@@ -451,12 +451,12 @@ class CollegeExperiences2019Seeder extends Seeder
                 'cons' => 'بدون مكافأة',
             ],
 
-            // idx=80 — KSU Network (explicit: "عملت ميدانيا في قسم الشبكة" — physical)
+            // idx=80 — UQU Network (explicit: "عملت ميدانيا في قسم الشبكة" — physical)
             [
-                'company' => 'جامعة الملك سعود-عمادة التعاملات الإلكترونية والاتصالات',
+                'company' => 'جامعة أم القرى-عمادة التعاملات الإلكترونية والاتصالات',
                 'role_title' => 'مهندس شبكات',
                 'department' => 'الشبكات',
-                'city' => 'الرياض',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 2,
                 'sector' => 'government',
                 'modality' => 'onsite',
