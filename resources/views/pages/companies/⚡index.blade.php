@@ -41,6 +41,7 @@ new #[Layout('layouts.public')] #[Title('الشركات')] class extends Compone
         return Company::approved()
             ->withCount('ratings')
             ->searchByName($this->search)
+            ->orderByDesc('ratings_count')
             ->orderByDesc('created_at')
             ->take($this->perPage + 1)
             ->get();
