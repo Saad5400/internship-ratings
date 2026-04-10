@@ -9,6 +9,7 @@
 .env
 .env.backup
 .env.production
+.env.staging
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -21,3 +22,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+rr
+.rr.yaml
