@@ -331,13 +331,13 @@ class Experiences2023Seeder extends Seeder
                 'cons' => null,
             ],
 
-            // Row 26 — جامعة الملك سعود للعلوم الصحية — recommendation: نعم
+            // Row 26 — جامعة أم القرى — recommendation: نعم
             [
-                'company' => 'جامعة الملك سعود للعلوم الصحية',
+                'company' => 'جامعة أم القرى',
                 'sector' => 'government',
                 'role_title' => 'متدرب تقنية معلومات',
                 'department' => 'تقنية المعلومات',
-                'city' => 'جدة',
+                'city' => 'مكة المكرمة',
                 'modality' => 'onsite',
                 'recommendation' => 'yes',
                 'mixed_env' => true,
