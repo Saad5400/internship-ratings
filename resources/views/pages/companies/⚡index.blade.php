@@ -28,11 +28,12 @@ new #[Layout('layouts.public')] #[Title('الشركات')] class extends Compone
         }
 
         $this->perPage += $this->pageSize;
+        unset($this->companyResults, $this->companies, $this->hasMore);
     }
 
     protected function resetPage(): void
     {
-        unset($this->companyResults);
+        unset($this->companyResults, $this->companies, $this->hasMore);
     }
 
     #[Computed]
