@@ -2,12 +2,16 @@
 
 namespace App\Filament\Resources\Companies\Tables;
 
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class CompaniesTable
@@ -19,10 +23,9 @@ class CompaniesTable
                 TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable()
-                    ->sortable(),
-                TextColumn::make('website')
-                    ->label('الموقع')
-                    ->toggleable(),
+                    ->sortable()
+                    ->weight('bold')
+                    ->description(fn ($record) => $record->website ? $record->website : null),
                 TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
@@ -42,7 +45,28 @@ class CompaniesTable
                 TextColumn::make('ratings_count')
                     ->label('التقييمات')
                     ->counts('ratings')
-                    ->sortable(),
+                    ->sortable()
+                    ->icon('heroicon-o-star')
+                    ->color('primary'),
+                TextColumn::make('ratings_avg_overall_rating')
+                    ->label('متوسط التقييم')
+                    ->avg('ratings', 'overall_rating')
+                    ->numeric(1)
+                    ->sortable()
+                    ->badge()
+                    ->color(fn ($state): string => match (true) {
+                        $state === null => 'gray',
+                        $state >= 4 => 'success',
+                        $state >= 3 => 'warning',
+                        default => 'danger',
+                    })
+                    ->formatStateUsing(fn ($state): string => $state ? number_format($state, 1).' / 5' : 'لا يوجد')
+                    ->toggleable(),
+                TextColumn::make('website')
+                    ->label('الموقع')
+                    ->url(fn ($record) => $record->website, shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime()
@@ -58,20 +82,27 @@ class CompaniesTable
                         'approved' => 'موافق عليه',
                         'rejected' => 'مرفوض',
                     ]),
+                TernaryFilter::make('has_ratings')
+                    ->label('لديها تقييمات')
+                    ->queries(
+                        true: fn (Builder $query) => $query->has('ratings'),
+                        false: fn (Builder $query) => $query->doesntHave('ratings'),
+                    ),
             ])
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    \Filament\Actions\BulkAction::make('approve')
+                    BulkAction::make('approve')
                         ->label('موافقة')
                         ->color('success')
                         ->icon('heroicon-o-check-circle')
                         ->action(fn (Collection $records) => $records->each->update(['status' => 'approved']))
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
-                    \Filament\Actions\BulkAction::make('reject')
+                    BulkAction::make('reject')
                         ->label('رفض')
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')
