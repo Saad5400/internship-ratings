@@ -7,13 +7,13 @@ use Filament\Widgets\ChartWidget;
 
 class RatingsDistributionChart extends ChartWidget
 {
-    protected static ?string $heading = 'توزيع التقييمات';
+    protected ?string $heading = 'توزيع التقييمات';
 
-    protected static ?string $description = 'عدد التقييمات حسب الدرجة';
+    protected ?string $description = 'عدد التقييمات حسب الدرجة';
 
     protected static ?int $sort = 2;
 
-    protected static ?string $maxHeight = '300px';
+    protected ?string $maxHeight = '300px';
 
     protected function getData(): array
     {
