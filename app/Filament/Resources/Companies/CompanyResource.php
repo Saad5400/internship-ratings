@@ -13,7 +13,6 @@ use App\Models\Company;
 use BackedEnum;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -31,7 +30,7 @@ class CompanyResource extends Resource
 
     protected static ?string $pluralModelLabel = 'الشركات';
 
-    protected static ?string $navigationGroup = 'إدارة المحتوى';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المحتوى';
 
     protected static ?int $navigationSort = 1;
 
@@ -69,9 +68,9 @@ class CompanyResource extends Resource
         return CompaniesTable::configure($table);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->schema([
                 Section::make('معلومات الشركة')
                     ->icon('heroicon-o-building-office-2')

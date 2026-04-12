@@ -13,7 +13,6 @@ use BackedEnum;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -32,7 +31,7 @@ class RatingResource extends Resource
 
     protected static ?string $pluralModelLabel = 'التقييمات';
 
-    protected static ?string $navigationGroup = 'إدارة المحتوى';
+    protected static string|\UnitEnum|null $navigationGroup = 'إدارة المحتوى';
 
     protected static ?int $navigationSort = 2;
 
@@ -71,9 +70,9 @@ class RatingResource extends Resource
         return RatingsTable::configure($table);
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist
+        return $schema
             ->schema([
                 Section::make('الشركة والوظيفة')
                     ->icon('heroicon-o-briefcase')
