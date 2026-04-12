@@ -4,7 +4,7 @@ namespace App\Filament\Resources\Ratings\Pages;
 
 use App\Filament\Resources\Ratings\RatingResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 
