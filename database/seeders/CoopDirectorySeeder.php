@@ -29,7 +29,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'الهيئة السعودية للمراجعين والمحاسبين',
-                'website' => 'https://socpa.org.sa/Socpa/Contact-Us/Submit-Request.aspx',
+                'website' => 'https://socpa.org.sa/',
                 'description' => 'الإيميل: info@socpa.org.sa',
             ],
             [
@@ -44,17 +44,17 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'هيئة حقوق الإنسان السعودية',
-                'website' => 'https://www.hrc.gov.sa/ar-sa/Pages/home.aspx',
+                'website' => 'https://www.hrc.gov.sa/',
                 'description' => "الإيميل: info@hrc.gov.sa\nLinkedIn: https://www.linkedin.com/company/saudi-human-rights-commission/",
             ],
             [
                 'name' => 'هيئة تنمية الصادرات السعودية',
-                'website' => 'https://www.saudiexports.sa/ar/pages/default.aspx',
+                'website' => 'https://www.saudiexports.sa/',
                 'description' => "الإيميل: info@saudiexports.sa ; CC@saudiexports.sa\nLinkedIn: https://www.linkedin.com/company/saudi-exports/",
             ],
             [
                 'name' => 'هيئة تقويم التعليم والتدريب',
-                'website' => 'https://www.etec.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://www.etec.gov.sa/',
                 'description' => "الإيميل: Faq@etec.gov.sa\nLinkedIn: https://www.linkedin.com/company/etecksa/",
             ],
             [
@@ -64,33 +64,32 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'الهيئة السعودية للمواصفات والمقاييس والجودة',
-                'website' => 'https://www.saso.gov.sa/ar/pages/default.aspx',
+                'website' => 'https://www.saso.gov.sa/',
                 'description' => "الإيميل: info@saso.gov.sa\nLinkedIn: https://www.linkedin.com/company/sasogov/",
             ],
             [
                 'name' => 'هيئة المدن الاقتصادية السعودية',
-                'website' => 'http://www.ecza.gov.sa/360/pages/ar/home',
+                'website' => 'https://www.ecza.gov.sa/',
                 'description' => "الإيميل: info@ecza.gov.sa\nLinkedIn: https://www.linkedin.com/company/ecza-gov/?originalSubdomain=sa",
             ],
             [
-                'name' => 'هيئة المحتوى المحلي
-والمشتريات الحكومية السعودية',
-                'website' => 'https://lcgpa.gov.sa/ar/Pages/default.aspx',
+                'name' => 'هيئة المحتوى المحلي والمشتريات الحكومية السعودية',
+                'website' => 'https://lcgpa.gov.sa/',
                 'description' => "الإيميل: info@lcgpa.gov.sa\nLinkedIn: https://www.linkedin.com/company/local-content-and-government-procurement-authority/",
             ],
             [
                 'name' => 'هيئة السوق المالية',
-                'website' => 'https://cma.org.sa/Pages/default.aspx',
+                'website' => 'https://cma.org.sa/',
                 'description' => "الإيميل: info@cma.org.sa\nLinkedIn: https://www.linkedin.com/company/capital-market-authority/",
             ],
             [
                 'name' => 'هيئة الاتصالات وتقنية المعلومات',
-                'website' => 'https://www.citc.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://www.citc.gov.sa/',
                 'description' => "الإيميل: info@citc.gov.sa\nLinkedIn: https://www.linkedin.com/company/citc_sa/life/e38a9f82-39a3-4cab-bb3e-ea72ba4a9f62/",
             ],
             [
                 'name' => 'الهيئة الوطنية لمكافحة الفساد',
-                'website' => 'https://www.nazaha.gov.sa/ar-sa/pages/default.aspx',
+                'website' => 'https://www.nazaha.gov.sa/',
                 'description' => "الإيميل: info@nazaha.gov.sa\nLinkedIn: https://www.linkedin.com/company/national-anti-corruption-commission-nazaha",
             ],
             [
@@ -100,7 +99,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'الهيئة الملكية للجبيل وينبع',
-                'website' => 'https://www.rcjy.gov.sa/ar-SA/Pages/default.aspx',
+                'website' => 'https://www.rcjy.gov.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/royal-commission-for-jubail-and-yanbu/',
             ],
             [
@@ -110,7 +109,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'الهيئة العامة للغذاء والدواء',
-                'website' => 'https://old.sfda.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://www.sfda.gov.sa/',
                 'description' => "الإيميل: webmaster@sfda.gov.sa\nLinkedIn: https://www.linkedin.com/company/sfda/",
             ],
             [
@@ -120,7 +119,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'الهيئة العامة للطيران المدني',
-                'website' => 'https://gaca.gov.sa/web/ar-sa/page/home',
+                'website' => 'https://gaca.gov.sa/',
                 'description' => "الإيميل: HR-Support@gaca.gov.sa\nLinkedIn: https://www.linkedin.com/company/civil-aviation-authority_2/",
             ],
             [
@@ -145,7 +144,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'الهيئة السعودية للمدن الصناعية ومناطق التقنية',
-                'website' => null,
+                'website' => 'https://www.modon.gov.sa/',
                 'description' => "الإيميل: info@modon.gov.sa\nLinkedIn: https://www.linkedin.com/company/saudi-authority-for-industrial-cities-and-technology-zones",
             ],
             [
@@ -160,7 +159,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'الهيئة السعودية للتخصصات الصحية',
-                'website' => null,
+                'website' => 'https://www.scfhs.org.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/saudi-commission-for-health-specialties-scfhs-',
             ],
             [
@@ -185,17 +184,17 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'هيئة الزكاة والضريبة والجمارك',
-                'website' => 'https://gazt.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://zatca.gov.sa/',
                 'description' => "الإيميل: info@zatca.gov.sa\nLinkedIn: https://www.linkedin.com/company/general-authority-of-zakat-&-tax",
             ],
             [
                 'name' => 'البنك المركزي السعودي',
-                'website' => 'https://www.sama.gov.sa/ar-sa/Pages/default.aspx',
+                'website' => 'https://www.sama.gov.sa/',
                 'description' => "الإيميل: info@sama.gov.sa\nLinkedIn: https://www.linkedin.com/company/saudi-central-bank-sama/?originalSubdomain=sa",
             ],
             [
                 'name' => 'المؤسسة العامة لتحلية المياه المالحة',
-                'website' => 'https://www.swcc.gov.sa/Arabic/Pages/Home.aspx',
+                'website' => 'https://www.swcc.gov.sa/',
                 'description' => "الإيميل: Ialhassan@swcc.gov.sa TCPR@swcc.gov.sa\nLinkedIn: https://www.linkedin.com/company/swdtcksa/?originalSubdomain=sa",
             ],
             [
@@ -206,11 +205,11 @@ class CoopDirectorySeeder extends Seeder
             [
                 'name' => 'المؤسسة العامة للتقاعد',
                 'website' => 'https://www.pension.gov.sa/',
-                'description' => "الإيميل: governor@pension,gov.sa\nLinkedIn: https://www.linkedin.com/company/public-pension-agency/?originalSubdomain=sa",
+                'description' => "الإيميل: governor@pension.gov.sa\nLinkedIn: https://www.linkedin.com/company/public-pension-agency/?originalSubdomain=sa",
             ],
             [
                 'name' => 'مؤسسة الملك عبد العزيز ورجاله للموهبة والإبداع',
-                'website' => 'https://www.mawhiba.org/Ar/About/who/Pages/Brief.aspx',
+                'website' => 'https://www.mawhiba.org/',
                 'description' => "الإيميل: Info@mawhiba.org.sa\nLinkedIn: https://www.linkedin.com/company/mawhiba/",
             ],
             [
@@ -220,12 +219,12 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'وزارة المالية',
-                'website' => 'https://www.mof.gov.sa/Pages/default.aspx',
+                'website' => 'https://www.mof.gov.sa/',
                 'description' => "الإيميل: ccc@mof.gov.sa\nLinkedIn: https://www.linkedin.com/company/mofksa",
             ],
             [
                 'name' => 'وزارة العدل',
-                'website' => 'https://www.moj.gov.sa/ar/pages/default.aspx',
+                'website' => 'https://www.moj.gov.sa/',
                 'description' => "الإيميل: 1950@moj.gov.sa\nLinkedIn: https://www.linkedin.com/company/وزارة-العدل",
             ],
             [
@@ -235,7 +234,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'وزارة التعليم',
-                'website' => 'https://www.moe.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://www.moe.gov.sa/',
                 'description' => "الإيميل: contact@mohe.gov.sa - info@mohe.gov.sa\nLinkedIn: https://sa.linkedin.com/company/ministry-of-education-saudi-arabia",
             ],
             [
@@ -250,7 +249,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'وزارة الطاقة',
-                'website' => 'http://www.moenergy.gov.sa/arabic/Pages/default.aspx',
+                'website' => 'https://www.energy.gov.sa/',
                 'description' => 'LinkedIn: https://sa.linkedin.com/company/saudi-ministry-of-energy',
             ],
             [
@@ -275,17 +274,17 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'وزارة البيئة والمياه والزراعة',
-                'website' => 'https://www.mewa.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://www.mewa.gov.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/ministry-of-environment-water-and-agriculture/',
             ],
             [
                 'name' => 'وزارة التجارة',
-                'website' => 'https://mc.gov.sa/ar/pages/default.aspx',
+                'website' => 'https://mc.gov.sa/',
                 'description' => "الإيميل: CS@mc.gov.sa\nLinkedIn: https://www.linkedin.com/company/ministry-of-commerce-saudiarabia/",
             ],
             [
                 'name' => 'وزارة الصحة',
-                'website' => 'https://www.moh.gov.sa/Pages/Default.aspx',
+                'website' => 'https://www.moh.gov.sa/',
                 'description' => "الإيميل: irecsupport@moh.gov.sa\nLinkedIn: https://www.linkedin.com/company/ministry-of-health-saudi-arabia/",
             ],
             [
@@ -295,7 +294,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'وزارة النقل',
-                'website' => 'https://www.mot.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://www.mot.gov.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/ministry-of-transport-saudi-arabia/',
             ],
             [
@@ -310,7 +309,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'المركز الوطني للتنافسية',
-                'website' => 'https://www.ncc.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://www.ncc.gov.sa/',
                 'description' => "الإيميل: info@ncc.gov.sa\nLinkedIn: https://www.linkedin.com/company/ksancc/",
             ],
             [
@@ -325,7 +324,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'مركز الملك عبدالله للدراسات والبحوث',
-                'website' => 'https://www.kapsarc.org/ar/about/',
+                'website' => 'https://www.kapsarc.org/',
                 'description' => "الإيميل: jobs@kapsarc.org\nLinkedIn: https://www.linkedin.com/company/kapsarc/",
             ],
             [
@@ -335,22 +334,22 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'صندوق الاستثمارات العامة',
-                'website' => 'https://www.pif.gov.sa/ar/Pages/default.aspx#1',
+                'website' => 'https://www.pif.gov.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/pifsaudi/',
             ],
             [
                 'name' => 'صندوق التنمية الزراعية',
-                'website' => 'https://adf.gov.sa/ar/Pages/default.aspx',
+                'website' => 'https://adf.gov.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/adfgovsa/',
             ],
             [
                 'name' => 'صندوق التنمية الصناعية السعودي',
-                'website' => 'https://www.sidf.gov.sa/ar/Pages/Home.aspx',
+                'website' => 'https://www.sidf.gov.sa/',
                 'description' => "الإيميل: info@sidf.gov.sa\nLinkedIn: https://www.linkedin.com/company/saudi-industrial-development-fund/",
             ],
             [
                 'name' => 'صندوق التنمية العقارية',
-                'website' => 'https://www.housing.gov.sa/ar/related-links/140',
+                'website' => 'https://www.redf.gov.sa/',
                 'description' => "الإيميل: info@housing.gov.sa\nLinkedIn: https://www.linkedin.com/company/real-estate-development-fund/",
             ],
             [
@@ -360,12 +359,12 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'صندوق تنمية الموارد البشرية',
-                'website' => 'https://www.hrdf.org.sa/Home',
+                'website' => 'https://www.hrdf.org.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/hrdf/',
             ],
             [
                 'name' => 'البنك الأهلي التجاري',
-                'website' => 'https://www.alahli.com/ar-sa/Pages/RB-NCB-Home-New.aspx',
+                'website' => 'https://www.snb.com/',
                 'description' => "الإيميل: contactus@alahli.com\nLinkedIn: https://www.linkedin.com/company/ncb/",
             ],
             [
@@ -375,7 +374,7 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'مصرف الانماء',
-                'website' => 'https://www.alinma.com/Career/coopAr.html',
+                'website' => 'https://www.alinma.com/',
                 'description' => "الإيميل: info@alinma.com\nLinkedIn: https://www.linkedin.com/company/alinma-bank/",
             ],
             [
@@ -385,12 +384,12 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'بنك الرياض',
-                'website' => 'https://www.riyadbank.com/ar/personal-banking',
+                'website' => 'https://www.riyadbank.com/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/riyad-bank/',
             ],
             [
                 'name' => 'مجموعة سامبا المالية',
-                'website' => 'https://m.samba.com/ar/home/index.aspx',
+                'website' => 'https://www.snb.com/ar/',
                 'description' => "الإيميل: customerCare@samba.com\nLinkedIn: https://www.linkedin.com/company/samba-financial-group/",
             ],
             [
@@ -400,12 +399,12 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'البنك العربي الوطني',
-                'website' => 'http://www.anb.com.sa/Default.aspx?tabid=634&language=ar-SA',
+                'website' => 'https://www.anb.com.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/arab-national-bank/',
             ],
             [
                 'name' => 'بنك البلاد',
-                'website' => 'https://www.bankalbilad.com/ar/about/Pages/Training.aspx',
+                'website' => 'https://www.bankalbilad.com/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/bankalbilad/',
             ],
             [
@@ -415,37 +414,37 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'stc',
-                'website' => 'https://careers.stc.com.sa/',
+                'website' => 'https://www.stc.com.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/stc/',
             ],
             [
                 'name' => 'Mobily',
-                'website' => 'https://careers.mobily.com.sa/en/saudi-arabia/jobs/coop-program-1100006246/',
+                'website' => 'https://www.mobily.com.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/mobily/',
             ],
             [
                 'name' => 'البحري',
-                'website' => 'https://careers.bahri.sa/job/Riyadh-COOP-Program-2020/571006001/',
+                'website' => 'https://www.bahri.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/bahri/',
             ],
             [
                 'name' => 'سابك',
-                'website' => 'https://www.sabic.com/ar/careers/middle-east-africa/students-and-fresh-graduates',
+                'website' => 'https://www.sabic.com/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/sabic/',
             ],
             [
                 'name' => 'Aramco',
-                'website' => 'https://www.aramco.com/ar/website-information/contactus',
+                'website' => 'https://www.aramco.com/',
                 'description' => "الإيميل: saempsa_webmaster@aramco.com\nLinkedIn: https://www.linkedin.com/company/aramco/",
             ],
             [
                 'name' => 'Saudi Railway Company',
-                'website' => 'https://www.sar.com.sa/Home-aspx-lang-ar-sa.aspx',
+                'website' => 'https://www.sar.com.sa/',
                 'description' => "الإيميل: Training@sar.com.sa\nLinkedIn: https://www.linkedin.com/company/sarsaudirailway/",
             ],
             [
                 'name' => 'KPMG',
-                'website' => 'https://home.kpmg/xx/en/home.html',
+                'website' => 'https://kpmg.com/sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/kpmg/',
             ],
             [
@@ -455,62 +454,62 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'PWC',
-                'website' => 'https://www.pwc.com/m1/en/media-centre/2017/pwc-saudi-arabia-welcomes-70-new-graduates-ar.html',
+                'website' => 'https://www.pwc.com/m1/en.html',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/pwc/',
             ],
             [
                 'name' => 'DELOITTE',
-                'website' => 'https://www2.deloitte.com/sa/en/legal/about-deloitte-saudi-arabia.html',
+                'website' => 'https://www2.deloitte.com/sa/en.html',
                 'description' => "الإيميل: emakhdoum@deloitte.com\nLinkedIn: https://www.linkedin.com/company/deloitte/",
             ],
             [
                 'name' => 'McKinsey & Company',
-                'website' => 'https://www.mckinsey.com/middle-east/ar/riyadh',
+                'website' => 'https://www.mckinsey.com/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/mckinsey/',
             ],
             [
                 'name' => 'Sanabil Investments',
-                'website' => 'http://www.sanabil.sa/ar/pages/default.aspx',
+                'website' => 'https://www.sanabil.com/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/sanabil-investments/',
             ],
             [
                 'name' => 'التعاونية',
-                'website' => 'https://www.tawuniya.com.sa/about-us/contact-us',
+                'website' => 'https://www.tawuniya.com.sa/',
                 'description' => "الإيميل: info@tawuniya.com.sa\nLinkedIn: https://www.linkedin.com/company/tawuniya/",
             ],
             [
                 'name' => 'شركة ابو حيمد وال الشيخ والحقباني بالتعاون مع Clifford Chance',
-                'website' => 'https://www.ashlawksa.com/en/home.html',
+                'website' => 'https://www.ashlawksa.com/',
                 'description' => "الإيميل: Info.ASH@ashlawksa.com\nLinkedIn: https://www.linkedin.com/company/abuhimed-alsheikh-alhagbani-law-firm-as-h-in-co-operation-with-clifford-chance/",
             ],
             [
                 'name' => 'شركة الخشيم وشركاه',
-                'website' => 'https://www.khoshaim.com/intern/',
+                'website' => 'https://www.khoshaim.com/',
                 'description' => "الإيميل: info@khoshaim.com\nLinkedIn: https://www.linkedin.com/company/khoshaim",
             ],
             [
                 'name' => 'شركة الضبعان وشركاه بالتعاون مع Evershed Sutherland',
-                'website' => 'https://www.eversheds-sutherland.com/global/en/where/middle-east/saudi-arabia/overview/careers/index.page',
+                'website' => 'https://www.eversheds-sutherland.com/',
                 'description' => "الإيميل: HRRiyadh@aldhabaan-es.com\nLinkedIn: https://www.linkedin.com/company/aldhabaan-and-partners",
             ],
             [
                 'name' => 'EKP Legal in association AlEnezee Legal Counsel',
-                'website' => 'https://www.ekplegal.com/index.php',
+                'website' => 'https://www.ekplegal.com/',
                 'description' => "الإيميل: info@ekplegal.com\nLinkedIn: https://www.linkedin.com/company/ekplegal",
             ],
             [
                 'name' => 'شركة الصعيب وشركاه للمحاماة',
-                'website' => 'http://soaiblaw.com',
+                'website' => 'https://soaiblaw.com/',
                 'description' => "الإيميل: soaib@soaiblaw.com\nLinkedIn: https://www.linkedin.com/in/soaiblaw-firm-0a238592",
             ],
             [
                 'name' => 'جدوى للاستثمار',
-                'website' => 'http://www.jadwa.com/en',
+                'website' => 'https://www.jadwa.com/',
                 'description' => "الإيميل: info@jadwa.com\nLinkedIn: https://www.linkedin.com/company/jadwa-investment",
             ],
             [
                 'name' => 'تداول',
-                'website' => 'https://www.tadawul.com.sa/wps/portal/tadawul/markets/equities/market-watch?locale=ar',
+                'website' => 'https://www.saudiexchange.sa/',
                 'description' => "الإيميل: Co.op.training@tadawul.com.sa\nLinkedIn: https://www.linkedin.com/company/tadawul",
             ],
             [
@@ -520,17 +519,17 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'أديم المالية',
-                'website' => 'http://adeemcapital.com/ar-sa/',
+                'website' => 'https://adeemcapital.com/',
                 'description' => "الإيميل: hr@adeemcapital.com\nLinkedIn: https://www.linkedin.com/company/adeem-capital",
             ],
             [
                 'name' => 'دراية المالية',
-                'website' => 'http://www.derayah.com/web/ar/index.html',
+                'website' => 'https://www.derayah.com/',
                 'description' => "الإيميل: HR@derayah.com\nLinkedIn: https://www.linkedin.com/company/derayah",
             ],
             [
                 'name' => 'فالكم المالية',
-                'website' => 'http://www.falcom.com.sa/',
+                'website' => 'https://www.falcom.com.sa/',
                 'description' => "الإيميل: hr@falcom.com.sa\nLinkedIn: https://www.linkedin.com/company/falcom-financial-services",
             ],
             [
@@ -545,32 +544,32 @@ class CoopDirectorySeeder extends Seeder
             ],
             [
                 'name' => 'شركة معادن',
-                'website' => 'https://www.maaden.com.sa/ar/careers/working',
+                'website' => 'https://www.maaden.com.sa/',
                 'description' => "الإيميل: GARNIS@MAADEN.COM.SA info@maaden.com.sa\nLinkedIn: https://www.linkedin.com/company/maaden",
             ],
             [
                 'name' => 'شركة كسب المالية',
-                'website' => 'http://www.kasbcapital.sa/index.php/ar/',
+                'website' => 'https://www.kasbcapital.sa/',
                 'description' => "الإيميل: ialalwan@ksb.com.sa\nLinkedIn: https://www.linkedin.com/company/ksb-capital-group",
             ],
             [
                 'name' => 'سمة Saudi Credit Bureau (SIMAH)',
-                'website' => 'https://www.simah.com/en/personal/pages/default.aspx',
+                'website' => 'https://www.simah.com/',
                 'description' => "الإيميل: kalmzaini@simah.com\nLinkedIn: https://www.linkedin.com/company/saudi-credit-bureau---simah",
             ],
             [
                 'name' => 'تكامل',
-                'website' => 'https://join.takamol.com.sa/?page_id=4',
+                'website' => 'https://www.takamol.com.sa/',
                 'description' => 'LinkedIn: https://www.linkedin.com/company/takamolholding',
             ],
             [
                 'name' => 'tetco',
-                'website' => 'https://tetco.sa/ar/default.aspx',
+                'website' => 'https://tetco.sa/',
                 'description' => "الإيميل: career@tetco.sa\nLinkedIn: https://www.linkedin.com/company/tetco-group",
             ],
             [
                 'name' => 'وساطه المالية',
-                'website' => 'http://www.wasatah.com.sa/index.php/ar/',
+                'website' => 'https://www.wasatah.com.sa/',
                 'description' => "الإيميل: info@wasatah.com.sa\nLinkedIn: https://www.linkedin.com/company/al-wasatah-al-maliah-co.-wasatah-capital-",
             ],
         ];
