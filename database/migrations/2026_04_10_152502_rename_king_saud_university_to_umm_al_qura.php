@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\DB;
  *  1. "جامعة الملك سعود للعلوم الصحية" — Row 26 of the 2023 survey
  *  2. "جامعة الملك سعود-عمادة التعاملات الإلكترونية والاتصالات" — idx=80 of the 2019 survey
  *
+ * Both correct names now resolve to the single canonical form
+ * "جامعة أم القرى العمادة التقنية" (see the merge migration that follows).
+ *
  * Strategy per old row:
  *  - If the correct name does NOT yet exist → rename the row in place.
  *  - If the correct name ALREADY exists as a separate row → reassign all
@@ -31,8 +34,8 @@ return new class extends Migration
      * @var array<string, string>
      */
     private const RENAMES = [
-        'جامعة الملك سعود للعلوم الصحية' => 'جامعة أم القرى',
-        'جامعة الملك سعود-عمادة التعاملات الإلكترونية والاتصالات' => 'جامعة أم القرى-عمادة التعاملات الإلكترونية والاتصالات',
+        'جامعة الملك سعود للعلوم الصحية' => 'جامعة أم القرى العمادة التقنية',
+        'جامعة الملك سعود-عمادة التعاملات الإلكترونية والاتصالات' => 'جامعة أم القرى العمادة التقنية',
     ];
 
     public function up(): void
