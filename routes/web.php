@@ -9,7 +9,7 @@ Route::livewire('/companies', 'pages::companies.index')->name('companies.index')
 Route::get('/companies/{company}', [CompanyController::class, 'show'])->name('companies.show');
 
 Route::livewire('/ratings/create', 'pages::ratings.create')
-    ->middleware('throttle:10,60')
+    ->middleware(app()->isLocal() ? 'web' : 'throttle:10,60')
     ->name('ratings.create');
 
 // Admin auth routes (from starter kit)

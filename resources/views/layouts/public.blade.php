@@ -83,6 +83,5 @@
             <script>window.onTurnstileReady = () => window.dispatchEvent(new Event('turnstile-loaded'));</script>
             <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileReady&render=explicit" async defer></script>
         @endif
-        @livewireScripts
     </body>
 </html>

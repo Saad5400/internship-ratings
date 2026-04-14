@@ -44,12 +44,6 @@ class RatingsRelationManager extends RelationManager
                             ->options(array_combine(range(1, 12), range(1, 12)))
                             ->placeholder('اختياري')
                             ->native(false),
-                        Select::make('sector')->label('نوع الجهة')->options([
-                            'government' => 'حكومي',
-                            'private' => 'خاص',
-                            'nonprofit' => 'غير ربحي',
-                            'other' => 'أخرى',
-                        ]),
                         Select::make('modality')->label('نمط التدريب')->required()->options([
                             'onsite' => 'حضوري',
                             'hybrid' => 'هجين',
@@ -60,11 +54,11 @@ class RatingsRelationManager extends RelationManager
                 Section::make('التقييمات')
                     ->columns(3)
                     ->schema([
-                        TextInput::make('rating_mentorship')->label('الإرشاد')->required()->numeric()->minValue(1)->maxValue(5),
-                        TextInput::make('rating_learning')->label('التعلم')->required()->numeric()->minValue(1)->maxValue(5),
-                        TextInput::make('rating_culture')->label('بيئة العمل')->required()->numeric()->minValue(1)->maxValue(5),
-                        TextInput::make('rating_compensation')->label('المكافأة')->required()->numeric()->minValue(1)->maxValue(5),
-                        TextInput::make('overall_rating')->label('التقييم العام')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_learning')->label('القيمة التعليمية')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_mentorship')->label('جودة الإرشاد')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_real_work')->label('العمل الحقيقي والمشاريع')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_team_environment')->label('بيئة الفريق')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_organization')->label('التنظيم ووضوح التوقعات')->required()->numeric()->minValue(1)->maxValue(5),
                         Select::make('recommendation')->label('التوصية')->required()->options([
                             'yes' => 'أنصح بها',
                             'maybe' => 'ربما',
@@ -95,12 +89,12 @@ class RatingsRelationManager extends RelationManager
                 TextColumn::make('overall_rating')
                     ->label('التقييم')
                     ->badge()
-                    ->color(fn (int $state): string => match (true) {
+                    ->color(fn (float $state): string => match (true) {
                         $state >= 4 => 'success',
                         $state >= 3 => 'warning',
                         default => 'danger',
                     })
-                    ->formatStateUsing(fn (int $state): string => $state.' / 5'),
+                    ->formatStateUsing(fn (float $state): string => number_format($state, 1).' / 5'),
                 TextColumn::make('recommendation')
                     ->label('توصية')
                     ->badge()

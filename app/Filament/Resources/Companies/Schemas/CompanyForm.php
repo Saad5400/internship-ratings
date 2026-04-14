@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Companies\Schemas;
 
+use App\Enums\CompanyType;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -29,6 +30,10 @@ class CompanyForm
                             ->url()
                             ->suffixIcon('heroicon-o-globe-alt')
                             ->placeholder('https://example.com'),
+                        Select::make('type')
+                            ->label('نوع الجهة')
+                            ->options(CompanyType::options())
+                            ->native(false),
                         Textarea::make('description')
                             ->label('الوصف')
                             ->rows(3)

@@ -10,7 +10,7 @@ class CompanyController extends Controller
     {
         abort_unless($company->status === 'approved', 404);
 
-        $ratings = $company->ratings()->latest()->paginate(10);
+        $ratings = $company->ratings()->with('company')->latest()->paginate(10);
 
         return view('public.companies.show', compact('company', 'ratings'));
     }

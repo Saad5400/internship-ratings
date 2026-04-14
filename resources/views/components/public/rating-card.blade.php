@@ -1,14 +1,21 @@
 @props(['rating'])
 
 @php
-    $modalityLabels = ['onsite' => 'حضوري', 'hybrid' => 'هجين', 'remote' => 'عن بُعد'];
-    $sectorLabels = ['government' => 'حكومي', 'private' => 'خاص', 'nonprofit' => 'غير ربحي', 'other' => 'أخرى'];
-    $recLabels = [
-        'yes' => ['أنصح به', 'bg-green-50 text-green-700 ring-green-600/20'],
-        'maybe' => ['توصية مشروطة', 'bg-amber-50 text-amber-700 ring-amber-600/20'],
-        'no' => ['لا أنصح', 'bg-red-50 text-red-700 ring-red-600/20'],
+    $modalityLabel = $rating->modality?->label() ?? $rating->modality;
+    $recLabel      = $rating->recommendation?->label() ?? (string) $rating->recommendation;
+    $recClass      = match ($rating->recommendation?->value ?? $rating->recommendation) {
+        'yes'   => 'bg-green-50 text-green-700 ring-green-600/20',
+        'maybe' => 'bg-amber-50 text-amber-700 ring-amber-600/20',
+        'no'    => 'bg-red-50 text-red-700 ring-red-600/20',
+        default => 'bg-slate-50 text-slate-600 ring-slate-200',
+    };
+    $scoreBars = [
+        ['label' => 'التعلّم', 'value' => $rating->rating_learning],
+        ['label' => 'الإرشاد', 'value' => $rating->rating_mentorship],
+        ['label' => 'العمل الحقيقي', 'value' => $rating->rating_real_work],
+        ['label' => 'بيئة الفريق', 'value' => $rating->rating_team_environment],
+        ['label' => 'التنظيم', 'value' => $rating->rating_organization],
     ];
-    [$recLabel, $recClass] = $recLabels[$rating->recommendation] ?? [$rating->recommendation, 'bg-slate-50 text-slate-600'];
 @endphp
 
 <article class="rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs transition-shadow hover:shadow-sm">
@@ -32,17 +39,14 @@
                     {{ $rating->duration_months }} {{ $rating->duration_months === 1 ? 'شهر' : 'أشهر' }}
                 </span>
                 @if($rating->modality)
-                    <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 font-medium text-blue-700">{{ $modalityLabels[$rating->modality] ?? $rating->modality }}</span>
+                    <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 font-medium text-blue-700">{{ $modalityLabel }}</span>
                 @endif
-                @if($rating->sector)
-                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600">{{ $sectorLabels[$rating->sector] ?? $rating->sector }}</span>
+                @if($rating->company?->type)
+                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600">{{ $rating->company->type->label() }}</span>
                 @endif
             </div>
         </div>
-        <div class="shrink-0 flex items-baseline gap-0.5">
-            <x-public.count-up :value="$rating->overall_rating" :decimals="0" :duration="700" class="text-3xl font-bold text-slate-900 tabular-nums" />
-            <span class="text-sm text-slate-400 font-normal">/5</span>
-        </div>
+        <x-public.overall-score :value="$rating->overall_rating" compact />
     </div>
 
     {{-- Facts row: stipend + yes/no chips --}}
@@ -94,10 +98,15 @@
 
     {{-- Multi-criteria bars --}}
     <div class="mt-5 space-y-2.5">
-        <x-public.rating-bar label="الإرشاد" :value="$rating->rating_mentorship" :delay="0" />
-        <x-public.rating-bar label="التعلّم" :value="$rating->rating_learning" :delay="80" />
-        <x-public.rating-bar label="بيئة العمل" :value="$rating->rating_culture" :delay="160" />
-        <x-public.rating-bar label="المكافأة" :value="$rating->rating_compensation" :delay="240" />
+        @foreach($scoreBars as $index => $scoreBar)
+            @if($scoreBar['value'] !== null)
+                <x-public.rating-bar
+                    :label="$scoreBar['label']"
+                    :value="$scoreBar['value']"
+                    :delay="$index * 80"
+                />
+            @endif
+        @endforeach
     </div>
 
     {{-- Review text --}}

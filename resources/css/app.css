@@ -99,6 +99,26 @@
 
 [x-cloak] { display: none !important; }
 
+.mary-choices-element {
+    display: inline-flex !important;
+    width: fit-content;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.375rem;
+    vertical-align: middle;
+}
+
+.mary-choices-element > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 0;
+}
+
+.mary-choices-element svg {
+    flex-shrink: 0;
+}
+
 /* Respect reduced-motion: tame all transitions and animations. */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

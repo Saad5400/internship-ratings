@@ -5,13 +5,13 @@ namespace App\Enums;
 enum SaudiCity: string
 {
     // تصنيف (أ)
-    case Riyadh = 'الرياض';
     case Mecca = 'مكة المكرمة';
+    case Jeddah = 'جدة';
+    case Riyadh = 'الرياض';
     case Medina = 'المدينة المنورة';
     case Dammam = 'الدمام';
     case Khobar = 'الخبر';
     case Dhahran = 'الظهران';
-    case Jeddah = 'جدة';
     case Buraydah = 'بريدة';
     case Abha = 'أبها';
     case Jizan = 'جازان';
@@ -56,6 +56,14 @@ enum SaudiCity: string
     case Sabya = 'صبياء';
     case Fifa = 'فيفا';
     case AlQurayyat = 'القريات';
+
+    /** @return list<array{id: string, name: string}> For x-mary-choices combobox */
+    public static function toChoicesOptions(): array
+    {
+        return collect(self::cases())
+            ->map(fn (self $city) => ['id' => $city->value, 'name' => $city->value])
+            ->all();
+    }
 
     /** @return array<string, string> value => label pairs for select options */
     public static function toOptions(): array

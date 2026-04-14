@@ -35,12 +35,12 @@ class TopCompaniesTable extends TableWidget
                     ->label('متوسط التقييم')
                     ->numeric(1)
                     ->badge()
-                    ->color(fn ($state): string => match (true) {
+                    ->color(fn (?float $state): string => match (true) {
                         $state >= 4 => 'success',
                         $state >= 3 => 'warning',
                         default => 'danger',
                     })
-                    ->formatStateUsing(fn ($state): string => number_format($state, 1).' / 5'),
+                    ->formatStateUsing(fn (?float $state): string => number_format($state ?? 0, 1).' / 5'),
                 TextColumn::make('ratings_count')
                     ->label('عدد التقييمات')
                     ->icon('heroicon-o-star')

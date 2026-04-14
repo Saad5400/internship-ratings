@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Companies;
 
+use App\Enums\CompanyType;
 use App\Filament\Resources\Companies\Pages\CreateCompany;
 use App\Filament\Resources\Companies\Pages\EditCompany;
 use App\Filament\Resources\Companies\Pages\ListCompanies;
@@ -85,6 +86,12 @@ class CompanyResource extends Resource
                             ->url(fn ($record) => $record->website, shouldOpenInNewTab: true)
                             ->icon('heroicon-o-globe-alt')
                             ->default('غير متوفر'),
+                        TextEntry::make('type')
+                            ->label('نوع الجهة')
+                            ->formatStateUsing(fn ($state): string => $state instanceof CompanyType
+                                ? $state->label()
+                                : CompanyType::tryFrom((string) $state)?->label() ?? 'غير محدد')
+                            ->badge(),
                         TextEntry::make('description')
                             ->label('الوصف')
                             ->default('لا يوجد وصف')

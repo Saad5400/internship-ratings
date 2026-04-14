@@ -1,8 +1,13 @@
 <?php
 
+use App\Enums\CompanyType;
+use App\Enums\Modality;
+use App\Enums\Recommendation;
+use App\Enums\ReviewerDegree;
 use App\Enums\SaudiCity;
 use App\Models\Company;
 use App\Models\Rating;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -18,12 +23,15 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     public string $companySearch = '';
     public array $companyOptions = [];
 
+    public string $citySearch = '';
+    public array $cityOptions = [];
+
     public ?string $role_title = null;
     public ?string $department = null;
     public ?string $city = null;
     public ?int $duration_months = null;
-    public ?string $sector = null;          // government | private | nonprofit | other
-    public ?string $modality = null;        // onsite | hybrid | remote
+    public ?string $newCompanyType = null;  // government | private | nonprofit | other
+    public ?string $modality = null;
 
     // Step 2 — facts & scores
     public ?int $stipend_sar = null;
@@ -32,22 +40,31 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     public ?bool $job_offer = null;
     public ?int $rating_mentorship = null;
     public ?int $rating_learning = null;
-    public ?int $rating_culture = null;
-    public ?int $rating_compensation = null;
-    public ?int $overall_rating = null;
+    public ?int $rating_real_work = null;
+    public ?int $rating_team_environment = null;
+    public ?int $rating_organization = null;
 
     // Step 3 — experience
-    public ?string $recommendation = null;  // yes | maybe | no
+    public ?string $recommendation = null;
+    public bool $recommendationOverridden = false;
     public string $review_text = '';
     public ?string $pros = null;
     public ?string $cons = null;
     public ?string $reviewer_name = null;
+    public ?string $reviewer_university = null;
+    public ?string $reviewer_college = null;
     public ?string $reviewer_major = null;
+    public ?string $reviewer_degree = null;
+    public ?string $application_method = null;
+    public ?bool $willing_to_help = null;
+    public ?string $contact_method = null;
     public string $turnstile = '';
+    protected bool $syncingRecommendation = false;
 
     public function mount(?int $company = null): void
     {
         $this->companyOptions = $this->defaultCompanyOptions();
+        $this->cityOptions = SaudiCity::toChoicesOptions();
 
         if ($company) {
             $selected = Company::approved()->find($company);
@@ -69,6 +86,14 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             ->take(8)
             ->get(['id', 'name'])
             ->map(fn ($c) => ['id' => (string) $c->id, 'name' => $c->name])
+            ->all();
+    }
+
+    #[Computed]
+    public function durationMonthOptions(): array
+    {
+        return collect(range(1, 12))
+            ->map(fn (int $month) => ['id' => $month, 'name' => (string) $month])
             ->all();
     }
 
@@ -102,21 +127,122 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         $this->companyOptions = $results->values()->all();
     }
 
+    public function searchCities(string $value = ''): void
+    {
+        $this->citySearch = trim($value);
+
+        $this->cityOptions = collect(SaudiCity::toChoicesOptions())
+            ->when(
+                $this->citySearch !== '',
+                fn ($c) => $c->filter(
+                    fn ($city) => str_contains($city['name'], $this->citySearch)
+                )
+            )
+            ->values()
+            ->all();
+    }
+
     public function updatedCompanyId($value): void
     {
         if ($value === '__new__') {
-            $this->newCompanyName = $this->companySearch;
-        } else {
-            $this->newCompanyName = null;
+            $companyName = trim($this->companySearch);
+
+            $this->newCompanyName = $companyName;
+            $this->companySearch = '';
+
+            if ($companyName !== '') {
+                $this->companyOptions = [
+                    ['id' => '__new__', 'name' => $companyName],
+                ];
+            }
+
+            return;
         }
+
+        $this->newCompanyName = null;
+        $this->newCompanyType = null;
+        $this->companySearch = '';
+
+        if (blank($value)) {
+            $this->companyOptions = $this->defaultCompanyOptions();
+
+            return;
+        }
+
+        $selected = Company::approved()->find($value);
+
+        $this->companyOptions = $selected
+            ? [['id' => (string) $selected->id, 'name' => $selected->name]]
+            : $this->defaultCompanyOptions();
     }
 
     public function clearCompany(): void
     {
         $this->companyId = null;
         $this->newCompanyName = null;
+        $this->newCompanyType = null;
         $this->companySearch = '';
         $this->companyOptions = $this->defaultCompanyOptions();
+    }
+
+    protected function ratingFields(): array
+    {
+        return [
+            'rating_mentorship',
+            'rating_learning',
+            'rating_real_work',
+            'rating_team_environment',
+            'rating_organization',
+        ];
+    }
+
+    public function updated(string $property): void
+    {
+        if (in_array($property, $this->ratingFields(), true)) {
+            $this->syncSuggestedRecommendation();
+        }
+    }
+
+    public function updatedRecommendation(?string $value): void
+    {
+        if ($this->syncingRecommendation) {
+            return;
+        }
+
+        if ($value !== null) {
+            $this->recommendationOverridden = true;
+        }
+    }
+
+    protected function syncSuggestedRecommendation(): void
+    {
+        if ($this->recommendationOverridden) {
+            return;
+        }
+
+        $this->syncingRecommendation = true;
+        $this->recommendation = $this->suggestedRecommendation;
+        $this->syncingRecommendation = false;
+    }
+
+    #[Computed]
+    public function calculatedOverallRating(): ?float
+    {
+        $rating = new Rating([
+            'rating_mentorship' => $this->rating_mentorship,
+            'rating_learning' => $this->rating_learning,
+            'rating_real_work' => $this->rating_real_work,
+            'rating_team_environment' => $this->rating_team_environment,
+            'rating_organization' => $this->rating_organization,
+        ]);
+
+        return $rating->calculateOverallRating();
+    }
+
+    #[Computed]
+    public function suggestedRecommendation(): ?string
+    {
+        return Rating::recommendationFromOverall($this->calculatedOverallRating)?->value;
     }
 
     protected function rulesForStep(int $step): array
@@ -125,12 +251,12 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             1 => array_filter([
                 'companyId' => 'required|string',
                 'newCompanyName' => $this->companyId === '__new__' ? 'required|string|max:255' : null,
+                'newCompanyType' => $this->companyId === '__new__' ? 'required|in:'.implode(',', CompanyType::values()) : null,
                 'role_title' => 'nullable|string|max:255',
                 'department' => 'nullable|string|max:255',
-                'city' => ['nullable', 'string', 'in:' . implode(',', SaudiCity::values())],
+                'city' => ['required', 'string', 'in:' . implode(',', SaudiCity::values())],
                 'duration_months' => 'nullable|integer|min:1|max:12',
-                'sector' => 'nullable|in:government,private,nonprofit,other',
-                'modality' => 'required|in:onsite,hybrid,remote',
+                'modality' => 'required|in:' . implode(',', Modality::values()),
             ]),
             2 => [
                 'stipend_sar' => 'nullable|integer|min:0|max:100000',
@@ -139,17 +265,23 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 'job_offer' => 'nullable|boolean',
                 'rating_mentorship' => 'required|integer|min:1|max:5',
                 'rating_learning' => 'required|integer|min:1|max:5',
-                'rating_culture' => 'required|integer|min:1|max:5',
-                'rating_compensation' => 'required|integer|min:1|max:5',
-                'overall_rating' => 'required|integer|min:1|max:5',
+                'rating_real_work' => 'required|integer|min:1|max:5',
+                'rating_team_environment' => 'required|integer|min:1|max:5',
+                'rating_organization' => 'required|integer|min:1|max:5',
             ],
             3 => array_filter([
-                'recommendation' => 'required|in:yes,maybe,no',
+                'recommendation' => 'required|in:' . implode(',', Recommendation::values()),
                 'review_text' => 'required|string|min:10|max:5000',
                 'pros' => 'nullable|string|max:500',
                 'cons' => 'nullable|string|max:500',
                 'reviewer_name' => 'nullable|string|max:255',
+                'reviewer_university' => 'nullable|string|max:255',
+                'reviewer_college' => 'nullable|string|max:255',
                 'reviewer_major' => 'nullable|string|max:255',
+                'reviewer_degree' => 'nullable|in:' . implode(',', ReviewerDegree::values()),
+                'application_method' => 'nullable|string|max:500',
+                'willing_to_help' => 'nullable|boolean',
+                'contact_method' => $this->willing_to_help === true ? 'required|string|max:500' : 'nullable|string|max:500',
                 'turnstile' => config('turnstile.enabled') ? ['required', new TurnstileRule] : null,
             ]),
             default => [],
@@ -159,16 +291,20 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     protected function messages(): array
     {
         return [
+            'contact_method.required' => 'يرجى إدخال طريقة التواصل إن كنت مستعداً للمساعدة.',
+            'reviewer_degree.in' => 'يرجى اختيار درجة علمية صحيحة.',
             'companyId.required' => 'يرجى اختيار جهة أو إنشاء واحدة جديدة.',
             'newCompanyName.required' => 'يرجى إدخال اسم الجهة الجديدة.',
+            'newCompanyType.required' => 'يرجى اختيار نوع الجهة الجديدة.',
+            'city.required' => 'يرجى اختيار المدينة.',
             'duration_months.min' => 'المدة يجب أن تكون شهرًا واحدًا على الأقل.',
             'duration_months.max' => 'المدة يجب ألا تتجاوز 12 شهرًا.',
             'modality.required' => 'يرجى تحديد نمط التدريب.',
             'rating_mentorship.required' => 'تقييم الإرشاد مطلوب.',
             'rating_learning.required' => 'تقييم القيمة التعليمية مطلوب.',
-            'rating_culture.required' => 'تقييم بيئة العمل مطلوب.',
-            'rating_compensation.required' => 'تقييم المكافأة والمزايا مطلوب.',
-            'overall_rating.required' => 'التقييم العام مطلوب.',
+            'rating_real_work.required' => 'تقييم التعرّض للعمل الحقيقي مطلوب.',
+            'rating_team_environment.required' => 'تقييم بيئة الفريق مطلوب.',
+            'rating_organization.required' => 'تقييم التنظيم ووضوح التوقعات مطلوب.',
             'recommendation.required' => 'يرجى اختيار توصيتك.',
             'review_text.required' => 'المراجعة مطلوبة.',
             'review_text.min' => 'المراجعة يجب أن تكون 10 أحرف على الأقل.',
@@ -219,6 +355,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         if ($this->companyId === '__new__') {
             $company = Company::create([
                 'name' => $this->newCompanyName,
+                'type' => $this->newCompanyType,
                 'status' => 'pending',
             ]);
             $targetCompanyId = $company->id;
@@ -237,7 +374,6 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             'department' => $this->department,
             'city' => $this->city,
             'duration_months' => $this->duration_months,
-            'sector' => $this->sector,
             'modality' => $this->modality,
             'stipend_sar' => $this->stipend_sar,
             'had_supervisor' => $this->had_supervisor,
@@ -245,15 +381,21 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             'job_offer' => $this->job_offer,
             'rating_mentorship' => $this->rating_mentorship,
             'rating_learning' => $this->rating_learning,
-            'rating_culture' => $this->rating_culture,
-            'rating_compensation' => $this->rating_compensation,
-            'overall_rating' => $this->overall_rating,
-            'recommendation' => $this->recommendation,
+            'rating_real_work' => $this->rating_real_work,
+            'rating_team_environment' => $this->rating_team_environment,
+            'rating_organization' => $this->rating_organization,
+            'recommendation' => $this->recommendation ?? $this->suggestedRecommendation?->value,
             'review_text' => $this->review_text,
             'pros' => $this->pros,
             'cons' => $this->cons,
             'reviewer_name' => $this->reviewer_name,
+            'reviewer_university' => $this->reviewer_university,
+            'reviewer_college' => $this->reviewer_college,
             'reviewer_major' => $this->reviewer_major,
+            'reviewer_degree' => $this->reviewer_degree,
+            'application_method' => $this->application_method,
+            'willing_to_help' => $this->willing_to_help,
+            'contact_method' => $this->willing_to_help ? $this->contact_method : null,
         ]);
 
         session()->flash('success', $successMessage);
@@ -336,20 +478,17 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
 
             {{-- Company combobox --}}
             <div>
-                <label class="mb-1.5 block text-sm font-medium text-slate-700">
-                    الجهة <span class="text-red-500">*</span>
-                </label>
-                <x-mary-choices
+                <x-public.nice-select
+                    label="الجهة"
+                    name="companyId"
                     wire:model.live="companyId"
                     :options="$companyOptions"
                     search-function="searchCompanies"
                     placeholder="ابحث عن جهة أو اكتب اسم جديدة..."
                     no-result-text="لا توجد نتائج — اكتب الاسم لإنشاء جهة جديدة"
                     debounce="300ms"
-                    single
                     searchable
-                    clearable
-                    omit-error
+                    :required="true"
                 >
                     @scope('item', $option)
                         @if(data_get($option, 'id') === '__new__')
@@ -364,7 +503,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                             </div>
                         @endif
                     @endscope
-                </x-mary-choices>
+                </x-public.nice-select>
 
                 @if($companyId === '__new__')
                     <div class="mt-3 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-sm text-blue-800">
@@ -372,10 +511,22 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                         <span class="flex-1">ستُنشأ جهة جديدة باسم <strong>{{ $newCompanyName }}</strong> وستُعرض بعد الموافقة.</span>
                         <button type="button" wire:click="clearCompany" class="text-xs font-medium text-blue-600 underline hover:text-blue-700">تغيير</button>
                     </div>
-                @endif
 
-                @error('companyId') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    <div class="mt-5">
+                        <x-public.form-field label="نوع الجهة الجديدة" name="newCompanyType" :required="true">
+                            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                @foreach(\App\Enums\CompanyType::options() as $val => $lbl)
+                                    <label class="relative">
+                                        <input type="radio" wire:model.live="newCompanyType" value="{{ $val }}" class="peer sr-only" />
+                                        <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20">{{ $lbl }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </x-public.form-field>
+                    </div>
+                @endif
                 @error('newCompanyName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                @error('newCompanyType') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
 
             {{-- Role --}}
@@ -385,47 +536,47 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <x-public.form-field label="القسم" name="department">
-                    <input type="text" wire:model="department" id="department" placeholder="اختياري" class="{{ $inputClass }}" />
+                    <input type="text" wire:model="department" id="department" placeholder="مثلاً: هندسة البرمجيات، تحليل البيانات" class="{{ $inputClass }}" />
                 </x-public.form-field>
 
-                <x-public.form-field label="المدينة" name="city">
-                    <select wire:model="city" id="city" class="{{ $inputClass }}">
-                        <option value="">— اختر المدينة —</option>
-                        @foreach(\App\Enums\SaudiCity::toOptions() as $val => $label)
-                            <option value="{{ $val }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </x-public.form-field>
+                {{-- City combobox --}}
+                <div>
+                    <x-public.nice-select
+                        label="المدينة"
+                        name="city"
+                        wire:model.live="city"
+                        :options="$cityOptions"
+                        search-function="searchCities"
+                        placeholder="ابحث عن مدينة..."
+                        no-result-text="لا توجد مدينة بهذا الاسم"
+                        debounce="200ms"
+                        searchable
+                        :required="true"
+                    >
+                        @scope('item', $option)
+                            <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50">
+                                <div class="font-medium text-slate-900">{{ data_get($option, 'name') }}</div>
+                            </div>
+                        @endscope
+                    </x-public.nice-select>
+                </div>
             </div>
 
-            <x-public.form-field label="المدة (بالاشهر)" name="duration_months">
-                <select wire:model="duration_months" id="duration_months" class="{{ $inputClass }}">
-                    <option value="">اختياري</option>
-                    @for($month = 1; $month <= 12; $month++)
-                        <option value="{{ $month }}">{{ $month }}</option>
-                    @endfor
-                </select>
-            </x-public.form-field>
-
-            {{-- Sector — pill radio --}}
-            <x-public.form-field label="نوع الجهة" name="sector">
-                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    @foreach(['government' => 'حكومي', 'private' => 'خاص', 'nonprofit' => 'غير ربحي', 'other' => 'أخرى'] as $val => $lbl)
-                        <label class="relative flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2.5 text-sm font-medium transition-all {{ $sector === $val ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500/20' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300' }}">
-                            <input type="radio" wire:model.live="sector" value="{{ $val }}" class="sr-only" />
-                            <span>{{ $lbl }}</span>
-                        </label>
-                    @endforeach
-                </div>
-            </x-public.form-field>
+            <x-public.numeric-select
+                label="المدة (بالاشهر)"
+                name="duration_months"
+                wire:model.live="duration_months"
+                :options="$this->durationMonthOptions"
+                placeholder="اكتب رقم الشهر أو اختره"
+            />
 
             {{-- Modality — pill radio --}}
             <x-public.form-field label="نمط التدريب" name="modality" :required="true">
                 <div class="grid grid-cols-3 gap-2">
-                    @foreach(['onsite' => 'حضوري', 'hybrid' => 'هجين', 'remote' => 'عن بُعد'] as $val => $lbl)
-                        <label class="relative flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2.5 text-sm font-medium transition-all {{ $modality === $val ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500/20' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300' }}">
-                            <input type="radio" wire:model.live="modality" value="{{ $val }}" class="sr-only" />
-                            <span>{{ $lbl }}</span>
+                    @foreach(\App\Enums\Modality::cases() as $case)
+                        <label class="relative">
+                            <input type="radio" wire:model.live="modality" value="{{ $case->value }}" class="peer sr-only" />
+                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20">{{ $case->label() }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -460,37 +611,55 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     <div class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50/50 p-3 sm:flex-row sm:items-center sm:justify-between">
                         <span class="text-sm font-medium text-slate-700">{{ $question }}</span>
                         <div class="flex gap-2">
-                            <label class="relative flex cursor-pointer items-center justify-center rounded-md border px-4 py-1.5 text-xs font-medium transition-all {{ $$field === true ? 'border-green-500 bg-green-50 text-green-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300' }}">
-                                <input type="radio" wire:model.live="{{ $field }}" value="1" class="sr-only" />
-                                نعم
+                            <label class="relative">
+                                <input type="radio" wire:model.live="{{ $field }}" value="1" class="peer sr-only" />
+                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700">نعم</span>
                             </label>
-                            <label class="relative flex cursor-pointer items-center justify-center rounded-md border px-4 py-1.5 text-xs font-medium transition-all {{ $$field === false ? 'border-red-500 bg-red-50 text-red-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300' }}">
-                                <input type="radio" wire:model.live="{{ $field }}" value="0" class="sr-only" />
-                                لا
+                            <label class="relative">
+                                <input type="radio" wire:model.live="{{ $field }}" value="0" class="peer sr-only" />
+                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700">لا</span>
                             </label>
                         </div>
                     </div>
                 @endforeach
             </div>
 
-            {{-- Star pickers — 4 criteria + overall --}}
+            {{-- Star pickers — weighted criteria --}}
             <div class="space-y-5 pt-2">
                 <div class="space-y-4">
                     @php
                         $criteriaFields = [
-                            'rating_mentorship' => 'الإرشاد والدعم',
                             'rating_learning' => 'القيمة التعليمية',
-                            'rating_culture' => 'بيئة العمل',
-                            'rating_compensation' => 'المكافأة والمزايا',
+                            'rating_mentorship' => 'جودة الإرشاد',
+                            'rating_real_work' => 'العمل الحقيقي والمشاريع',
+                            'rating_team_environment' => 'بيئة الفريق',
+                            'rating_organization' => 'التنظيم ووضوح التوقعات',
                         ];
                     @endphp
                     @foreach($criteriaFields as $field => $label)
-                        <x-public.star-picker :field="$field" :label="$label" :value="$$field" :required="true" />
+                        <div wire:key="rating-metric-{{ $field }}">
+                            <x-public.star-picker :field="$field" :label="$label" :value="$$field" :required="true" />
+                        </div>
                     @endforeach
                 </div>
 
-                <div class="border-t border-slate-100 pt-5">
-                    <x-public.star-picker field="overall_rating" label="التقييم العام" :value="$overall_rating" :required="true" />
+                <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-900">التقييم العام</h3>
+                        </div>
+
+                        <div class="shrink-0 rounded-xl bg-white px-4 py-3 text-center shadow-xs ring-1 ring-inset ring-blue-100">
+                            @if($this->calculatedOverallRating !== null)
+                                <div class="text-3xl font-bold text-blue-600 tabular-nums">
+                                    <x-public.count-up :value="$this->calculatedOverallRating" :decimals="1" :duration="700" />
+                                </div>
+                                <div class="text-xs font-medium text-blue-400">/ 5</div>
+                            @else
+                                <div class="text-sm font-medium text-slate-400">أكمل التقييمات الخمسة</div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -504,18 +673,27 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
 
             {{-- Recommendation — big pills --}}
             <x-public.form-field label="هل تنصح بهذا التدريب؟" name="recommendation" :required="true">
+                @if($this->suggestedRecommendation)
+                    <p class="mb-3 text-xs text-slate-500">
+                        الاقتراح الافتراضي مبني على التقييم المحسوب:
+                        <span class="font-semibold text-slate-700">{{ Recommendation::from($this->suggestedRecommendation)->label() }}</span>
+                        @if($this->calculatedOverallRating !== null)
+                            <span class="tabular-nums">({{ number_format($this->calculatedOverallRating, 1) }}/5)</span>
+                        @endif
+                    </p>
+                @endif
                 <div class="grid grid-cols-3 gap-2">
-                    @php
-                        $recOptions = [
-                            'yes' => ['أنصح به', 'border-green-500 bg-green-50 text-green-700 ring-2 ring-green-500/20'],
-                            'maybe' => ['ربما', 'border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-500/20'],
-                            'no' => ['لا أنصح', 'border-red-500 bg-red-50 text-red-700 ring-2 ring-red-500/20'],
-                        ];
-                    @endphp
-                    @foreach($recOptions as $val => [$lbl, $activeClass])
-                        <label class="relative flex cursor-pointer items-center justify-center rounded-lg border px-3 py-3 text-sm font-semibold transition-all {{ $recommendation === $val ? $activeClass : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300' }}">
-                            <input type="radio" wire:model.live="recommendation" value="{{ $val }}" class="sr-only" />
-                            {{ $lbl }}
+                    @foreach(\App\Enums\Recommendation::cases() as $case)
+                        @php
+                            $recommendationCheckedClasses = match ($case->value) {
+                                'yes' => 'peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700 peer-checked:ring-2 peer-checked:ring-green-500/20',
+                                'maybe' => 'peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-checked:ring-2 peer-checked:ring-amber-500/20',
+                                'no' => 'peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700 peer-checked:ring-2 peer-checked:ring-red-500/20',
+                            };
+                        @endphp
+                        <label class="relative">
+                            <input type="radio" wire:model.live="recommendation" value="{{ $case->value }}" class="peer sr-only" />
+                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 {{ $recommendationCheckedClasses }}">{{ $case->label() }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -542,9 +720,65 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     <input type="text" wire:model="reviewer_name" id="reviewer_name" placeholder="سيظهر بجانب مراجعتك" class="{{ $inputClass }}" />
                 </x-public.form-field>
 
-                <x-public.form-field label="تخصصك (اختياري)" name="reviewer_major">
+                <x-public.form-field label="الجامعة (اختياري)" name="reviewer_university">
+                    <input type="text" wire:model="reviewer_university" id="reviewer_university" placeholder="مثلاً: جامعة الملك عبدالله" class="{{ $inputClass }}" />
+                </x-public.form-field>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <x-public.form-field label="الكلية (اختياري)" name="reviewer_college">
+                    <input type="text" wire:model="reviewer_college" id="reviewer_college" placeholder="مثلاً: كلية الحاسب الآلي" class="{{ $inputClass }}" />
+                </x-public.form-field>
+
+                <x-public.form-field label="التخصص (اختياري)" name="reviewer_major">
                     <input type="text" wire:model="reviewer_major" id="reviewer_major" placeholder="مثلاً: علوم الحاسب" class="{{ $inputClass }}" />
                 </x-public.form-field>
+            </div>
+
+            <x-public.form-field label="الدرجة العلمية (اختياري)" name="reviewer_degree">
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    @foreach(\App\Enums\ReviewerDegree::cases() as $case)
+                        <label class="relative">
+                            <input type="radio" wire:model.live="reviewer_degree" value="{{ $case->value }}" class="peer sr-only" />
+                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20">{{ $case->label() }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </x-public.form-field>
+
+            {{-- How they applied --}}
+            <x-public.form-field label="كيف قدّمت؟ (اختياري)" name="application_method">
+                <input type="text" wire:model="application_method" id="application_method" placeholder="مثلاً: عبر الموقع الرسمي، عن طريق زميل، طلب تقديم مباشر..." class="{{ $inputClass }}" />
+            </x-public.form-field>
+
+            {{-- Willing to help others --}}
+            <div class="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-700">هل أنت مستعد تساعد غيرك في الحصول على قبول؟ (اختياري)</p>
+                        <p class="mt-0.5 text-xs text-slate-500">إذا وافقت، سيُعرض معلومات التواصل معك مع تقييمك.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <label class="relative">
+                            <input type="radio" wire:model.live="willing_to_help" value="1" class="peer sr-only" />
+                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700">نعم</span>
+                        </label>
+                        <label class="relative">
+                            <input type="radio" wire:model.live="willing_to_help" value="0" class="peer sr-only" />
+                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700">لا</span>
+                        </label>
+                    </div>
+                </div>
+
+                @if($willing_to_help === true)
+                    <div class="border-t border-slate-200 pt-3">
+                        <x-public.form-field label="طريقة التواصل" name="contact_method" :required="true">
+                            <input type="text" wire:model="contact_method" id="contact_method"
+                                placeholder="مثلاً: تويتر: @username، واتساب: 05xxxxxxxx، بريد: name@example.com"
+                                class="{{ $inputClass }}" />
+                        </x-public.form-field>
+                    </div>
+                @endif
             </div>
 
             @if(config('turnstile.enabled'))

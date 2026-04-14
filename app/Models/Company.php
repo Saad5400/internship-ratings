@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CompanyType;
 use App\Support\Arabic;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -11,10 +12,18 @@ class Company extends Model
 {
     protected $fillable = [
         'name',
+        'type',
         'website',
         'description',
         'status',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'type' => CompanyType::class,
+        ];
+    }
 
     protected static function booted(): void
     {

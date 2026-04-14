@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Companies\Tables;
 
+use App\Enums\CompanyType;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -41,6 +42,13 @@ class CompaniesTable
                         'pending' => 'قيد المراجعة',
                         default => $state,
                     })
+                    ->sortable(),
+                TextColumn::make('type')
+                    ->label('نوع الجهة')
+                    ->formatStateUsing(fn ($state): string => $state instanceof CompanyType
+                        ? $state->label()
+                        : CompanyType::tryFrom((string) $state)?->label() ?? 'غير محدد')
+                    ->badge()
                     ->sortable(),
                 TextColumn::make('ratings_count')
                     ->label('التقييمات')
@@ -82,6 +90,9 @@ class CompaniesTable
                         'approved' => 'موافق عليه',
                         'rejected' => 'مرفوض',
                     ]),
+                SelectFilter::make('type')
+                    ->label('نوع الجهة')
+                    ->options(CompanyType::options()),
                 TernaryFilter::make('has_ratings')
                     ->label('لديها تقييمات')
                     ->queries(
