@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SaudiCity;
 use App\Models\Company;
 use App\Models\Rating;
 use Livewire\Attributes\Layout;
@@ -126,8 +127,8 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 'newCompanyName' => $this->companyId === '__new__' ? 'required|string|max:255' : null,
                 'role_title' => 'nullable|string|max:255',
                 'department' => 'nullable|string|max:255',
-                'city' => 'nullable|string|max:255',
-                'duration_months' => 'required|integer|min:1|max:24',
+                'city' => ['nullable', 'string', 'in:' . implode(',', SaudiCity::values())],
+                'duration_months' => 'nullable|integer|min:1|max:12',
                 'sector' => 'nullable|in:government,private,nonprofit,other',
                 'modality' => 'required|in:onsite,hybrid,remote',
             ]),
@@ -160,9 +161,8 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         return [
             'companyId.required' => 'يرجى اختيار جهة أو إنشاء واحدة جديدة.',
             'newCompanyName.required' => 'يرجى إدخال اسم الجهة الجديدة.',
-            'duration_months.required' => 'المدة مطلوبة.',
-            'duration_months.min' => 'المدة يجب أن تكون شهر على الأقل.',
-            'duration_months.max' => 'المدة يجب ألا تتجاوز 24 شهر.',
+            'duration_months.min' => 'المدة يجب أن تكون شهرًا واحدًا على الأقل.',
+            'duration_months.max' => 'المدة يجب ألا تتجاوز 12 شهرًا.',
             'modality.required' => 'يرجى تحديد نمط التدريب.',
             'rating_mentorship.required' => 'تقييم الإرشاد مطلوب.',
             'rating_learning.required' => 'تقييم القيمة التعليمية مطلوب.',
@@ -389,12 +389,22 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 </x-public.form-field>
 
                 <x-public.form-field label="المدينة" name="city">
-                    <input type="text" wire:model="city" id="city" placeholder="مثلاً: الرياض" class="{{ $inputClass }}" />
+                    <select wire:model="city" id="city" class="{{ $inputClass }}">
+                        <option value="">— اختر المدينة —</option>
+                        @foreach(\App\Enums\SaudiCity::toOptions() as $val => $label)
+                            <option value="{{ $val }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </x-public.form-field>
             </div>
 
-            <x-public.form-field label="المدة (بالأشهر)" name="duration_months" :required="true">
-                <input type="number" wire:model="duration_months" id="duration_months" min="1" max="24" class="{{ $inputClass }}" />
+            <x-public.form-field label="المدة (بالاشهر)" name="duration_months">
+                <select wire:model="duration_months" id="duration_months" class="{{ $inputClass }}">
+                    <option value="">اختياري</option>
+                    @for($month = 1; $month <= 12; $month++)
+                        <option value="{{ $month }}">{{ $month }}</option>
+                    @endfor
+                </select>
             </x-public.form-field>
 
             {{-- Sector — pill radio --}}

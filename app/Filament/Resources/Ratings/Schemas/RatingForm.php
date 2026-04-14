@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Ratings\Schemas;
 
+use App\Enums\SaudiCity;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -34,22 +35,22 @@ class RatingForm
                         TextInput::make('department')
                             ->label('القسم')
                             ->placeholder('مثال: تقنية المعلومات'),
-                        TextInput::make('city')
+                        Select::make('city')
                             ->label('المدينة')
-                            ->placeholder('مثال: الرياض'),
+                            ->options(SaudiCity::toOptions())
+                            ->searchable()
+                            ->native(false),
                     ]),
                 Section::make('تفاصيل التدريب')
                     ->description('معلومات عن مدة ونمط التدريب')
                     ->icon('heroicon-o-calendar-days')
                     ->columns(2)
                     ->schema([
-                        TextInput::make('duration_months')
-                            ->label('المدة (أشهر)')
-                            ->required()
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(24)
-                            ->suffix('شهر'),
+                        Select::make('duration_months')
+                            ->label('المدة (بالاشهر)')
+                            ->options(array_combine(range(1, 12), range(1, 12)))
+                            ->placeholder('اختياري')
+                            ->native(false),
                         Select::make('sector')
                             ->label('نوع الجهة')
                             ->options([

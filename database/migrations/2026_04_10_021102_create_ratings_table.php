@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('role_title')->nullable();
             $table->string('department')->nullable();
             $table->string('city')->nullable();
-            $table->unsignedTinyInteger('duration_months');
+            $table->unsignedTinyInteger('duration_months')->nullable();
             $table->string('sector')->nullable();   // government | private | nonprofit | other
             $table->string('modality');             // onsite | hybrid | remote
 

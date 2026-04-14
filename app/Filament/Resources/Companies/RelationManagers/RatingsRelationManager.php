@@ -39,7 +39,11 @@ class RatingsRelationManager extends RelationManager
                         TextInput::make('role_title')->label('المسمى الوظيفي'),
                         TextInput::make('department')->label('القسم'),
                         TextInput::make('city')->label('المدينة'),
-                        TextInput::make('duration_months')->label('المدة (أشهر)')->required()->numeric()->minValue(1)->maxValue(24),
+                        Select::make('duration_months')
+                            ->label('المدة (بالاشهر)')
+                            ->options(array_combine(range(1, 12), range(1, 12)))
+                            ->placeholder('اختياري')
+                            ->native(false),
                         Select::make('sector')->label('نوع الجهة')->options([
                             'government' => 'حكومي',
                             'private' => 'خاص',

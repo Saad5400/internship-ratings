@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\SaudiCity;
 use App\Models\Company;
 use App\Models\Rating;
 use Livewire\Livewire;
@@ -19,7 +20,7 @@ test('wizard starts on step 1', function () {
 test('cannot advance past step 1 without required fields', function () {
     Livewire::test('pages::ratings.create')
         ->call('nextStep')
-        ->assertHasErrors(['companyId', 'duration_months', 'modality'])
+        ->assertHasErrors(['companyId', 'modality'])
         ->assertSet('currentStep', 1);
 });
 
@@ -77,7 +78,7 @@ test('goToStep blocks forward jumps when intermediate steps are invalid', functi
     Livewire::test('pages::ratings.create')
         ->set('companyId', (string) $company->id)
         ->call('goToStep', 3)
-        ->assertHasErrors(['duration_months'])
+        ->assertHasErrors(['modality'])
         ->assertSet('currentStep', 1);
 });
 
@@ -129,7 +130,7 @@ test('valid rating can be submitted for existing company', function () {
         ->set('companyId', (string) $company->id)
         ->set('role_title', 'مهندس برمجيات')
         ->set('department', 'تقنية المعلومات')
-        ->set('city', 'الرياض')
+        ->set('city', SaudiCity::Riyadh->value)
         ->set('duration_months', 3)
         ->set('sector', 'private')
         ->set('modality', 'onsite')
@@ -212,7 +213,30 @@ test('rating with missing required fields is rejected', function () {
     Livewire::test('pages::ratings.create')
         ->set('companyId', (string) $company->id)
         ->call('save')
-        ->assertHasErrors(['duration_months', 'modality', 'rating_mentorship', 'rating_learning', 'rating_culture', 'rating_compensation', 'overall_rating', 'recommendation', 'review_text']);
+        ->assertHasErrors(['modality', 'rating_mentorship', 'rating_learning', 'rating_culture', 'rating_compensation', 'overall_rating', 'recommendation', 'review_text']);
+});
+
+test('duration is optional on step 1', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->set('role_title', 'مهندس')
+        ->set('modality', 'onsite')
+        ->call('nextStep')
+        ->assertHasNoErrors()
+        ->assertSet('currentStep', 2);
+});
+
+test('duration must be between 1 and 12 months when provided', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->set('duration_months', 13)
+        ->set('modality', 'onsite')
+        ->call('nextStep')
+        ->assertHasErrors(['duration_months']);
 });
 
 test('rating scores must be between 1 and 5', function () {
@@ -263,6 +287,30 @@ test('recommendation must be yes maybe or no', function () {
         ->set('review_text', 'تجربة مفصّلة في التدريب')
         ->call('save')
         ->assertHasErrors(['recommendation']);
+});
+
+test('city must be a valid saudi city', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->set('duration_months', 3)
+        ->set('modality', 'onsite')
+        ->set('city', 'New York')
+        ->call('nextStep')
+        ->assertHasErrors(['city']);
+});
+
+test('city accepts valid saudi city', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->set('duration_months', 3)
+        ->set('modality', 'onsite')
+        ->set('city', SaudiCity::Jeddah->value)
+        ->call('nextStep')
+        ->assertHasNoErrors(['city']);
 });
 
 test('model computes average rating correctly', function () {
