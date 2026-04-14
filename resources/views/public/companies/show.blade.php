@@ -2,7 +2,7 @@
     <div class="space-y-8">
         <a href="{{ route('companies.index') }}" wire:navigate class="group inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900">
             <svg class="size-4 transition-transform group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-            العودة للشركات
+            العودة للجهات
         </a>
 
         <div class="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">

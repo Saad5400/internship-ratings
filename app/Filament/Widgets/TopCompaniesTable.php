@@ -9,7 +9,7 @@ use Filament\Widgets\TableWidget;
 
 class TopCompaniesTable extends TableWidget
 {
-    protected static ?string $heading = 'أفضل الشركات تقييماً';
+    protected static ?string $heading = 'أفضل الجهات تقييماً';
 
     protected static ?int $sort = 3;
 
@@ -28,7 +28,7 @@ class TopCompaniesTable extends TableWidget
             )
             ->columns([
                 TextColumn::make('name')
-                    ->label('الشركة')
+                    ->label('الجهة')
                     ->weight('bold')
                     ->icon('heroicon-o-building-office-2'),
                 TextColumn::make('ratings_avg_overall_rating')

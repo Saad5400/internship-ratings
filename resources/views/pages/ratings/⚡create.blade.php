@@ -158,8 +158,8 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     protected function messages(): array
     {
         return [
-            'companyId.required' => 'يرجى اختيار شركة أو إنشاء واحدة جديدة.',
-            'newCompanyName.required' => 'يرجى إدخال اسم الشركة الجديدة.',
+            'companyId.required' => 'يرجى اختيار جهة أو إنشاء واحدة جديدة.',
+            'newCompanyName.required' => 'يرجى إدخال اسم الجهة الجديدة.',
             'role_title.required' => 'المسمى الوظيفي مطلوب.',
             'duration_months.required' => 'المدة مطلوبة.',
             'duration_months.min' => 'المدة يجب أن تكون شهر على الأقل.',
@@ -224,7 +224,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             ]);
             $targetCompanyId = $company->id;
             $redirectRoute = route('companies.index');
-            $successMessage = 'شكراً! تم إرسال تقييمك وسيظهر بعد الموافقة على الشركة.';
+            $successMessage = 'شكراً! تم إرسال تقييمك وسيظهر بعد الموافقة على الجهة.';
         } else {
             $company = Company::approved()->findOrFail($this->companyId);
             $targetCompanyId = $company->id;
@@ -269,7 +269,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
 <div class="mx-auto max-w-2xl space-y-6">
     <a href="{{ route('companies.index') }}" wire:navigate class="group inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900">
         <svg class="size-4 transition-transform group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-        العودة للشركات
+        العودة للجهات
     </a>
 
     <div>
@@ -280,7 +280,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     {{-- Progress header --}}
     @php
         $stepLabels = [
-            1 => 'الشركة والدور',
+            1 => 'الجهة والدور',
             2 => 'الحقائق والتقييم',
             3 => 'التجربة',
         ];
@@ -331,21 +331,21 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         {{-- STEP 1: COMPANY & ROLE --}}
         <div x-show="$wire.currentStep === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5">
             <div class="mb-1">
-                <h2 class="text-lg font-semibold text-slate-900">الشركة والدور</h2>
-                <p class="mt-1 text-sm text-slate-500">ابحث عن الشركة وأخبرنا عن دورك فيها.</p>
+                <h2 class="text-lg font-semibold text-slate-900">الجهة والدور</h2>
+                <p class="mt-1 text-sm text-slate-500">ابحث عن الجهة وأخبرنا عن دورك فيها.</p>
             </div>
 
             {{-- Company combobox --}}
             <div>
                 <label class="mb-1.5 block text-sm font-medium text-slate-700">
-                    الشركة <span class="text-red-500">*</span>
+                    الجهة <span class="text-red-500">*</span>
                 </label>
                 <x-mary-choices
                     wire:model.live="companyId"
                     :options="$companyOptions"
                     search-function="searchCompanies"
-                    placeholder="ابحث عن شركة أو اكتب اسم جديدة..."
-                    no-result-text="لا توجد نتائج — اكتب الاسم لإنشاء شركة جديدة"
+                    placeholder="ابحث عن جهة أو اكتب اسم جديدة..."
+                    no-result-text="لا توجد نتائج — اكتب الاسم لإنشاء جهة جديدة"
                     debounce="300ms"
                     single
                     searchable
@@ -356,7 +356,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                         @if(data_get($option, 'id') === '__new__')
                             <div class="flex items-center gap-2 p-3 border-s-4 border-s-blue-500 bg-blue-50/60 text-blue-700">
                                 <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                                <span class="font-medium">إنشاء شركة جديدة:</span>
+                                <span class="font-medium">إنشاء جهة جديدة:</span>
                                 <span class="truncate">{{ data_get($option, 'name') }}</span>
                             </div>
                         @else
@@ -370,7 +370,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 @if($companyId === '__new__')
                     <div class="mt-3 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-sm text-blue-800">
                         <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span class="flex-1">ستُنشأ شركة جديدة باسم <strong>{{ $newCompanyName }}</strong> وستُعرض بعد الموافقة.</span>
+                        <span class="flex-1">ستُنشأ جهة جديدة باسم <strong>{{ $newCompanyName }}</strong> وستُعرض بعد الموافقة.</span>
                         <button type="button" wire:click="clearCompany" class="text-xs font-medium text-blue-600 underline hover:text-blue-700">تغيير</button>
                     </div>
                 @endif

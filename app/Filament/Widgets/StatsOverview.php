@@ -24,12 +24,12 @@ class StatsOverview extends StatsOverviewWidget
             : 0;
 
         return [
-            Stat::make('شركات قيد المراجعة', $pendingCount)
-                ->description($totalCompanies.' شركة إجمالاً')
+            Stat::make('جهات قيد المراجعة', $pendingCount)
+                ->description($totalCompanies.' جهة إجمالاً')
                 ->descriptionIcon('heroicon-o-building-office-2')
                 ->color('warning')
                 ->icon('heroicon-o-clock'),
-            Stat::make('شركات موافق عليها', $approvedCount)
+            Stat::make('جهات موافق عليها', $approvedCount)
                 ->description(round($totalCompanies > 0 ? $approvedCount / $totalCompanies * 100 : 0).'% من الإجمالي')
                 ->descriptionIcon('heroicon-o-arrow-trending-up')
                 ->color('success')

@@ -27,7 +27,7 @@ class LatestRatingsTable extends TableWidget
             )
             ->columns([
                 TextColumn::make('company.name')
-                    ->label('الشركة')
+                    ->label('الجهة')
                     ->weight('bold'),
                 TextColumn::make('role_title')
                     ->label('المسمى الوظيفي'),

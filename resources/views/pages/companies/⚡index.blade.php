@@ -7,7 +7,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-new #[Layout('layouts.public')] #[Title('الشركات')] class extends Component {
+new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component {
     #[Url(as: 'search', except: '')]
     public string $search = '';
 
@@ -64,8 +64,8 @@ new #[Layout('layouts.public')] #[Title('الشركات')] class extends Compone
 <div class="space-y-8">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-            <h1 class="text-3xl font-bold tracking-tight text-slate-900">الشركات</h1>
-            <p class="mt-2 text-slate-500">تصفح تقييمات التدريب في مختلف الشركات</p>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900">الجهات</h1>
+            <p class="mt-2 text-slate-500">تصفح تقييمات التدريب في مختلف الجهات</p>
         </div>
     </div>
 
@@ -77,9 +77,9 @@ new #[Layout('layouts.public')] #[Title('الشركات')] class extends Compone
         <input
             type="text"
             wire:model.live.debounce.300ms="search"
-            placeholder="ابحث عن شركة..."
+            placeholder="ابحث عن جهة..."
             class="w-full rounded-xl border border-slate-200 bg-white ps-11 pe-11 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-            aria-label="ابحث عن شركة"
+            aria-label="ابحث عن جهة"
         />
 
         {{-- Clear button --}}
@@ -103,7 +103,7 @@ new #[Layout('layouts.public')] #[Title('الشركات')] class extends Compone
     @if($this->companies->isEmpty())
         <div class="rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center">
             <svg class="mx-auto size-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-            <p class="mt-4 text-sm text-slate-500">لا توجد شركات {{ $search !== '' ? 'تطابق بحثك' : 'حالياً' }}</p>
+            <p class="mt-4 text-sm text-slate-500">لا توجد جهات {{ $search !== '' ? 'تطابق بحثك' : 'حالياً' }}</p>
             @if($search !== '')
                 <button type="button" wire:click="$set('search', '')" class="mt-3 text-sm font-medium text-blue-500 transition-colors hover:text-blue-600">مسح البحث</button>
             @endif

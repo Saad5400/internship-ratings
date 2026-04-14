@@ -107,8 +107,8 @@ return [
     ],
 
     'attributes' => [
-        'companyId' => 'الشركة',
-        'newCompanyName' => 'اسم الشركة الجديدة',
+        'companyId' => 'الجهة',
+        'newCompanyName' => 'اسم الجهة الجديدة',
         'role_title' => 'المسمى الوظيفي',
         'department' => 'القسم',
         'city' => 'المدينة',

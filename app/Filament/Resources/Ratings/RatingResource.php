@@ -55,7 +55,7 @@ class RatingResource extends Resource
     public static function getGlobalSearchResultDetails(Model $record): array
     {
         return [
-            'الشركة' => $record->company?->name,
+            'الجهة' => $record->company?->name,
             'التقييم' => $record->overall_rating.' / 5',
         ];
     }
@@ -74,12 +74,12 @@ class RatingResource extends Resource
     {
         return $schema
             ->schema([
-                Section::make('الشركة والوظيفة')
+                Section::make('الجهة والوظيفة')
                     ->icon('heroicon-o-briefcase')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('company.name')
-                            ->label('الشركة')
+                            ->label('الجهة')
                             ->weight('bold')
                             ->size('lg')
                             ->icon('heroicon-o-building-office-2'),

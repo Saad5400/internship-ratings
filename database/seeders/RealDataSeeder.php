@@ -21,14 +21,7 @@ class RealDataSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            CoopDirectorySeeder::class,
-            CollegeExperiences2019Seeder::class,
-            SummerTraining2022Seeder::class,
-            Experiences2023Seeder::class,
-            Batch44_2025Seeder::class,
-            Batch45_2026Seeder::class,
-            // Runs last so it can merge duplicates created across the above.
-            CompanyDedupSeeder::class,
+
         ]);
     }
 }

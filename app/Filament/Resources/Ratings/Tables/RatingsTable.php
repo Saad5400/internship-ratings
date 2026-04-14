@@ -20,7 +20,7 @@ class RatingsTable
         return $table
             ->columns([
                 TextColumn::make('company.name')
-                    ->label('الشركة')
+                    ->label('الجهة')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),

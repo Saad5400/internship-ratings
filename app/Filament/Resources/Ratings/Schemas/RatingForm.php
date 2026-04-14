@@ -16,14 +16,14 @@ class RatingForm
     {
         return $schema
             ->components([
-                Section::make('الشركة والوظيفة')
+                Section::make('الجهة والوظيفة')
                     ->description('معلومات عن مكان وطبيعة التدريب')
                     ->icon('heroicon-o-briefcase')
                     ->columns(2)
                     ->schema([
                         Select::make('company_id')
                             ->relationship('company', 'name')
-                            ->label('الشركة')
+                            ->label('الجهة')
                             ->required()
                             ->searchable()
                             ->preload()

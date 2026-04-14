@@ -14,16 +14,16 @@ class CompanyForm
     {
         return $schema
             ->components([
-                Section::make('معلومات الشركة')
-                    ->description('البيانات الأساسية للشركة')
+                Section::make('معلومات الجهة')
+                    ->description('البيانات الأساسية للجهة')
                     ->icon('heroicon-o-building-office-2')
                     ->columns(2)
                     ->schema([
                         TextInput::make('name')
-                            ->label('اسم الشركة')
+                            ->label('اسم الجهة')
                             ->required()
                             ->maxLength(255)
-                            ->placeholder('مثال: شركة أرامكو السعودية'),
+                            ->placeholder('مثال: جهة أرامكو السعودية'),
                         TextInput::make('website')
                             ->label('الموقع الإلكتروني')
                             ->url()
@@ -32,7 +32,7 @@ class CompanyForm
                         Textarea::make('description')
                             ->label('الوصف')
                             ->rows(3)
-                            ->placeholder('وصف مختصر عن الشركة ونشاطها...')
+                            ->placeholder('وصف مختصر عن الجهة ونشاطها...')
                             ->columnSpanFull(),
                     ]),
                 Section::make('حالة المراجعة')

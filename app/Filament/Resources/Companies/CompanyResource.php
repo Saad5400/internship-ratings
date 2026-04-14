@@ -24,11 +24,11 @@ class CompanyResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
-    protected static ?string $navigationLabel = 'الشركات';
+    protected static ?string $navigationLabel = 'الجهات';
 
-    protected static ?string $modelLabel = 'شركة';
+    protected static ?string $modelLabel = 'جهة';
 
-    protected static ?string $pluralModelLabel = 'الشركات';
+    protected static ?string $pluralModelLabel = 'الجهات';
 
     protected static string|\UnitEnum|null $navigationGroup = 'إدارة المحتوى';
 
@@ -50,7 +50,7 @@ class CompanyResource extends Resource
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'شركات قيد المراجعة';
+        return 'جهات قيد المراجعة';
     }
 
     public static function getGloballySearchableAttributes(): array
@@ -72,12 +72,12 @@ class CompanyResource extends Resource
     {
         return $schema
             ->schema([
-                Section::make('معلومات الشركة')
+                Section::make('معلومات الجهة')
                     ->icon('heroicon-o-building-office-2')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('name')
-                            ->label('اسم الشركة')
+                            ->label('اسم الجهة')
                             ->weight('bold')
                             ->size('lg'),
                         TextEntry::make('website')
