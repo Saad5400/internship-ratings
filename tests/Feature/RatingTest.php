@@ -15,6 +15,50 @@ test('rating form is accessible', function () {
     $response->assertSee('inputmode="numeric"', false);
 });
 
+test('rating form avoids unnecessary live requests for static fields', function () {
+    $template = file_get_contents(resource_path('views/pages/ratings/⚡create.blade.php'));
+    $niceSelect = file_get_contents(resource_path('views/components/public/nice-select.blade.php'));
+    $numericSelect = file_get_contents(resource_path('views/components/public/numeric-select.blade.php'));
+    $publicLayout = file_get_contents(resource_path('views/layouts/public.blade.php'));
+
+    expect($template)
+        ->toContain('wire:model.live="companyId"')
+        ->toContain('wire:model.live="recommendation"')
+        ->toContain('wire:model.live="willing_to_help"')
+        ->toContain('x-on:rating-wizard-step-changed.window="window.scrollTo(0, 0)"')
+        ->toContain('offline')
+        ->not->toContain('label="المراجعة" name="review_text" :required="true"')
+        ->not->toContain('search-function="searchCities"')
+        ->not->toContain('wire:model.live="newCompanyType"')
+        ->not->toContain('wire:model.live="city"')
+        ->not->toContain('wire:model.live="duration_months"')
+        ->not->toContain('wire:model.live="modality"')
+        ->not->toContain('wire:model.live="{{ $field }}"')
+        ->not->toContain('wire:model.live="reviewer_degree"');
+
+    expect($niceSelect)
+        ->toContain("'offline' => false")
+        ->toContain('<x-mary-choices-offline')
+        ->toContain('<x-mary-choices')
+        ->not->toContain("@scope('selection'");
+
+    expect($numericSelect)
+        ->not->toContain("@entangle(\$attributes->wire('model')).live");
+
+    expect($publicLayout)
+        ->toContain('data-navigate-once');
+});
+
+test('rating choices options remain list-shaped after hydration', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'type' => 'private', 'status' => 'approved']);
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->call('$refresh')
+        ->assertSet('companyOptions', fn ($options) => array_is_list($options))
+        ->assertSet('cityOptions', fn ($options) => array_is_list($options));
+});
+
 test('wizard starts on step 1', function () {
     Livewire::test('pages::ratings.create')
         ->assertSet('currentStep', 1);
@@ -24,6 +68,7 @@ test('cannot advance past step 1 without required fields', function () {
     Livewire::test('pages::ratings.create')
         ->call('nextStep')
         ->assertHasErrors(['companyId', 'city', 'modality'])
+        ->assertNotDispatched('rating-wizard-step-changed')
         ->assertSet('currentStep', 1);
 });
 
@@ -39,6 +84,35 @@ test('can advance past step 1 with all required fields filled', function () {
         ->call('nextStep')
         ->assertHasNoErrors()
         ->assertSet('currentStep', 2);
+});
+
+test('next step dispatches top scroll event when advancing', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'type' => 'private', 'status' => 'approved']);
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->set('role_title', 'مهندس')
+        ->set('city', SaudiCity::Riyadh->value)
+        ->set('duration_months', 3)
+        ->set('modality', 'onsite')
+        ->call('nextStep')
+        ->assertDispatched('rating-wizard-step-changed')
+        ->assertSet('currentStep', 2);
+});
+
+test('previous step dispatches top scroll event when going back', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'type' => 'private', 'status' => 'approved']);
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->set('role_title', 'مهندس')
+        ->set('city', SaudiCity::Riyadh->value)
+        ->set('duration_months', 3)
+        ->set('modality', 'onsite')
+        ->call('nextStep')
+        ->call('prevStep')
+        ->assertDispatched('rating-wizard-step-changed')
+        ->assertSet('currentStep', 1);
 });
 
 test('cannot advance past step 2 without required scores', function () {
@@ -251,13 +325,33 @@ test('unpaid internship saves stipend as null', function () {
         ->and(Rating::first()->recommendation->value)->toBe('no');
 });
 
+test('review text is optional when submitting a rating', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'type' => 'private', 'status' => 'approved']);
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->set('role_title', 'متدرب')
+        ->set('city', SaudiCity::Riyadh->value)
+        ->set('duration_months', 2)
+        ->set('modality', 'onsite')
+        ->set('rating_learning', 3)
+        ->set('rating_mentorship', 3)
+        ->set('rating_real_work', 2)
+        ->set('rating_team_environment', 3)
+        ->set('rating_organization', 2)
+        ->call('save')
+        ->assertRedirect(route('companies.show', $company));
+
+    expect(Rating::first()->review_text)->toBeNull();
+});
+
 test('rating with missing required fields is rejected', function () {
     $company = Company::create(['name' => 'شركة تجريبية', 'type' => 'private', 'status' => 'approved']);
 
     Livewire::test('pages::ratings.create')
         ->set('companyId', (string) $company->id)
         ->call('save')
-        ->assertHasErrors(['modality', 'rating_mentorship', 'rating_learning', 'rating_real_work', 'rating_team_environment', 'rating_organization', 'recommendation', 'review_text']);
+        ->assertHasErrors(['modality', 'rating_mentorship', 'rating_learning', 'rating_real_work', 'rating_team_environment', 'rating_organization', 'recommendation']);
 });
 
 test('duration is optional on step 1', function () {
@@ -390,4 +484,34 @@ test('model computes average rating correctly', function () {
     ]);
 
     expect($company->average_rating)->toBe(4.0);
+});
+
+test('model recalculates overall rating on save', function () {
+    $company = Company::create(['name' => 'شركة', 'type' => 'private', 'status' => 'approved']);
+
+    $rating = Rating::create([
+        'company_id' => $company->id,
+        'role_title' => 'مبرمج',
+        'duration_months' => 3,
+        'modality' => 'onsite',
+        'rating_learning' => 5,
+        'rating_mentorship' => 5,
+        'rating_real_work' => 4,
+        'rating_team_environment' => 4,
+        'rating_organization' => 3,
+        'overall_rating' => 0.0,
+        'recommendation' => 'yes',
+        'review_text' => '',
+    ]);
+
+    expect($rating->fresh()->overall_rating)->toBe(4.4);
+});
+
+test('model returns null overall rating when score inputs are incomplete', function () {
+    $rating = new Rating([
+        'rating_learning' => 5,
+        'rating_mentorship' => 4,
+    ]);
+
+    expect($rating->calculateOverallRating())->toBeNull();
 });

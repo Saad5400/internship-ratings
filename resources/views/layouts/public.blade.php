@@ -80,8 +80,8 @@
             </div>
         </footer>
         @if(config('turnstile.enabled'))
-            <script>window.onTurnstileReady = () => window.dispatchEvent(new Event('turnstile-loaded'));</script>
-            <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileReady&render=explicit" async defer></script>
+            <script data-navigate-once>window.onTurnstileReady = () => window.dispatchEvent(new Event('turnstile-loaded'));</script>
+            <script data-navigate-once src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileReady&render=explicit" async defer></script>
         @endif
     </body>
 </html>

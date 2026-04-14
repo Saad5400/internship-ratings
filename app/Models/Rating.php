@@ -116,7 +116,7 @@ class Rating extends Model
             $value = $this->{$field};
 
             if ($value === null) {
-                return $this->overall_rating;
+                return null;
             }
 
             $weightedScore += $value * $weight;

@@ -2,18 +2,20 @@
 
 namespace App\Filament\Resources\Companies\RelationManagers;
 
+use App\Enums\Modality;
+use App\Enums\Recommendation;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -70,7 +72,7 @@ class RatingsRelationManager extends RelationManager
                         Toggle::make('had_supervisor')->label('يوجد مرشد مباشر'),
                         Toggle::make('mixed_env')->label('بيئة مختلطة'),
                         Toggle::make('job_offer')->label('عرض عمل بعد التدريب'),
-                        Textarea::make('review_text')->label('المراجعة')->required()->columnSpanFull(),
+                        Textarea::make('review_text')->label('المراجعة')->columnSpanFull(),
                         TextInput::make('pros')->label('المزايا')->columnSpanFull(),
                         TextInput::make('cons')->label('العيوب')->columnSpanFull(),
                         TextInput::make('reviewer_name')->label('اسم المقيّم'),
@@ -98,25 +100,25 @@ class RatingsRelationManager extends RelationManager
                 TextColumn::make('recommendation')
                     ->label('توصية')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'yes' => 'أنصح بها',
-                        'maybe' => 'ربما',
-                        'no' => 'لا أنصح',
+                    ->formatStateUsing(fn (Recommendation $state): string => match ($state) {
+                        Recommendation::Yes => 'أنصح بها',
+                        Recommendation::Maybe => 'ربما',
+                        Recommendation::No => 'لا أنصح',
                         default => $state,
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'yes' => 'success',
-                        'maybe' => 'warning',
-                        'no' => 'danger',
+                    ->color(fn (Recommendation $state): string => match ($state) {
+                        Recommendation::Yes => 'success',
+                        Recommendation::Maybe => 'warning',
+                        Recommendation::No => 'danger',
                         default => 'gray',
                     }),
                 TextColumn::make('modality')
                     ->label('النمط')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'onsite' => 'حضوري',
-                        'hybrid' => 'هجين',
-                        'remote' => 'عن بُعد',
+                    ->formatStateUsing(fn (Modality $state): string => match ($state) {
+                        Modality::Onsite => 'حضوري',
+                        Modality::Hybrid => 'هجين',
+                        Modality::Remote => 'عن بُعد',
                         default => $state,
                     }),
                 TextColumn::make('stipend_sar')

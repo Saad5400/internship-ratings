@@ -38,7 +38,7 @@ return new class extends Migration
             $table->string('recommendation');       // Recommendation enum: yes | maybe | no
 
             // Experience
-            $table->text('review_text');
+            $table->text('review_text')->nullable();
             $table->string('pros')->nullable();
             $table->string('cons')->nullable();
 

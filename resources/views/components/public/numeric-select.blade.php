@@ -9,7 +9,7 @@
 <x-public.form-field :label="$label" :name="$name" :required="$required">
     <div
         x-data="{
-            value: @entangle($attributes->wire('model')).live,
+            value: @entangle($attributes->wire('model')),
             open: false,
             query: '',
             options: @js($options),

@@ -140,7 +140,6 @@ class RatingForm
                             ->columnSpanFull(),
                         Textarea::make('review_text')
                             ->label('المراجعة التفصيلية')
-                            ->required()
                             ->rows(4)
                             ->placeholder('اكتب تجربتك بالتفصيل...')
                             ->columnSpanFull(),
