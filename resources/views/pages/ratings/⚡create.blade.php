@@ -17,7 +17,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     public string $companySearch = '';
     public array $companyOptions = [];
 
-    public string $role_title = '';
+    public ?string $role_title = null;
     public ?string $department = null;
     public ?string $city = null;
     public ?int $duration_months = null;
@@ -124,7 +124,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             1 => array_filter([
                 'companyId' => 'required|string',
                 'newCompanyName' => $this->companyId === '__new__' ? 'required|string|max:255' : null,
-                'role_title' => 'required|string|max:255',
+                'role_title' => 'nullable|string|max:255',
                 'department' => 'nullable|string|max:255',
                 'city' => 'nullable|string|max:255',
                 'duration_months' => 'required|integer|min:1|max:24',
@@ -160,7 +160,6 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         return [
             'companyId.required' => 'يرجى اختيار جهة أو إنشاء واحدة جديدة.',
             'newCompanyName.required' => 'يرجى إدخال اسم الجهة الجديدة.',
-            'role_title.required' => 'المسمى الوظيفي مطلوب.',
             'duration_months.required' => 'المدة مطلوبة.',
             'duration_months.min' => 'المدة يجب أن تكون شهر على الأقل.',
             'duration_months.max' => 'المدة يجب ألا تتجاوز 24 شهر.',
@@ -380,7 +379,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             </div>
 
             {{-- Role --}}
-            <x-public.form-field label="المسمى الوظيفي" name="role_title" :required="true">
+            <x-public.form-field label="المسمى الوظيفي" name="role_title">
                 <input type="text" wire:model="role_title" id="role_title" placeholder="مثلاً: مهندس برمجيات" class="{{ $inputClass }}" />
             </x-public.form-field>
 

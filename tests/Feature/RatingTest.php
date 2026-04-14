@@ -19,7 +19,7 @@ test('wizard starts on step 1', function () {
 test('cannot advance past step 1 without required fields', function () {
     Livewire::test('pages::ratings.create')
         ->call('nextStep')
-        ->assertHasErrors(['companyId', 'role_title', 'duration_months', 'modality'])
+        ->assertHasErrors(['companyId', 'duration_months', 'modality'])
         ->assertSet('currentStep', 1);
 });
 
@@ -77,7 +77,7 @@ test('goToStep blocks forward jumps when intermediate steps are invalid', functi
     Livewire::test('pages::ratings.create')
         ->set('companyId', (string) $company->id)
         ->call('goToStep', 3)
-        ->assertHasErrors(['role_title'])
+        ->assertHasErrors(['duration_months'])
         ->assertSet('currentStep', 1);
 });
 
@@ -212,7 +212,7 @@ test('rating with missing required fields is rejected', function () {
     Livewire::test('pages::ratings.create')
         ->set('companyId', (string) $company->id)
         ->call('save')
-        ->assertHasErrors(['role_title', 'duration_months', 'modality', 'rating_mentorship', 'rating_learning', 'rating_culture', 'rating_compensation', 'overall_rating', 'recommendation', 'review_text']);
+        ->assertHasErrors(['duration_months', 'modality', 'rating_mentorship', 'rating_learning', 'rating_culture', 'rating_compensation', 'overall_rating', 'recommendation', 'review_text']);
 });
 
 test('rating scores must be between 1 and 5', function () {

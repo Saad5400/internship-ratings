@@ -30,7 +30,6 @@ class RatingForm
                             ->native(false),
                         TextInput::make('role_title')
                             ->label('المسمى الوظيفي')
-                            ->required()
                             ->placeholder('مثال: مطور برمجيات'),
                         TextInput::make('department')
                             ->label('القسم')

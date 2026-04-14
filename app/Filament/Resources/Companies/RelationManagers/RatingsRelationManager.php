@@ -36,7 +36,7 @@ class RatingsRelationManager extends RelationManager
                 Section::make('تفاصيل التدريب')
                     ->columns(2)
                     ->schema([
-                        TextInput::make('role_title')->label('المسمى الوظيفي')->required(),
+                        TextInput::make('role_title')->label('المسمى الوظيفي'),
                         TextInput::make('department')->label('القسم'),
                         TextInput::make('city')->label('المدينة'),
                         TextInput::make('duration_months')->label('المدة (أشهر)')->required()->numeric()->minValue(1)->maxValue(24),
