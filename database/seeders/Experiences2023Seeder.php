@@ -333,7 +333,7 @@ class Experiences2023Seeder extends Seeder
 
             // Row 26 — جامعة أم القرى — recommendation: نعم
             [
-                'company' => 'جامعة أم القرى',
+                'company' => 'جامعة أم القرى العمادة التقنية',
                 'sector' => 'government',
                 'role_title' => 'متدرب تقنية معلومات',
                 'department' => 'تقنية المعلومات',

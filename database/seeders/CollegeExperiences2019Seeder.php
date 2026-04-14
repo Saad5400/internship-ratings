@@ -453,7 +453,7 @@ class CollegeExperiences2019Seeder extends Seeder
 
             // idx=80 — UQU Network (explicit: "عملت ميدانيا في قسم الشبكة" — physical)
             [
-                'company' => 'جامعة أم القرى-عمادة التعاملات الإلكترونية والاتصالات',
+                'company' => 'جامعة أم القرى العمادة التقنية',
                 'role_title' => 'مهندس شبكات',
                 'department' => 'الشبكات',
                 'city' => 'مكة المكرمة',

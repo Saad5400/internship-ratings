@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Company;
 use App\Models\Rating;
+use App\Support\Arabic;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -381,8 +382,8 @@ class Batch44_2025Seeder extends Seeder
         DB::transaction(function () use ($rows) {
             foreach ($rows as $row) {
                 $company = Company::firstOrCreate(
-                    ['name' => $row['company_name']],
-                    ['status' => 'approved']
+                    ['name_normalized' => Arabic::normalize($row['company_name'])],
+                    ['name' => $row['company_name'], 'status' => 'approved']
                 );
 
                 // Idempotency: skip if a rating already exists for this

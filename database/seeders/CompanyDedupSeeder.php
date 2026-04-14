@@ -40,10 +40,11 @@ class CompanyDedupSeeder extends Seeder
         ],
         [
             'canonical' => 158, // "أمانة العاصمة المقدسة" (7 ratings)
-            'aliases' => [172, 180],
+            'aliases' => [172, 180, 170],
             // 172 = "امانة العاصمة" (missing "المقدسة"),
             // 180 = "أمانة العاصمة المقدسة - وكالة الحلول الرقمية" (district/agency suffix)
-            'reason' => 'Makkah Municipality — base name vs truncated vs sub-agency suffix.',
+            // 170 = "أمانة مكة" (shortened colloquial form — same body)
+            'reason' => 'Makkah Municipality — base name vs truncated vs sub-agency suffix vs colloquial short form.',
         ],
         [
             'canonical' => 156, // "مستشفى الملك عبدالعزيز" (5 ratings)
@@ -106,6 +107,27 @@ class CompanyDedupSeeder extends Seeder
             'canonical' => 127, // "مدينة الملك فهد الطبية" (1 rating)
             'aliases' => [134], // "King Fahad Medical City" (1 rating)
             'reason' => 'King Fahad Medical City — Arabic and English labels.',
+        ],
+        [
+            'canonical' => 132, // "سدايا" (4 ratings) — informal abbreviation
+            'aliases' => [1],
+            // 1 = "الهيئة السعودية للبيانات والذكاء الاصطناعي" (1 rating, COOP entry with sdaia.gov.sa URL)
+            'reason' => 'SDAIA — abbreviated brand name "سدايا" vs full official Arabic name. '
+                .'Backfill copies sdaia.gov.sa / description from COOP entry to the abbreviation row.',
+        ],
+        [
+            'canonical' => 50, // "وزارة الاتصالات وتقنية المعلومات" (0 ratings, COOP, website=mcit.gov.sa)
+            'aliases' => [124],
+            // 124 = "وزارة الاتصالات وتقنية المعلومات MCIT" (1 rating) — same ministry, English acronym appended
+            'reason' => 'MCIT — same ministry; "MCIT" suffix is just the English acronym. '
+                .'COOP entry kept as canonical for the cleaner Arabic display name.',
+        ],
+        [
+            'canonical' => 51, // "وزارة البيئة والمياه والزراعة" (0 ratings, COOP, website=mewa.gov.sa)
+            'aliases' => [137],
+            // 137 = "MEWA | وزارة البيئة والمياه والزراعة" (1 rating) — same ministry, English acronym prepended
+            'reason' => 'MEWA — same ministry; "MEWA |" prefix is just the English acronym. '
+                .'COOP entry kept as canonical for the cleaner Arabic display name.',
         ],
     ];
 
