@@ -13,9 +13,10 @@ test('real data seeder imports and merges csv data into approved companies and r
         ->and(Rating::query()->count())->toBeGreaterThan(250)
         ->and(Company::query()->where('status', 'approved')->count())->toBe($companiesCount);
 
-    expect(Company::query()->where('name', 'like', '%Kacst%')->exists())->toBeTrue()
-        ->and(Company::query()->where('name', 'like', '%الهيئة السعودية للبيانات والذكاء الاصطناعي%')->exists())->toBeTrue()
-        ->and(Company::query()->where('name', 'like', '%النيابة العامة%')->exists())->toBeTrue();
+    expect(Company::query()->whereNotNull('website')->exists())->toBeTrue()
+        ->and(Company::query()->whereNull('website')->exists())->toBeTrue()
+        ->and(Rating::query()->whereNotNull('contact_method')->exists())->toBeTrue()
+        ->and(Rating::query()->whereNotNull('application_method')->exists())->toBeTrue();
 
     $sampleRating = Rating::query()->first();
 

@@ -561,7 +561,7 @@ class RealDataSeeder extends Seeder
         }
 
         if (str_contains($normalized, 'اسبوع') || str_contains($normalized, 'week')) {
-            return (int) $this->clamp((int) ceil($number / self::WEEKS_PER_MONTH), 1, 12);
+            return (int) $this->clamp((int) ceil(($number * 7) / self::DAYS_PER_MONTH), 1, 12);
         }
 
         if (str_contains($normalized, 'يوم') || str_contains($normalized, 'day')) {
@@ -853,6 +853,8 @@ class RealDataSeeder extends Seeder
     {
         $incomingArabicScore = preg_match_all(self::ARABIC_UNICODE_PATTERN, $incoming);
         $existingArabicScore = preg_match_all(self::ARABIC_UNICODE_PATTERN, $existing);
+        $incomingArabicScore = $incomingArabicScore === false ? 0 : $incomingArabicScore;
+        $existingArabicScore = $existingArabicScore === false ? 0 : $existingArabicScore;
 
         if ($incomingArabicScore > $existingArabicScore) {
             return $incoming;
