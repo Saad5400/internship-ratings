@@ -7,9 +7,11 @@ use App\Models\Rating;
 test('real data seeder imports and merges csv data into approved companies and ratings', function () {
     $this->seed(RealDataSeeder::class);
 
-    expect(Company::query()->count())->toBeGreaterThan(120)
+    $companiesCount = Company::query()->count();
+
+    expect($companiesCount)->toBeGreaterThan(120)
         ->and(Rating::query()->count())->toBeGreaterThan(250)
-        ->and(Company::query()->where('status', 'approved')->count())->toBe(Company::query()->count());
+        ->and(Company::query()->where('status', 'approved')->count())->toBe($companiesCount);
 
     expect(Company::query()->where('name', 'like', '%Kacst%')->exists())->toBeTrue()
         ->and(Company::query()->where('name', 'like', '%الهيئة السعودية للبيانات والذكاء الاصطناعي%')->exists())->toBeTrue()

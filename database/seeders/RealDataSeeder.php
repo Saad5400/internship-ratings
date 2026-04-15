@@ -14,6 +14,14 @@ use Illuminate\Support\Str;
 
 class RealDataSeeder extends Seeder
 {
+    private const WEEKS_PER_MONTH = 4;
+
+    private const DAYS_PER_MONTH = 30;
+
+    private const BATCH_INSERT_SIZE = 500;
+
+    private const ARABIC_UNICODE_PATTERN = '/[\x{0600}-\x{06FF}]/u';
+
     /** @var list<string> */
     private const INVALID_VALUES = [
         '',
@@ -25,6 +33,7 @@ class RealDataSeeder extends Seeder
         'na',
         'null',
         'test',
+        // noisy single-cell values observed in source files
         '2',
     ];
 
@@ -79,7 +88,17 @@ class RealDataSeeder extends Seeder
      */
     private function loadCsvRows(string $path): array
     {
-        $firstLine = (string) fgets(fopen($path, 'rb'));
+        $handle = fopen($path, 'rb');
+        $firstLine = '';
+
+        if ($handle !== false) {
+            try {
+                $firstLine = (string) fgets($handle);
+            } finally {
+                fclose($handle);
+            }
+        }
+
         $delimiter = substr_count($firstLine, "\t") > substr_count($firstLine, ',') ? "\t" : ',';
 
         $file = new \SplFileObject($path);
@@ -137,17 +156,31 @@ class RealDataSeeder extends Seeder
      */
     private function loadSingleColumnTabbedCsv(string $path): array
     {
-        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $file = new \SplFileObject($path);
+        $file->setFlags(\SplFileObject::READ_CSV | \SplFileObject::SKIP_EMPTY | \SplFileObject::DROP_NEW_LINE);
+        $file->setCsvControl(',');
 
-        if ($lines === false || $lines === []) {
-            return [];
-        }
-
-        $header = array_map(fn (string $key): string => $this->cleanHeader($key), explode("\t", trim($lines[0])));
+        $header = null;
         $rows = [];
 
-        foreach (array_slice($lines, 1) as $line) {
-            $parts = explode("\t", (string) $line);
+        foreach ($file as $csvRow) {
+            if (! is_array($csvRow) || $csvRow === [null]) {
+                continue;
+            }
+
+            $line = trim((string) $csvRow[0]);
+
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = explode("\t", $line);
+
+            if ($header === null) {
+                $header = array_map(fn (string $key): string => $this->cleanHeader($key), $parts);
+
+                continue;
+            }
 
             if (count($parts) < 2) {
                 continue;
@@ -255,7 +288,7 @@ class RealDataSeeder extends Seeder
         }
 
         $sourceTimestamp = $this->extractFirstValue($row, ['Timestamp', 'طابع زمني', 'Completion time']);
-        $location = $this->extractFirstValue($row, ['مكان التدريب', 'المنطقه والحي', 'مقر التدريب؟', 'مقر الجهة', 'مقر الجهة']);
+        $location = $this->extractFirstValue($row, ['مكان التدريب', 'المنطقه والحي', 'مقر التدريب؟', 'مقر الجهة']);
         $experienceText = $this->extractFirstValue($row, [
             'تكلم عن تجربتك في التدريب التعاوني',
             'تكلم/ي عن تجربتك مثلا (المسمى الوظيفي، وش المهام الي كانوا يكلفونك بها ، المشاريع الي اشتغلت عليها، مزايا التدريب وعيوبه)',
@@ -352,7 +385,7 @@ class RealDataSeeder extends Seeder
 
     private function extractCompanyName(array $row): ?string
     {
-        $name = $this->extractFirstValue($row, ['اسم الجهة التدريبية', 'اسم الجهه المُدربه؟', 'اسم الجهة', 'جهة التدريب :', 'جهة التدريب']);
+        $name = $this->extractFirstValue($row, ['اسم الجهة التدريبية', 'اسم الجهة المُدربه؟', 'اسم الجهه المُدربه؟', 'اسم الجهة', 'جهة التدريب :', 'جهة التدريب']);
 
         if ($name === null) {
             return null;
@@ -436,6 +469,7 @@ class RealDataSeeder extends Seeder
         $numeric = $this->parseNumber($scoreValue);
 
         if ($numeric !== null) {
+            // Some CSV sheets store "benefit score" out of 10, while ratings are 1..5.
             if ($numeric > 5 && $numeric <= 10) {
                 $numeric /= 2;
             }
@@ -527,11 +561,11 @@ class RealDataSeeder extends Seeder
         }
 
         if (str_contains($normalized, 'اسبوع') || str_contains($normalized, 'week')) {
-            return (int) $this->clamp((int) ceil($number / 4), 1, 12);
+            return (int) $this->clamp((int) ceil($number / self::WEEKS_PER_MONTH), 1, 12);
         }
 
         if (str_contains($normalized, 'يوم') || str_contains($normalized, 'day')) {
-            return (int) $this->clamp((int) ceil($number / 30), 1, 12);
+            return (int) $this->clamp((int) ceil($number / self::DAYS_PER_MONTH), 1, 12);
         }
 
         return (int) $this->clamp((int) round($number), 1, 12);
@@ -716,7 +750,7 @@ class RealDataSeeder extends Seeder
         }
 
         $records[$normalizedName] = [
-            'name' => mb_strlen($incoming['name']) > mb_strlen((string) $existing['name']) ? $incoming['name'] : (string) $existing['name'],
+            'name' => $this->preferredCompanyName((string) $existing['name'], $incoming['name']),
             'type' => $this->mergeCompanyType($existing['type'] ?? null, $incoming['type']),
             'website' => $existing['website'] ?? $incoming['website'],
             'description' => $this->joinParts(array_filter([$existing['description'] ?? null, $incoming['description']])),
@@ -770,7 +804,7 @@ class RealDataSeeder extends Seeder
 
         Rating::query()
             ->with('company:id,name_normalized')
-            ->get()
+            ->lazyById()
             ->each(function (Rating $rating) use (&$existingSignatures): void {
                 $companyNormalized = $rating->company?->name_normalized;
 
@@ -780,6 +814,9 @@ class RealDataSeeder extends Seeder
 
                 $existingSignatures[$this->buildRatingSignature($companyNormalized, $rating->toArray())] = true;
             });
+
+        $now = now();
+        $rowsToInsert = [];
 
         foreach ($ratingRecords as $ratingData) {
             $companyNormalized = Arabic::normalize((string) Arr::get($ratingData, 'company_name'));
@@ -798,9 +835,34 @@ class RealDataSeeder extends Seeder
                 continue;
             }
 
-            Rating::query()->create($payload);
             $existingSignatures[$signature] = true;
+            $rowsToInsert[] = $payload + ['created_at' => $now, 'updated_at' => $now];
+
+            if (count($rowsToInsert) >= self::BATCH_INSERT_SIZE) {
+                Rating::query()->insert($rowsToInsert);
+                $rowsToInsert = [];
+            }
         }
+
+        if ($rowsToInsert !== []) {
+            Rating::query()->insert($rowsToInsert);
+        }
+    }
+
+    private function preferredCompanyName(string $existing, string $incoming): string
+    {
+        $incomingArabicScore = preg_match_all(self::ARABIC_UNICODE_PATTERN, $incoming);
+        $existingArabicScore = preg_match_all(self::ARABIC_UNICODE_PATTERN, $existing);
+
+        if ($incomingArabicScore > $existingArabicScore) {
+            return $incoming;
+        }
+
+        if ($incomingArabicScore === $existingArabicScore && mb_strlen($incoming) > mb_strlen($existing)) {
+            return $incoming;
+        }
+
+        return $existing;
     }
 
     /**
