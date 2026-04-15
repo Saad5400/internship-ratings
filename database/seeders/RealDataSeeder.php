@@ -18,6 +18,12 @@ class RealDataSeeder extends Seeder
 
     private const DAYS_PER_MONTH = 30;
 
+    private const DAYS_PER_WEEK = 7;
+
+    private const MAX_DURATION_MONTHS = 12;
+
+    private const MAX_PROS_CONS_LENGTH = 255;
+
     private const BATCH_INSERT_SIZE = 500;
 
     private const ARABIC_UNICODE_PATTERN = '/[\x{0600}-\x{06FF}]/u';
@@ -561,14 +567,14 @@ class RealDataSeeder extends Seeder
         }
 
         if (str_contains($normalized, 'اسبوع') || str_contains($normalized, 'week')) {
-            return (int) $this->clamp((int) ceil(($number * 7) / self::DAYS_PER_MONTH), 1, 12);
+            return (int) $this->clamp((int) ceil(($number * self::DAYS_PER_WEEK) / self::DAYS_PER_MONTH), 1, self::MAX_DURATION_MONTHS);
         }
 
         if (str_contains($normalized, 'يوم') || str_contains($normalized, 'day')) {
-            return (int) $this->clamp((int) ceil($number / self::DAYS_PER_MONTH), 1, 12);
+            return (int) $this->clamp((int) ceil($number / self::DAYS_PER_MONTH), 1, self::MAX_DURATION_MONTHS);
         }
 
-        return (int) $this->clamp((int) round($number), 1, 12);
+        return (int) $this->clamp((int) round($number), 1, self::MAX_DURATION_MONTHS);
     }
 
     private function parseStipend(?string $value): ?int
@@ -658,7 +664,7 @@ class RealDataSeeder extends Seeder
         $normalized = Arabic::normalize($experienceText);
 
         if (str_contains($normalized, 'مميزات') || str_contains($normalized, 'مزايا') || str_contains($normalized, 'ممتع') || str_contains($normalized, 'متعاون')) {
-            return Str::limit($experienceText, 255, '');
+            return Str::limit($experienceText, self::MAX_PROS_CONS_LENGTH, '');
         }
 
         return null;
@@ -675,7 +681,7 @@ class RealDataSeeder extends Seeder
         $normalized = Arabic::normalize($candidate);
 
         if (str_contains($normalized, 'عيوب') || str_contains($normalized, 'سيئ') || str_contains($normalized, 'ما انصح') || str_contains($normalized, 'مافي')) {
-            return Str::limit($candidate, 255, '');
+            return Str::limit($candidate, self::MAX_PROS_CONS_LENGTH, '');
         }
 
         return null;
