@@ -3166,7 +3166,7 @@ class RealDataSeeder extends Seeder
                 'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
                 'pros' => 'خطة تدريب ومتابعة من المشرفة',
                 'cons' => 'لا مشاريع حقيقية, مشروع افتراضي فقط, لا مكاتب للمتدربين, لا اندماج مع الموظفين',
-                'review_text' => 'تدربت في إدار�� الحوسبة السحاب��ة تحديدًا تحت ق��م تطوير البرمجيات. مشرفتي اعطتني خطة مدة التدريب أمشي عليها وكانت تراقب شغلي كل فترة. بس ماكنت اش��غل على مشاريع خاصة بسدايا كان مشروع افتراضي خاص فيني وماكنت أدخل معهم كموظفين. مافيه مكاتب للمتدربين ب��لقسم. الجهة مو أسوء شي با��تدريب بس مو أحسن شي.',
+                'review_text' => 'تدربت في إدارة الحوسبة السحابية تحديدًا تحت قسم تطوير البرمجيات. مشرفتي اعطتني خطة مدة التدريب أمشي عليها وكانت تراقب شغلي كل فترة. بس ماكنت اشتغل على مشاريع خاصة بسدايا كان مشروع افتراضي خاص فيني وماكنت أدخل معهم كموظفين. مافيه مكاتب للمتدربين بالقسم. الجهة مو أسوء شي بالتدريب بس مو أحسن شي.',
             ], // file#2:385
             [
                 'company' => 'nwc',
@@ -4194,7 +4194,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'علوم ح��سب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 4, 'rating_learning' => 5, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 4,
                 'review_text' => 'تطوير الويب (web development) وتحليل البيانات. إضافة قوية للسيرة الذاتية والتعامل مع فريق متعاون وفرصة تعلّم تقنيات جديدة.',
             ], // file#8:6
@@ -4221,7 +4221,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => '��لوم حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 5, 'rating_learning' => 5, 'rating_real_work' => 5, 'rating_team_environment' => 5, 'rating_organization' => 5,
                 'review_text' => 'باك ايند. بيئة عمل محترفة ومهام عملية ومفيدة وإشراف وتوجيه جيد وفرصة تعلّم تقنيات جديدة.',
             ], // file#8:9
@@ -4239,7 +4239,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => '��لوم حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'DevOps. مهام عملية ومفيدة وإشراف وتوجيه جيد وبيئة عمل محترفة. رح للقطاع الخاص الحكومي اغلبه تساهل وماراح تستفيد.',
             ], // file#8:11
@@ -4265,7 +4265,7 @@ class RealDataSeeder extends Seeder
             ], // file#8:13
             [
                 'company' => 'qanoniah',
-                'city' => 'مكة ��لمكرمة',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'هندسة البرمجيات',
@@ -4301,7 +4301,7 @@ class RealDataSeeder extends Seeder
             ], // file#8:18
             [
                 'company' => 'hajj',
-                'city' => 'مكة المك��مة',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علم البيانات',
@@ -4357,7 +4357,7 @@ class RealDataSeeder extends Seeder
             ], // file#8:29
             [
                 'company' => 'haramain_authority',
-                'city' => 'مكة الم��رمة',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علوم حاسب',
@@ -4397,14 +4397,14 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'عل��م حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 5, 'rating_learning' => 5, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 5,
                 'review_text' => 'تدريب عام لكل شي يخص مجال الحاسب. تجربة ممتازه وانصح فيها.',
             ], // file#8:42
             [
                 'company' => 'holiday_inn_makkah',
                 'department' => 'IT',
-                'city' => 'مكة الم��رمة',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علوم حاسب',
@@ -4417,7 +4417,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'علو�� حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 2, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 2,
                 'review_text' => 'تجربة سيئة للامانة بسبب انه شغل وكرف ولكن تحس بدون فائدة بسبب انه دعم فني. تعرف طابعات وتشبك كمبيوترات للممرضين والدكاتره وتفصل سلك وترجعه. مشاكل بسيطة تنحل بثواني ما تفيد تخصصك للأسف.',
             ], // file#8:48
@@ -4426,7 +4426,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'ع��م البيانات',
+                'reviewer_major' => 'علم البيانات',
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 1,
                 'review_text' => 'تحليل بيانات وذكاء أعمال. ما كانت مفيدة. إذا ما طلبت شغل بنفسك ماراح يعطونك لو تقعد فاضي طول مدة التدريب. المهام اللي أعطوني إياها كانت بسيطة مرة مو بمستواي. البيئة جميلة لكن الإستفادة قليلة ولا تكاد تذكر.',
             ], // file#8:49
@@ -4448,7 +4448,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'ع��وم حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'دعم فني. مهام عملية ومفيدة وإشراف وتوجيه جيد والتعامل مع فريق متعاون وفرصة تعلّم تقنيات جديدة وبيئة عمل محترفة.',
             ], // file#8:55
