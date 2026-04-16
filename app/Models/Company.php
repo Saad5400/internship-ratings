@@ -56,7 +56,13 @@ class Company extends Model
             return $query;
         }
 
-        return $query->where('name_normalized', 'like', '%'.$normalized.'%');
+        $words = preg_split('/\s+/u', $normalized, -1, PREG_SPLIT_NO_EMPTY);
+
+        foreach ($words as $word) {
+            $query->where('name_normalized', 'like', '%'.$word.'%');
+        }
+
+        return $query;
     }
 
     public function getAverageRatingAttribute(): ?float
