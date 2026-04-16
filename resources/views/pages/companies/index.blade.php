@@ -128,9 +128,8 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                 aria-hidden="true"
             ></div>
 
-            <div wire:loading wire:target="loadMore" class="flex items-center justify-center gap-2 py-4 text-sm text-slate-400">
-                <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-                جاري التحميل...
+            <div wire:loading.grid wire:target="loadMore" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <x-public.company-card-skeleton :count="2" />
             </div>
         @endif
     @endif

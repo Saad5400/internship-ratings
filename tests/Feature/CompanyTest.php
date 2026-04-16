@@ -117,6 +117,53 @@ test('loadMore does nothing when no more results', function () {
         ->assertSet('perPage', 12); // unchanged because hasMore=false
 });
 
+test('company detail loadMore reveals more ratings', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+
+    for ($i = 1; $i <= 15; $i++) {
+        Rating::create([
+            'company_id' => $company->id,
+            'role_title' => "دور رقم {$i}",
+            'duration_months' => 3,
+            'modality' => 'onsite',
+            'rating_learning' => 5,
+            'rating_mentorship' => 4,
+            'rating_real_work' => 3,
+            'rating_team_environment' => 3,
+            'rating_organization' => 4,
+            'review_text' => "تجربة {$i}",
+        ]);
+    }
+
+    Livewire::test('pages::companies.show', ['company' => $company])
+        ->assertSet('perPage', 10)
+        ->call('loadMore')
+        ->assertSet('perPage', 20);
+});
+
+test('company detail loadMore does nothing when no more ratings', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+
+    for ($i = 1; $i <= 3; $i++) {
+        Rating::create([
+            'company_id' => $company->id,
+            'role_title' => "دور رقم {$i}",
+            'duration_months' => 3,
+            'modality' => 'onsite',
+            'rating_learning' => 5,
+            'rating_mentorship' => 4,
+            'rating_real_work' => 3,
+            'rating_team_environment' => 3,
+            'rating_organization' => 4,
+            'review_text' => "تجربة {$i}",
+        ]);
+    }
+
+    Livewire::test('pages::companies.show', ['company' => $company])
+        ->call('loadMore')
+        ->assertSet('perPage', 10);
+});
+
 test('typing new search resets pagination', function () {
     for ($i = 1; $i <= 15; $i++) {
         Company::create(['name' => "شركة رقم {$i}", 'status' => 'approved']);

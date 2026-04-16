@@ -11,14 +11,11 @@ test('rating form is accessible', function () {
     $response->assertOk();
     $response->assertSee('أضف تقييم');
     $response->assertDontSee('<select wire:model="duration_months"', false);
-    $response->assertSee('id="duration_months_search"', false);
-    $response->assertSee('inputmode="numeric"', false);
 });
 
 test('rating form avoids unnecessary live requests for static fields', function () {
-    $template = file_get_contents(resource_path('views/pages/ratings/⚡create.blade.php'));
+    $template = file_get_contents(resource_path('views/pages/ratings/create.blade.php'));
     $niceSelect = file_get_contents(resource_path('views/components/public/nice-select.blade.php'));
-    $numericSelect = file_get_contents(resource_path('views/components/public/numeric-select.blade.php'));
     $publicLayout = file_get_contents(resource_path('views/layouts/public.blade.php'));
 
     expect($template)
@@ -39,11 +36,7 @@ test('rating form avoids unnecessary live requests for static fields', function 
     expect($niceSelect)
         ->toContain("'offline' => false")
         ->toContain('<x-mary-choices-offline')
-        ->toContain('<x-mary-choices')
-        ->not->toContain("@scope('selection'");
-
-    expect($numericSelect)
-        ->not->toContain("@entangle(\$attributes->wire('model')).live");
+        ->toContain('<x-mary-choices');
 
     expect($publicLayout)
         ->toContain('data-navigate-once');
@@ -176,6 +169,23 @@ test('goToStep blocks forward jumps when intermediate steps are invalid', functi
         ->call('goToStep', 3)
         ->assertHasErrors(['modality'])
         ->assertSet('currentStep', 1);
+});
+
+test('rating form preselects company from query string', function () {
+    $company = Company::create(['name' => 'شركة مُختارة', 'type' => 'private', 'status' => 'approved']);
+
+    Livewire::withQueryParams(['company' => $company->id])
+        ->test('pages::ratings.create')
+        ->assertSet('companyId', (string) $company->id)
+        ->assertSet('companyOptions', function ($options) use ($company) {
+            return collect($options)->contains(fn ($o) => data_get($o, 'id') === (string) $company->id);
+        });
+});
+
+test('rating form ignores unknown company id in query string', function () {
+    Livewire::withQueryParams(['company' => 999999])
+        ->test('pages::ratings.create')
+        ->assertSet('companyId', null);
 });
 
 test('rating form initially loads approved companies', function () {

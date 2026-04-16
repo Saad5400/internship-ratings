@@ -60,13 +60,15 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     public string $turnstile = '';
     protected bool $syncingRecommendation = false;
 
-    public function mount(?int $company = null): void
+    public function mount(): void
     {
         $this->companyOptions = $this->defaultCompanyOptions();
         $this->cityOptions = $this->normalizeChoicesOptions(SaudiCity::toChoicesOptions());
 
-        if ($company) {
-            $selected = Company::approved()->find($company);
+        $companyId = request()->integer('company');
+
+        if ($companyId) {
+            $selected = Company::approved()->find($companyId);
             if ($selected) {
                 $this->companyId = (string) $selected->id;
                 $this->companyOptions = $this->normalizeChoicesOptions(collect($this->companyOptions)
@@ -259,23 +261,23 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 'city' => ['required', 'string', 'in:' . implode(',', SaudiCity::values())],
                 'duration_months' => 'nullable|integer|min:1|max:12',
                 'modality' => 'required|in:' . implode(',', Modality::values()),
-            ]),
-            2 => [
                 'stipend_sar' => 'nullable|integer|min:0|max:100000',
                 'had_supervisor' => 'nullable|boolean',
                 'mixed_env' => 'nullable|boolean',
                 'job_offer' => 'nullable|boolean',
+            ]),
+            2 => [
                 'rating_mentorship' => 'required|integer|min:1|max:5',
                 'rating_learning' => 'required|integer|min:1|max:5',
                 'rating_real_work' => 'required|integer|min:1|max:5',
                 'rating_team_environment' => 'required|integer|min:1|max:5',
                 'rating_organization' => 'required|integer|min:1|max:5',
-            ],
-            3 => array_filter([
                 'recommendation' => 'required|in:' . implode(',', Recommendation::values()),
                 'review_text' => 'nullable|string|max:5000',
                 'pros' => 'nullable|string|max:500',
                 'cons' => 'nullable|string|max:500',
+            ],
+            3 => array_filter([
                 'reviewer_name' => 'nullable|string|max:255',
                 'reviewer_university' => 'nullable|string|max:255',
                 'reviewer_college' => 'nullable|string|max:255',
@@ -317,9 +319,19 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         $this->dispatch('rating-wizard-step-changed');
     }
 
+    protected function validateOrScroll(array $rules): void
+    {
+        try {
+            $this->validate($rules, $this->messages());
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->dispatch('rating-wizard-validation-failed');
+            throw $e;
+        }
+    }
+
     public function nextStep(): void
     {
-        $this->validate($this->rulesForStep($this->currentStep), $this->messages());
+        $this->validateOrScroll($this->rulesForStep($this->currentStep));
 
         if ($this->currentStep < $this->totalSteps) {
             $this->currentStep++;
@@ -346,7 +358,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         }
 
         for ($s = $this->currentStep; $s < $step; $s++) {
-            $this->validate($this->rulesForStep($s), $this->messages());
+            $this->validateOrScroll($this->rulesForStep($s));
         }
 
         $this->currentStep = $step;
@@ -359,7 +371,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         for ($s = 1; $s <= $this->totalSteps; $s++) {
             $allRules = array_merge($allRules, $this->rulesForStep($s));
         }
-        $this->validate($allRules, $this->messages());
+        $this->validateOrScroll($allRules);
 
         if ($this->companyId === '__new__') {
             $company = Company::create([
@@ -416,7 +428,12 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     $inputClass = 'w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none';
 @endphp
 
-<div class="mx-auto max-w-2xl space-y-6" x-data x-on:rating-wizard-step-changed.window="window.scrollTo(0, 0)">
+<div
+    class="mx-auto max-w-2xl space-y-6"
+    x-data
+    x-on:rating-wizard-step-changed.window="window.scrollTo(0, 0)"
+    x-on:rating-wizard-validation-failed.window="$nextTick(() => { const el = $el.querySelector('.text-red-600'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); })"
+>
     <a href="{{ route('companies.index') }}" wire:navigate class="group inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900">
         <svg class="size-4 transition-transform group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
         العودة للجهات
@@ -430,21 +447,21 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     {{-- Progress header --}}
     @php
         $stepLabels = [
-            1 => 'الجهة والدور',
-            2 => 'الحقائق والتقييم',
-            3 => 'التجربة',
+            1 => 'تفاصيل التدريب',
+            2 => 'تقييمك وتجربتك',
+            3 => 'عنك',
         ];
     @endphp
 
     <nav aria-label="خطوات النموذج" class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
-        <ol class="flex items-center justify-between gap-2">
+        <ol class="flex items-center justify-between gap-2 px-10">
             @foreach($stepLabels as $num => $title)
                 @php
                     $isCurrent = $currentStep === $num;
                     $isCompleted = $currentStep > $num;
                     $isClickable = $num < $currentStep;
                 @endphp
-                <li class="flex flex-1 items-center gap-2">
+                <li class="flex items-center gap-2 {{ $loop->last ? '' : 'flex-1' }}">
                     <button
                         type="button"
                         @if($isClickable) wire:click="goToStep({{ $num }})" @else disabled @endif
@@ -481,8 +498,8 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         {{-- STEP 1: COMPANY & ROLE --}}
         <div x-show="$wire.currentStep === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5">
             <div class="mb-1">
-                <h2 class="text-lg font-semibold text-slate-900">الجهة والدور</h2>
-                <p class="mt-1 text-sm text-slate-500">ابحث عن الجهة وأخبرنا عن دورك فيها.</p>
+                <h2 class="text-lg font-semibold text-slate-900">تفاصيل التدريب</h2>
+                <p class="mt-1 text-sm text-slate-500">معلومات موضوعية عن الجهة، الدور، والتدريب نفسه.</p>
             </div>
 
             {{-- Company combobox --}}
@@ -570,13 +587,22 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 </div>
             </div>
 
-            <x-public.numeric-select
-                label="المدة (بالاشهر)"
+            <x-public.nice-select
+                label="المدة (بالأشهر)"
                 name="duration_months"
                 wire:model="duration_months"
                 :options="$this->durationMonthOptions"
-                placeholder="اكتب رقم الشهر أو اختره"
-            />
+                placeholder="اختر عدد الأشهر..."
+                no-result-text="لا توجد نتائج"
+                searchable
+                offline
+            >
+                @scope('item', $option)
+                    <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50">
+                        <div class="font-medium text-slate-900">{{ data_get($option, 'name') }} {{ (int) data_get($option, 'id') === 1 ? 'شهر' : 'أشهر' }}</div>
+                    </div>
+                @endscope
+            </x-public.nice-select>
 
             {{-- Modality — pill radio --}}
             <x-public.form-field label="نمط التدريب" name="modality" :required="true">
@@ -589,14 +615,6 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     @endforeach
                 </div>
             </x-public.form-field>
-        </div>
-
-        {{-- STEP 2: FACTS & RATING --}}
-        <div x-show="$wire.currentStep === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-6">
-            <div>
-                <h2 class="text-lg font-semibold text-slate-900">الحقائق والتقييم</h2>
-                <p class="mt-1 text-sm text-slate-500">هذه الحقائق مفيدة للطلاب الآخرين قبل التقديم.</p>
-            </div>
 
             {{-- Stipend --}}
             <x-public.form-field label="المكافأة الشهرية (ريال سعودي)" name="stipend_sar">
@@ -606,7 +624,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 </div>
             </x-public.form-field>
 
-            {{-- Yes/no questions --}}
+            {{-- Yes/no facts about the placement --}}
             <div class="space-y-3">
                 @php
                     $yesNoQuestions = [
@@ -621,19 +639,27 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                         <div class="flex gap-2">
                             <label class="relative">
                                 <input type="radio" wire:model="{{ $field }}" value="1" class="peer sr-only" />
-                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700">نعم</span>
+                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20">نعم</span>
                             </label>
                             <label class="relative">
                                 <input type="radio" wire:model="{{ $field }}" value="0" class="peer sr-only" />
-                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700">لا</span>
+                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20">لا</span>
                             </label>
                         </div>
                     </div>
                 @endforeach
             </div>
+        </div>
+
+        {{-- STEP 2: RATING & EXPERIENCE --}}
+        <div x-show="$wire.currentStep === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-6">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">تقييمك وتجربتك</h2>
+                <p class="mt-1 text-sm text-slate-500">قيّم تجربتك على المعايير الخمسة، ثم شاركنا توصيتك وتفاصيل تجربتك.</p>
+            </div>
 
             {{-- Star pickers — weighted criteria --}}
-            <div class="space-y-5 pt-2">
+            <div class="space-y-5">
                 <div class="space-y-4">
                     @php
                         $criteriaFields = [
@@ -651,32 +677,19 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     @endforeach
                 </div>
 
-                <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                <div class="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <h3 class="text-sm font-semibold text-slate-900">التقييم العام</h3>
                         </div>
 
-                        <div class="shrink-0 rounded-xl bg-white px-4 py-3 text-center shadow-xs ring-1 ring-inset ring-blue-100">
-                            @if($this->calculatedOverallRating !== null)
-                                <div class="text-3xl font-bold text-blue-600 tabular-nums">
-                                    {{ number_format($this->calculatedOverallRating, 1) }}
-                                </div>
-                                <div class="text-xs font-medium text-blue-400">/ 5</div>
-                            @else
-                                <div class="text-sm font-medium text-slate-400">أكمل التقييمات الخمسة</div>
-                            @endif
-                        </div>
+                        @if($this->calculatedOverallRating !== null)
+                            <x-public.overall-score :value="$this->calculatedOverallRating" wire:key="overall-score-{{ number_format($this->calculatedOverallRating, 2) }}" compact />
+                        @else
+                            <div class="shrink-0 rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-400 ring-1 ring-inset ring-slate-200">أكمل التقييمات الخمسة</div>
+                        @endif
                     </div>
                 </div>
-            </div>
-        </div>
-
-        {{-- STEP 3: EXPERIENCE --}}
-        <div x-show="$wire.currentStep === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5">
-            <div>
-                <h2 class="text-lg font-semibold text-slate-900">التجربة</h2>
-                <p class="mt-1 text-sm text-slate-500">شارك تجربتك بالتفصيل وأخبرنا بتوصيتك.</p>
             </div>
 
             {{-- Recommendation — big pills --}}
@@ -694,9 +707,9 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     @foreach(\App\Enums\Recommendation::cases() as $case)
                         @php
                             $recommendationCheckedClasses = match ($case->value) {
-                                'yes' => 'peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700 peer-checked:ring-2 peer-checked:ring-green-500/20',
-                                'maybe' => 'peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-700 peer-checked:ring-2 peer-checked:ring-amber-500/20',
-                                'no' => 'peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700 peer-checked:ring-2 peer-checked:ring-red-500/20',
+                                'yes' => 'peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20',
+                                'maybe' => 'peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20',
+                                'no' => 'peer-checked:border-slate-300 peer-checked:bg-slate-50 peer-checked:text-slate-600 peer-checked:ring-2 peer-checked:ring-slate-300/30',
                             };
                         @endphp
                         <label class="relative">
@@ -722,6 +735,14 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     placeholder="اكتب تجربتك بالتفصيل: الدور، المشاريع، الفريق، ما تعلّمت..."
                     class="{{ $inputClass }}"></textarea>
             </x-public.form-field>
+        </div>
+
+        {{-- STEP 3: ABOUT YOU & SUBMIT --}}
+        <div x-show="$wire.currentStep === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">عنك</h2>
+                <p class="mt-1 text-sm text-slate-500">معلومات اختيارية تساعد القرّاء على فهم خلفيتك. ثم أرسل تقييمك.</p>
+            </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <x-public.form-field label="اسمك" name="reviewer_name">
@@ -769,11 +790,11 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     <div class="flex gap-2">
                         <label class="relative">
                             <input type="radio" wire:model.live="willing_to_help" value="1" class="peer sr-only" />
-                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700">نعم</span>
+                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20">نعم</span>
                         </label>
                         <label class="relative">
                             <input type="radio" wire:model.live="willing_to_help" value="0" class="peer sr-only" />
-                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700">لا</span>
+                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20">لا</span>
                         </label>
                     </div>
                 </div>
@@ -842,14 +863,10 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     wire:loading.attr="disabled"
                     wire:target="save"
                 >
-                    <span wire:loading.remove wire:target="save" class="flex items-center gap-1.5">
-                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                        إرسال التقييم
-                    </span>
-                    <span wire:loading wire:target="save" class="flex items-center gap-2">
-                        <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
-                        جاري الإرسال...
-                    </span>
+                    <svg wire:loading.remove wire:target="save" class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    <svg wire:loading wire:target="save" class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                    <span wire:loading.remove wire:target="save" class="whitespace-nowrap">إرسال التقييم</span>
+                    <span wire:loading wire:target="save" class="whitespace-nowrap">جاري الإرسال...</span>
                 </button>
             @endif
         </div>

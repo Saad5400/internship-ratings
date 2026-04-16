@@ -6,6 +6,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -28,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
 
         if (in_array($this->app->environment(), ['production', 'staging'])) {
             URL::forceScheme('https');
+        }
+
+        if ($this->app->environment('local')) {
+            Vite::useScriptTagAttributes(['data-navigate-track' => false]);
+            Vite::useStyleTagAttributes(['data-navigate-track' => false]);
         }
     }
 

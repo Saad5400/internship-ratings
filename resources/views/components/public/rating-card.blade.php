@@ -4,9 +4,9 @@
     $modalityLabel = $rating->modality?->label() ?? $rating->modality;
     $recLabel      = $rating->recommendation?->label() ?? (string) $rating->recommendation;
     $recClass      = match ($rating->recommendation?->value ?? $rating->recommendation) {
-        'yes'   => 'bg-green-50 text-green-700 ring-green-600/20',
-        'maybe' => 'bg-amber-50 text-amber-700 ring-amber-600/20',
-        'no'    => 'bg-red-50 text-red-700 ring-red-600/20',
+        'yes'   => 'bg-sky-50 text-sky-700 ring-sky-600/20',
+        'maybe' => 'bg-slate-100 text-slate-700 ring-slate-300',
+        'no'    => 'bg-slate-50 text-slate-500 ring-slate-200',
         default => 'bg-slate-50 text-slate-600 ring-slate-200',
     };
     $scoreBars = [
@@ -52,7 +52,7 @@
     {{-- Facts row: stipend + yes/no chips --}}
     <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
         @if($rating->stipend_sar)
-            <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 font-semibold text-green-700 ring-1 ring-inset ring-green-600/20">
+            <span class="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 font-semibold text-sky-700 ring-1 ring-inset ring-sky-600/20">
                 <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <x-public.count-up :value="$rating->stipend_sar" :duration="700" class="tabular-nums" /> ر.س / شهر
             </span>
@@ -116,14 +116,14 @@
     @if($rating->pros || $rating->cons)
         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             @if($rating->pros)
-                <div class="rounded-lg rounded-s-none border-s-2 border-s-green-500 bg-green-50/50 px-3 py-2">
-                    <div class="text-[11px] font-semibold uppercase tracking-wide text-green-700">المزايا</div>
+                <div class="rounded-lg rounded-s-none border-s-2 border-s-sky-500 bg-sky-50/60 px-3 py-2">
+                    <div class="text-[11px] font-semibold uppercase tracking-wide text-sky-700">المزايا</div>
                     <div class="mt-0.5 text-sm text-slate-700">{{ $rating->pros }}</div>
                 </div>
             @endif
             @if($rating->cons)
-                <div class="rounded-lg rounded-s-none border-s-2 border-s-red-500 bg-red-50/50 px-3 py-2">
-                    <div class="text-[11px] font-semibold uppercase tracking-wide text-red-700">العيوب</div>
+                <div class="rounded-lg rounded-s-none border-s-2 border-s-slate-400 bg-slate-100/60 px-3 py-2">
+                    <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-600">العيوب</div>
                     <div class="mt-0.5 text-sm text-slate-700">{{ $rating->cons }}</div>
                 </div>
             @endif
