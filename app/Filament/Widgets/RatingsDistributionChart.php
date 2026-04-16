@@ -18,8 +18,9 @@ class RatingsDistributionChart extends ChartWidget
     protected function getData(): array
     {
         $distribution = [];
+
         for ($i = 1; $i <= 5; $i++) {
-            $distribution[$i] = Rating::where('overall_rating', $i)->count();
+            $distribution[$i] = Rating::whereRaw('ROUND(overall_rating) = ?', [$i])->count();
         }
 
         return [

@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\Ratings;
 
+use App\Enums\CompanyType;
+use App\Enums\Modality;
+use App\Enums\Recommendation;
 use App\Filament\Resources\Ratings\Pages\CreateRating;
 use App\Filament\Resources\Ratings\Pages\EditRating;
 use App\Filament\Resources\Ratings\Pages\ListRatings;
@@ -55,8 +58,8 @@ class RatingResource extends Resource
     public static function getGlobalSearchResultDetails(Model $record): array
     {
         return [
-            'الشركة' => $record->company?->name,
-            'التقييم' => $record->overall_rating.' / 5',
+            'الجهة' => $record->company?->name,
+            'التقييم' => number_format((float) $record->overall_rating, 1).' / 5',
         ];
     }
 
@@ -74,12 +77,12 @@ class RatingResource extends Resource
     {
         return $schema
             ->schema([
-                Section::make('الشركة والوظيفة')
+                Section::make('الجهة والوظيفة')
                     ->icon('heroicon-o-briefcase')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('company.name')
-                            ->label('الشركة')
+                            ->label('الجهة')
                             ->weight('bold')
                             ->size('lg')
                             ->icon('heroicon-o-building-office-2'),
@@ -102,31 +105,21 @@ class RatingResource extends Resource
                             ->label('المدة')
                             ->formatStateUsing(fn (int $state): string => $state.' شهر')
                             ->icon('heroicon-o-clock'),
-                        TextEntry::make('sector')
+                        TextEntry::make('company.type')
                             ->label('نوع الجهة')
-                            ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                'government' => 'حكومي',
-                                'private' => 'خاص',
-                                'nonprofit' => 'غير ربحي',
-                                'other' => 'أخرى',
-                                default => 'غير محدد',
-                            })
+                            ->formatStateUsing(fn ($state): string => $state instanceof CompanyType
+                                ? $state->label()
+                                : CompanyType::tryFrom((string) $state)?->label() ?? 'غير محدد')
                             ->badge(),
                         TextEntry::make('modality')
                             ->label('نمط التدريب')
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'onsite' => 'حضوري',
-                                'hybrid' => 'هجين',
-                                'remote' => 'عن بُعد',
-                                default => $state,
-                            })
+                            ->formatStateUsing(fn (string|Modality $state): string => $state instanceof Modality
+                                ? $state->label()
+                                : Modality::tryFrom($state)?->label() ?? $state)
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'onsite' => 'info',
-                                'hybrid' => 'warning',
-                                'remote' => 'success',
-                                default => 'gray',
-                            }),
+                            ->color(fn (string|Modality $state): string => $state instanceof Modality
+                                ? $state->color()
+                                : Modality::tryFrom((string) $state)?->color() ?? 'gray'),
                         TextEntry::make('stipend_sar')
                             ->label('المكافأة الشهرية')
                             ->formatStateUsing(fn (?int $state): string => $state ? number_format($state).' ر.س' : 'بدون مكافأة')
@@ -145,15 +138,6 @@ class RatingResource extends Resource
                     ->icon('heroicon-o-star')
                     ->columns(3)
                     ->schema([
-                        TextEntry::make('rating_mentorship')
-                            ->label('الإرشاد والدعم')
-                            ->formatStateUsing(fn (int $state): string => $state.' / 5')
-                            ->badge()
-                            ->color(fn (int $state): string => match (true) {
-                                $state >= 4 => 'success',
-                                $state >= 3 => 'warning',
-                                default => 'danger',
-                            }),
                         TextEntry::make('rating_learning')
                             ->label('القيمة التعليمية')
                             ->formatStateUsing(fn (int $state): string => $state.' / 5')
@@ -163,8 +147,8 @@ class RatingResource extends Resource
                                 $state >= 3 => 'warning',
                                 default => 'danger',
                             }),
-                        TextEntry::make('rating_culture')
-                            ->label('بيئة العمل')
+                        TextEntry::make('rating_mentorship')
+                            ->label('جودة الإرشاد')
                             ->formatStateUsing(fn (int $state): string => $state.' / 5')
                             ->badge()
                             ->color(fn (int $state): string => match (true) {
@@ -172,8 +156,26 @@ class RatingResource extends Resource
                                 $state >= 3 => 'warning',
                                 default => 'danger',
                             }),
-                        TextEntry::make('rating_compensation')
-                            ->label('المكافأة والمزايا')
+                        TextEntry::make('rating_real_work')
+                            ->label('العمل الحقيقي والمشاريع')
+                            ->formatStateUsing(fn (int $state): string => $state.' / 5')
+                            ->badge()
+                            ->color(fn (int $state): string => match (true) {
+                                $state >= 4 => 'success',
+                                $state >= 3 => 'warning',
+                                default => 'danger',
+                            }),
+                        TextEntry::make('rating_team_environment')
+                            ->label('بيئة الفريق')
+                            ->formatStateUsing(fn (int $state): string => $state.' / 5')
+                            ->badge()
+                            ->color(fn (int $state): string => match (true) {
+                                $state >= 4 => 'success',
+                                $state >= 3 => 'warning',
+                                default => 'danger',
+                            }),
+                        TextEntry::make('rating_organization')
+                            ->label('التنظيم ووضوح التوقعات')
                             ->formatStateUsing(fn (int $state): string => $state.' / 5')
                             ->badge()
                             ->color(fn (int $state): string => match (true) {
@@ -183,29 +185,23 @@ class RatingResource extends Resource
                             }),
                         TextEntry::make('overall_rating')
                             ->label('التقييم العام')
-                            ->formatStateUsing(fn (int $state): string => $state.' / 5')
+                            ->formatStateUsing(fn (float $state): string => number_format($state, 1).' / 5')
                             ->badge()
                             ->size('lg')
-                            ->color(fn (int $state): string => match (true) {
+                            ->color(fn (float $state): string => match (true) {
                                 $state >= 4 => 'success',
                                 $state >= 3 => 'warning',
                                 default => 'danger',
                             }),
                         TextEntry::make('recommendation')
                             ->label('التوصية')
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'yes' => 'أنصح بها',
-                                'maybe' => 'ربما',
-                                'no' => 'لا أنصح',
-                                default => $state,
-                            })
+                            ->formatStateUsing(fn (string|Recommendation $state): string => $state instanceof Recommendation
+                                ? $state->label()
+                                : Recommendation::tryFrom((string) $state)?->label() ?? $state)
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'yes' => 'success',
-                                'maybe' => 'warning',
-                                'no' => 'danger',
-                                default => 'gray',
-                            }),
+                            ->color(fn (string|Recommendation $state): string => $state instanceof Recommendation
+                                ? $state->color()
+                                : Recommendation::tryFrom((string) $state)?->color() ?? 'gray'),
                     ]),
                 Section::make('المراجعة')
                     ->icon('heroicon-o-chat-bubble-bottom-center-text')

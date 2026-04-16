@@ -1,14 +1,21 @@
 @props(['rating'])
 
 @php
-    $modalityLabels = ['onsite' => 'حضوري', 'hybrid' => 'هجين', 'remote' => 'عن بُعد'];
-    $sectorLabels = ['government' => 'حكومي', 'private' => 'خاص', 'nonprofit' => 'غير ربحي', 'other' => 'أخرى'];
-    $recLabels = [
-        'yes' => ['أنصح به', 'bg-green-50 text-green-700 ring-green-600/20'],
-        'maybe' => ['توصية مشروطة', 'bg-amber-50 text-amber-700 ring-amber-600/20'],
-        'no' => ['لا أنصح', 'bg-red-50 text-red-700 ring-red-600/20'],
+    $modalityLabel = $rating->modality?->label() ?? $rating->modality;
+    $recLabel      = $rating->recommendation?->label() ?? (string) $rating->recommendation;
+    $recClass      = match ($rating->recommendation?->value ?? $rating->recommendation) {
+        'yes'   => 'bg-sky-50 text-sky-700 ring-sky-600/20',
+        'maybe' => 'bg-slate-100 text-slate-700 ring-slate-300',
+        'no'    => 'bg-slate-50 text-slate-500 ring-slate-200',
+        default => 'bg-slate-50 text-slate-600 ring-slate-200',
+    };
+    $scoreBars = [
+        ['label' => 'التعلّم', 'value' => $rating->rating_learning],
+        ['label' => 'الإرشاد', 'value' => $rating->rating_mentorship],
+        ['label' => 'العمل الحقيقي', 'value' => $rating->rating_real_work],
+        ['label' => 'بيئة الفريق', 'value' => $rating->rating_team_environment],
+        ['label' => 'التنظيم', 'value' => $rating->rating_organization],
     ];
-    [$recLabel, $recClass] = $recLabels[$rating->recommendation] ?? [$rating->recommendation, 'bg-slate-50 text-slate-600'];
 @endphp
 
 <article class="rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs transition-shadow hover:shadow-sm">
@@ -32,23 +39,20 @@
                     {{ $rating->duration_months }} {{ $rating->duration_months === 1 ? 'شهر' : 'أشهر' }}
                 </span>
                 @if($rating->modality)
-                    <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 font-medium text-blue-700">{{ $modalityLabels[$rating->modality] ?? $rating->modality }}</span>
+                    <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 font-medium text-blue-700">{{ $modalityLabel }}</span>
                 @endif
-                @if($rating->sector)
-                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600">{{ $sectorLabels[$rating->sector] ?? $rating->sector }}</span>
+                @if($rating->company?->type)
+                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600">{{ $rating->company->type->label() }}</span>
                 @endif
             </div>
         </div>
-        <div class="shrink-0 flex items-baseline gap-0.5">
-            <x-public.count-up :value="$rating->overall_rating" :decimals="0" :duration="700" class="text-3xl font-bold text-slate-900 tabular-nums" />
-            <span class="text-sm text-slate-400 font-normal">/5</span>
-        </div>
+        <x-public.overall-score :value="$rating->overall_rating" compact />
     </div>
 
     {{-- Facts row: stipend + yes/no chips --}}
     <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
         @if($rating->stipend_sar)
-            <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 font-semibold text-green-700 ring-1 ring-inset ring-green-600/20">
+            <span class="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 font-semibold text-sky-700 ring-1 ring-inset ring-sky-600/20">
                 <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <x-public.count-up :value="$rating->stipend_sar" :duration="700" class="tabular-nums" /> ر.س / شهر
             </span>
@@ -94,10 +98,15 @@
 
     {{-- Multi-criteria bars --}}
     <div class="mt-5 space-y-2.5">
-        <x-public.rating-bar label="الإرشاد" :value="$rating->rating_mentorship" :delay="0" />
-        <x-public.rating-bar label="التعلّم" :value="$rating->rating_learning" :delay="80" />
-        <x-public.rating-bar label="بيئة العمل" :value="$rating->rating_culture" :delay="160" />
-        <x-public.rating-bar label="المكافأة" :value="$rating->rating_compensation" :delay="240" />
+        @foreach($scoreBars as $index => $scoreBar)
+            @if($scoreBar['value'] !== null)
+                <x-public.rating-bar
+                    :label="$scoreBar['label']"
+                    :value="$scoreBar['value']"
+                    :delay="$index * 80"
+                />
+            @endif
+        @endforeach
     </div>
 
     {{-- Review text --}}
@@ -107,14 +116,14 @@
     @if($rating->pros || $rating->cons)
         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             @if($rating->pros)
-                <div class="rounded-lg rounded-s-none border-s-2 border-s-green-500 bg-green-50/50 px-3 py-2">
-                    <div class="text-[11px] font-semibold uppercase tracking-wide text-green-700">المزايا</div>
+                <div class="rounded-lg rounded-s-none border-s-2 border-s-sky-500 bg-sky-50/60 px-3 py-2">
+                    <div class="text-[11px] font-semibold uppercase tracking-wide text-sky-700">المزايا</div>
                     <div class="mt-0.5 text-sm text-slate-700">{{ $rating->pros }}</div>
                 </div>
             @endif
             @if($rating->cons)
-                <div class="rounded-lg rounded-s-none border-s-2 border-s-red-500 bg-red-50/50 px-3 py-2">
-                    <div class="text-[11px] font-semibold uppercase tracking-wide text-red-700">العيوب</div>
+                <div class="rounded-lg rounded-s-none border-s-2 border-s-slate-400 bg-slate-100/60 px-3 py-2">
+                    <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-600">العيوب</div>
                     <div class="mt-0.5 text-sm text-slate-700">{{ $rating->cons }}</div>
                 </div>
             @endif

@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\Ratings\Schemas;
 
+use App\Enums\Modality;
+use App\Enums\Recommendation;
+use App\Enums\SaudiCity;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -16,58 +19,44 @@ class RatingForm
     {
         return $schema
             ->components([
-                Section::make('الشركة والوظيفة')
+                Section::make('الجهة والوظيفة')
                     ->description('معلومات عن مكان وطبيعة التدريب')
                     ->icon('heroicon-o-briefcase')
                     ->columns(2)
                     ->schema([
                         Select::make('company_id')
                             ->relationship('company', 'name')
-                            ->label('الشركة')
+                            ->label('الجهة')
                             ->required()
                             ->searchable()
                             ->preload()
                             ->native(false),
                         TextInput::make('role_title')
                             ->label('المسمى الوظيفي')
-                            ->required()
                             ->placeholder('مثال: مطور برمجيات'),
                         TextInput::make('department')
                             ->label('القسم')
                             ->placeholder('مثال: تقنية المعلومات'),
-                        TextInput::make('city')
+                        Select::make('city')
                             ->label('المدينة')
-                            ->placeholder('مثال: الرياض'),
+                            ->options(SaudiCity::toOptions())
+                            ->searchable()
+                            ->native(false),
                     ]),
                 Section::make('تفاصيل التدريب')
                     ->description('معلومات عن مدة ونمط التدريب')
                     ->icon('heroicon-o-calendar-days')
                     ->columns(2)
                     ->schema([
-                        TextInput::make('duration_months')
-                            ->label('المدة (أشهر)')
-                            ->required()
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(24)
-                            ->suffix('شهر'),
-                        Select::make('sector')
-                            ->label('نوع الجهة')
-                            ->options([
-                                'government' => 'حكومي',
-                                'private' => 'خاص',
-                                'nonprofit' => 'غير ربحي',
-                                'other' => 'أخرى',
-                            ])
+                        Select::make('duration_months')
+                            ->label('المدة (بالاشهر)')
+                            ->options(array_combine(range(1, 12), range(1, 12)))
+                            ->placeholder('اختياري')
                             ->native(false),
                         Select::make('modality')
                             ->label('نمط التدريب')
                             ->required()
-                            ->options([
-                                'onsite' => 'حضوري',
-                                'hybrid' => 'هجين',
-                                'remote' => 'عن بُعد',
-                            ])
+                            ->options(Modality::options())
                             ->native(false),
                         TextInput::make('stipend_sar')
                             ->label('المكافأة الشهرية')
@@ -92,17 +81,10 @@ class RatingForm
                             ->columnSpanFull(),
                     ]),
                 Section::make('التقييمات')
-                    ->description('قيّم تجربتك من 1 إلى 5')
+                    ->description('قيّم التجربة من خلال خمسة عوامل، وسيُحسب التقييم العام تلقائياً')
                     ->icon('heroicon-o-star')
                     ->columns(3)
                     ->schema([
-                        TextInput::make('rating_mentorship')
-                            ->label('الإرشاد والدعم')
-                            ->required()
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(5)
-                            ->suffix('/ 5'),
                         TextInput::make('rating_learning')
                             ->label('القيمة التعليمية')
                             ->required()
@@ -110,22 +92,29 @@ class RatingForm
                             ->minValue(1)
                             ->maxValue(5)
                             ->suffix('/ 5'),
-                        TextInput::make('rating_culture')
-                            ->label('بيئة العمل')
+                        TextInput::make('rating_mentorship')
+                            ->label('جودة الإرشاد')
                             ->required()
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(5)
                             ->suffix('/ 5'),
-                        TextInput::make('rating_compensation')
-                            ->label('المكافأة والمزايا')
+                        TextInput::make('rating_real_work')
+                            ->label('العمل الحقيقي والمشاريع')
                             ->required()
                             ->numeric()
                             ->minValue(1)
                             ->maxValue(5)
                             ->suffix('/ 5'),
-                        TextInput::make('overall_rating')
-                            ->label('التقييم العام')
+                        TextInput::make('rating_team_environment')
+                            ->label('بيئة الفريق')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(5)
+                            ->suffix('/ 5'),
+                        TextInput::make('rating_organization')
+                            ->label('التنظيم ووضوح التوقعات')
                             ->required()
                             ->numeric()
                             ->minValue(1)
@@ -134,11 +123,7 @@ class RatingForm
                         Select::make('recommendation')
                             ->label('التوصية')
                             ->required()
-                            ->options([
-                                'yes' => 'أنصح بها',
-                                'maybe' => 'ربما',
-                                'no' => 'لا أنصح',
-                            ])
+                            ->options(Recommendation::options())
                             ->native(false),
                     ]),
                 Section::make('المراجعة')
@@ -155,7 +140,6 @@ class RatingForm
                             ->columnSpanFull(),
                         Textarea::make('review_text')
                             ->label('المراجعة التفصيلية')
-                            ->required()
                             ->rows(4)
                             ->placeholder('اكتب تجربتك بالتفصيل...')
                             ->columnSpanFull(),

@@ -27,19 +27,19 @@ class LatestRatingsTable extends TableWidget
             )
             ->columns([
                 TextColumn::make('company.name')
-                    ->label('الشركة')
+                    ->label('الجهة')
                     ->weight('bold'),
                 TextColumn::make('role_title')
                     ->label('المسمى الوظيفي'),
                 TextColumn::make('overall_rating')
                     ->label('التقييم')
                     ->badge()
-                    ->color(fn (int $state): string => match (true) {
+                    ->color(fn (float $state): string => match (true) {
                         $state >= 4 => 'success',
                         $state >= 3 => 'warning',
                         default => 'danger',
                     })
-                    ->formatStateUsing(fn (int $state): string => $state.' / 5'),
+                    ->formatStateUsing(fn (float $state): string => number_format($state, 1).' / 5'),
                 TextColumn::make('recommendation')
                     ->label('التوصية')
                     ->badge()

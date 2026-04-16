@@ -2,18 +2,20 @@
 
 namespace App\Filament\Resources\Companies\RelationManagers;
 
+use App\Enums\Modality;
+use App\Enums\Recommendation;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -36,16 +38,14 @@ class RatingsRelationManager extends RelationManager
                 Section::make('تفاصيل التدريب')
                     ->columns(2)
                     ->schema([
-                        TextInput::make('role_title')->label('المسمى الوظيفي')->required(),
+                        TextInput::make('role_title')->label('المسمى الوظيفي'),
                         TextInput::make('department')->label('القسم'),
                         TextInput::make('city')->label('المدينة'),
-                        TextInput::make('duration_months')->label('المدة (أشهر)')->required()->numeric()->minValue(1)->maxValue(24),
-                        Select::make('sector')->label('نوع الجهة')->options([
-                            'government' => 'حكومي',
-                            'private' => 'خاص',
-                            'nonprofit' => 'غير ربحي',
-                            'other' => 'أخرى',
-                        ]),
+                        Select::make('duration_months')
+                            ->label('المدة (بالاشهر)')
+                            ->options(array_combine(range(1, 12), range(1, 12)))
+                            ->placeholder('اختياري')
+                            ->native(false),
                         Select::make('modality')->label('نمط التدريب')->required()->options([
                             'onsite' => 'حضوري',
                             'hybrid' => 'هجين',
@@ -56,11 +56,11 @@ class RatingsRelationManager extends RelationManager
                 Section::make('التقييمات')
                     ->columns(3)
                     ->schema([
-                        TextInput::make('rating_mentorship')->label('الإرشاد')->required()->numeric()->minValue(1)->maxValue(5),
-                        TextInput::make('rating_learning')->label('التعلم')->required()->numeric()->minValue(1)->maxValue(5),
-                        TextInput::make('rating_culture')->label('بيئة العمل')->required()->numeric()->minValue(1)->maxValue(5),
-                        TextInput::make('rating_compensation')->label('المكافأة')->required()->numeric()->minValue(1)->maxValue(5),
-                        TextInput::make('overall_rating')->label('التقييم العام')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_learning')->label('القيمة التعليمية')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_mentorship')->label('جودة الإرشاد')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_real_work')->label('العمل الحقيقي والمشاريع')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_team_environment')->label('بيئة الفريق')->required()->numeric()->minValue(1)->maxValue(5),
+                        TextInput::make('rating_organization')->label('التنظيم ووضوح التوقعات')->required()->numeric()->minValue(1)->maxValue(5),
                         Select::make('recommendation')->label('التوصية')->required()->options([
                             'yes' => 'أنصح بها',
                             'maybe' => 'ربما',
@@ -72,7 +72,7 @@ class RatingsRelationManager extends RelationManager
                         Toggle::make('had_supervisor')->label('يوجد مرشد مباشر'),
                         Toggle::make('mixed_env')->label('بيئة مختلطة'),
                         Toggle::make('job_offer')->label('عرض عمل بعد التدريب'),
-                        Textarea::make('review_text')->label('المراجعة')->required()->columnSpanFull(),
+                        Textarea::make('review_text')->label('المراجعة')->columnSpanFull(),
                         TextInput::make('pros')->label('المزايا')->columnSpanFull(),
                         TextInput::make('cons')->label('العيوب')->columnSpanFull(),
                         TextInput::make('reviewer_name')->label('اسم المقيّم'),
@@ -91,34 +91,34 @@ class RatingsRelationManager extends RelationManager
                 TextColumn::make('overall_rating')
                     ->label('التقييم')
                     ->badge()
-                    ->color(fn (int $state): string => match (true) {
+                    ->color(fn (float $state): string => match (true) {
                         $state >= 4 => 'success',
                         $state >= 3 => 'warning',
                         default => 'danger',
                     })
-                    ->formatStateUsing(fn (int $state): string => $state.' / 5'),
+                    ->formatStateUsing(fn (float $state): string => number_format($state, 1).' / 5'),
                 TextColumn::make('recommendation')
                     ->label('توصية')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'yes' => 'أنصح بها',
-                        'maybe' => 'ربما',
-                        'no' => 'لا أنصح',
+                    ->formatStateUsing(fn (Recommendation $state): string => match ($state) {
+                        Recommendation::Yes => 'أنصح بها',
+                        Recommendation::Maybe => 'ربما',
+                        Recommendation::No => 'لا أنصح',
                         default => $state,
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'yes' => 'success',
-                        'maybe' => 'warning',
-                        'no' => 'danger',
+                    ->color(fn (Recommendation $state): string => match ($state) {
+                        Recommendation::Yes => 'success',
+                        Recommendation::Maybe => 'warning',
+                        Recommendation::No => 'danger',
                         default => 'gray',
                     }),
                 TextColumn::make('modality')
                     ->label('النمط')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'onsite' => 'حضوري',
-                        'hybrid' => 'هجين',
-                        'remote' => 'عن بُعد',
+                    ->formatStateUsing(fn (Modality $state): string => match ($state) {
+                        Modality::Onsite => 'حضوري',
+                        Modality::Hybrid => 'هجين',
+                        Modality::Remote => 'عن بُعد',
                         default => $state,
                     }),
                 TextColumn::make('stipend_sar')

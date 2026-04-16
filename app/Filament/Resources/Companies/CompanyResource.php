@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Companies;
 
+use App\Enums\CompanyType;
 use App\Filament\Resources\Companies\Pages\CreateCompany;
 use App\Filament\Resources\Companies\Pages\EditCompany;
 use App\Filament\Resources\Companies\Pages\ListCompanies;
@@ -11,9 +12,9 @@ use App\Filament\Resources\Companies\Schemas\CompanyForm;
 use App\Filament\Resources\Companies\Tables\CompaniesTable;
 use App\Models\Company;
 use BackedEnum;
-use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
@@ -24,11 +25,11 @@ class CompanyResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
-    protected static ?string $navigationLabel = 'الشركات';
+    protected static ?string $navigationLabel = 'الجهات';
 
-    protected static ?string $modelLabel = 'شركة';
+    protected static ?string $modelLabel = 'جهة';
 
-    protected static ?string $pluralModelLabel = 'الشركات';
+    protected static ?string $pluralModelLabel = 'الجهات';
 
     protected static string|\UnitEnum|null $navigationGroup = 'إدارة المحتوى';
 
@@ -50,7 +51,7 @@ class CompanyResource extends Resource
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'شركات قيد المراجعة';
+        return 'جهات قيد المراجعة';
     }
 
     public static function getGloballySearchableAttributes(): array
@@ -72,12 +73,12 @@ class CompanyResource extends Resource
     {
         return $schema
             ->schema([
-                Section::make('معلومات الشركة')
+                Section::make('معلومات الجهة')
                     ->icon('heroicon-o-building-office-2')
                     ->columns(2)
                     ->schema([
                         TextEntry::make('name')
-                            ->label('اسم الشركة')
+                            ->label('اسم الجهة')
                             ->weight('bold')
                             ->size('lg'),
                         TextEntry::make('website')
@@ -85,6 +86,12 @@ class CompanyResource extends Resource
                             ->url(fn ($record) => $record->website, shouldOpenInNewTab: true)
                             ->icon('heroicon-o-globe-alt')
                             ->default('غير متوفر'),
+                        TextEntry::make('type')
+                            ->label('نوع الجهة')
+                            ->formatStateUsing(fn ($state): string => $state instanceof CompanyType
+                                ? $state->label()
+                                : CompanyType::tryFrom((string) $state)?->label() ?? 'غير محدد')
+                            ->badge(),
                         TextEntry::make('description')
                             ->label('الوصف')
                             ->default('لا يوجد وصف')

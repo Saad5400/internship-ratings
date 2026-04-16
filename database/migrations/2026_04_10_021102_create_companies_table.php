@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('name_normalized')->index();
+            $table->string('type')->nullable(); // government | private | nonprofit | other
             $table->string('website')->nullable();
             $table->text('description')->nullable();
             $table->string('status')->default('pending'); // pending, approved, rejected
