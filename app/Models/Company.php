@@ -16,6 +16,7 @@ class Company extends Model
         'website',
         'description',
         'status',
+        'is_imported',
     ];
 
     protected function casts(): array
