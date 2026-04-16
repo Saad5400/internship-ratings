@@ -37,13 +37,27 @@ class RealDataSeeder extends Seeder
         $ids = [];
 
         foreach ($this->companies() as $key => $data) {
+            $data['is_imported'] = true;
             $ids[$key] = Company::create($data)->id;
         }
 
-        foreach ($this->ratings() as $row) {
+        // File #2 entries (indices 0–202) are from KSU; the rest from UQU.
+        foreach ($this->ratings() as $index => $row) {
             $key = $row['company'];
             unset($row['company']);
             $row['company_id'] = $ids[$key];
+
+            if (! isset($row['reviewer_university'])) {
+                if ($index < 203) {
+                    $row['reviewer_university'] = 'جامعة الملك سعود';
+                    $row['reviewer_college'] = 'كلية علوم الحاسب والمعلومات';
+                } else {
+                    $row['reviewer_university'] = 'جامعة أم القرى';
+                    $row['reviewer_college'] = 'كلية الحاسبات وتقنية المعلومات';
+                }
+            }
+
+            $row['is_imported'] = true;
             Rating::create($row);
         }
     }
@@ -1846,7 +1860,9 @@ class RealDataSeeder extends Seeder
                 'company' => 'elm',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 1000, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'تعلم تطوير أندرويد, القدرة على بناء تطبيق بشكل مستقل',
+                'cons' => 'لا يوجد احتكاك مع موظفين علم, التدريب كورس خارجي فقط, لا يوجد خبرة ببيئة العمل',
                 'review_text' => 'التدريب كان اشبه بكورس اندرويد من قبل مدربة خارجيه (ليست من موظفين علم)، لا يوجد عمل خاص لعلم ولم يكن هنالك احتكاك او تواصل مع موظفين علم، رح تطلعين وانت فاهم الاندرويد وتقدرين تطورين تطبيق لحالك بس لا يوجد خبر من بيئة العمل. غرفة المكتب للمتدربات فقط ولكن موجوده في قسم الرجال، لعدم وجود مكان في قسم النساء يكفي عدد المتدربات.',
             ], // file#2:47
             [
@@ -1861,6 +1877,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 3000, 'job_offer' => true, 'mixed_env' => true,
                 'rating_mentorship' => 5, 'rating_learning' => 5, 'rating_real_work' => 5, 'rating_team_environment' => 5, 'rating_organization' => 4,
+                'pros' => 'اختيار التقنيات بنفسك, استخدام GitHub, تنوع المهام بين تطوير وجودة, التعامل مع عملاء',
                 'review_text' => 'كان تدريبي تدريب تعاوني كمطور تطبيقات، تدربت بـ technology team، التيم اللي معاي بعضهم متدربين من نفس التخصص وأغلبهم موظفين، بداية تدريبي كان كله بال infrastructure and Unix command (وجدًا تغير تفكيري بعده كان مشاريع بسيطه زي المهمات يبون انجزها بس ما كانت لها دخل بمشاريعهم هم كان مجهزين هذه المهام لي). اغلب تدريبي كان بال development team على تقنيات أنا اخترتها (React.js, React Native, Android studio). ثم سويت معاهم مشروعين عليها كلها تقريبًا. من الأشياء اللي حبيتها بالفريق خلوني التزم ب GitHub. بنص التدريب أخذت أسبوع ونص تقريبًا مع ال quality team واشتغلت فيه على مشروع وسوينا تقرير على بعض ال bugs وال design errors. أيضًا أتيح لي الفرصة ان أقرا ال BRD وأتعامل مع customers. كانت تجربة تستحق الذكر صراحة.',
             ], // file#2:49
             [
@@ -1868,6 +1885,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 1, 'rating_learning' => 2, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'تعلم ذاتي فقط, لا يوجد احتكاك بالشركة, لا مشاريع حقيقية',
                 'review_text' => 'المشاريع كانت من افكارنا وسويناها من انفسنا، ما اشتغلنا ابدا مع الشركه ولا احتكينا فيهم بس عرضوا لنا باقي التخصصات كميتنق. لا انصح فيها ابدا للاسف كانت عباره عن سيلف ليرننق ومن انفسنا عشان نفيد انفسنا فقط.',
             ], // file#2:50
             [
@@ -1882,7 +1900,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'Front-End Intern',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => 2000, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
                 'review_text' => 'Front-End Intern. كان شغلي مع Front-End Developers ومن احد المشاريع اللي اشتغلت عليها كان مشروع جانبي سويته بنفسي عشان اتدرب على Angular بحكم ان الشركة كان شغلهم على Angular. وأيضاً كان مطلوب مني اني اضيف feature لاحد المشاريع تبع الشركة وكانت فكرة الfeature هي اني اغيّر الlayout تبع الموقع في حالة ان اللغة كانت عربي وبرضو كان شغلي اني اترجم الصفحات.',
             ], // file#2:52
             [
@@ -1944,7 +1962,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'Business Development',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 3000, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'Business development, we used to work on business cases, feasibility studies, benchmarks. It was more business than IT. You don\'t have to work on the same department you trained at, it takes time to apply and for them to process your application and interview you and come up with a training plan so don\'t stress, everyone will do the training :)',
             ], // file#2:63
             [
@@ -1960,7 +1978,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'Android Mobile Application Developer',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 1000, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 2, 'rating_learning' => 4, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'القسم: علم سوفت. المسمى الوظيفي: android mobile application developer. المدرب: الاء اغا كرس (CTO في شركة Superior ICT) من خارج الشركة. المشاريع: Elm survey system. مشروع من اختيارنا: ديمو فقط. البيئة مختلطه في الممرات و قاعات الاجتماعات لكن المتدربات في مكتب خاص مع مدربات.',
             ], // file#2:65
             [
@@ -1993,6 +2011,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 2, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'pros' => 'موظفين متعاونين, تطوير السيرة الذاتية ومهارات المقابلة, تنمية السوفت سكيلز, شهادة نهاية التدريب',
+                'cons' => 'أغلب التدريب نظري وجلسات, تطبيق عملي قليل',
                 'review_text' => 'كان بقسم support. اغلب التدريب كان عبارة عن sessions يعلمونا اكثر من اننا نطبق. عرضوا علينا Demo لشغلهم كيف يصير، شرحوا لنا عن المسميات الوظيفية ايش يشتغلون، شرحوا عن الستورجز والسيرفيرز، عطونا كورس اسمه ISM بس الشهاده على الكورس احنا ناخذها بأنفسنا اذا اجتزنا الاختبار. كان فيه كثير موظفين صغار لان عندهم برنامج توظيف لحديثين التخرج، الموظفين جدا متعاونين اذا كان عندك استفسار عن اي شي يساعدونك، علمونا كيف نخلي السيره الذاتيه كويسه وشافوا السير الذاتية حقتنا وعطونا نصايح وعلمونا كيف نجاوب على اسئلة المقابلة الوظيفية. هدفهم كان انهم ينمون السوفت سكيلز فسوينا تقريبا ٣ برزنتيشنز، سوينا مشروع بروجكت مانجمينت. كان فيه شهادة نهاية التدريب.',
             ], // file#2:75
             [
@@ -2008,6 +2028,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
                 'rating_mentorship' => 5, 'rating_learning' => 5, 'rating_real_work' => 5, 'rating_team_environment' => 5, 'rating_organization' => 5,
+                'pros' => 'شغل حقيقي بالسايبر, كورسات مكثفة, دوام مرن, بيئة متعاونة, اجتماعات مع CEO',
                 'review_text' => 'تدريبي كان عن Cybersecurity. الخطة كانت تدريب على كل أقسام الشركة بس بتدريبنا كان التركيز على المعمل ومركز العمليات الأمنية بالشركة. بالبداية أخذنا كورسات مكثفة بالنتورك والسكيوريتي بعدها بدأنا العمل على شبكة خاصة فينا سوينا لها installing and configuring وجربنا نشوف الـlogs. شاركنا بـ incident response كان attack على جهة وكنا نحاول نفهم طريقتهم وحاولنا نوقفهم وسوينا تقرير عنه. اشتغلنا على Miter-Lab. دخلت الـSOC وهو مكان يراقبون فيه اللوقز والاتتاكس ويسوون لها تحليل وريسبونز. التدريب كان رائع وما أذكر بيوم كنت فاضية وماعندي شغلة. كل يوم إنجاز جديد، معلومات جديدة. الكل متعاون ويقدم لك المساعدة متى ما احتجت. وكان فيه ميتنقز اسبوعية مع الـCEO. الدوام مرن.',
             ], // file#2:80
             [
@@ -2015,6 +2036,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'الخطة لم تُطبق, لا يوجد مشروع حقيقي, شغل فعلي ساعة واحدة فقط باليوم',
                 'review_text' => 'اذا كان على الخطة اللي عطوناياها كانت ممتازة و فيها اشياء حلوة تتعلمين عليها و تعطيك خبرة جيدة لكن الحقيقة طلع كلشي عكس المتوقع ما جهزو ولا شي و كل واحد يعطيك رؤوس اقلام عن الخطة و يمشي لدرجة ان الدوام ما نشتغل فيه الا بالكثير ساعة وحدة. قسم تقنية المعلومات وما كان فيه مشروع معين نشتغل عليه.',
             ], // file#2:81
             [
@@ -2028,7 +2050,7 @@ class RealDataSeeder extends Seeder
                 'company' => 'quant',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 2000, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
                 'review_text' => 'تحليل البيانات، خبرة التيم علم بيانات وتحليل البيانات. انصح لمن تخصصهم تقنية المعلومات مسار علم البيانات.',
             ], // file#2:83
             [
@@ -2037,7 +2059,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'الحوسبه العلميه',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'مساعد باحث، الحوسبه العلميه، بنات من جامعة الملك سعود، انشاء تطبيقات تفيد اقسام المستشفى.',
             ], // file#2:84
             [
@@ -2060,7 +2082,7 @@ class RealDataSeeder extends Seeder
                 'company' => 'riyadh_amanah',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 4,
                 'review_text' => 'كنا ١٧ طالبة في التدريب، قسمونا ل٣ مجموعات كل مجموعة فيها ٥-٦ طالبات. كل مجموعة وكلت بمشروع تسويه وكنا مخيرين بين الويب سايت او آب. إنا اخترنا الويب سايت وبديناه من الصفر وفي الأخير عرضناه لإدارة الأمانة. مره استمتعت في تدريبي البنات كانو مره لطيفات والمشرفة كانت تساعدنا قدر الإمكان.',
             ], // file#2:87
             [
@@ -2099,7 +2121,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'System Analyst',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 1500, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'محلل نظم/System analyst. في قسم الهندسة. خبرتهم ٤ سنين في السوق والمشاريع التي دخلوا فيها كثير. هدفهم الأساسي يبنون أفكار العملاء الستارت اب ليكون تطبيق/موقع. وعندهم بعض المشاريع مع الجهات الحكومية. يستخدمون إطار Scrum في إدارة المشاريع. أحدث التقنيات يستخدمونها في تطوير البرامج (React.js, React-native, Node.js).',
             ], // file#2:94
             [
@@ -2132,6 +2154,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 1700, 'job_offer' => true, 'mixed_env' => false,
                 'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'عرض وظيفي بعد التدريب',
+                'cons' => 'لا يوجد تنظيم, تعلم ذاتي بدون شرح مفصل, المهام ليست على المسمى الوظيفي',
                 'review_text' => 'مهندس برمجيات. شركة صغيرة مره (startup) الشركة مب ذاك التنظيم فالتاسكات متساهلين. بالنسبة للي راح تتعلمه سواء برمجة او اساليب ما راح ينشرح لك بشكل مفصل يمكن كذا ابو دقيقتين مقدمة عنه لكن بيعطونك اسمه ويقولك دور بالنت وتعلمه. ما فيه تنظيم بالاشياء اللي راح تتعلمها وما راح تكون على مسماك الوظيفي. عرض علي وظيفة بعد التدريب مهندس برمجيات راتب ٥٠٠٠.',
             ], // file#2:98
             [
@@ -2147,7 +2171,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'System Analyst',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
                 'review_text' => 'سيستم اناليست - كان الوضع عازلين بنات التدريب بمبنى لحاله، كنا قروب خمس بنات ومعطينا مشروع خربوطي لويب سايت على مدى الشهرين نسويه مع حملة توعوية. صراحة اللي يبي شغل صح وتدريب على مستوى لا يفكر فيها للأمانة تحسفت مره اني تدربت فيها.',
             ], // file#2:100
             [
@@ -2193,7 +2217,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'User Support',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 2,
                 'review_text' => 'المسمى الوظيفي: user support. التيم عاديين السعوديين اللي موجودين وفيه هنود كثير كويسين الصراحة بس ما يشاركون كثير من معلوماتهم يخافون احد يمسك منصبهم. البيئة عادية والشغل عادي واقل من عادي. مافيه مشاريع تذكر ماكانوا يدخلوني بكثير من المشاريع بخصوص انها جهة حكومية ومعلوماتها تعتبر سرية. بشكل عام جيدة الى اقل من جيدة التجربة.',
             ], // file#2:108
             [
@@ -2201,7 +2225,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'البنية التحتية، العمليات',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 4, 'rating_organization' => 3,
                 'review_text' => 'قسم البنية التحتية، العمليات. التجربة كانت ممتازة جداً لكن بما أن الشركة كبيرة فهم يتعاقدون مع الشركات لإنجاز الأعمال وهم يديرونهم فقط فمن يبحث عن فائدة عبر الممارسة فالشركات الكبيرة خيار غير مناسب تماماً له.',
             ], // file#2:110
             [
@@ -2217,7 +2241,9 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'مطورة أندرويد',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 1000, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 1, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'تعلم أندرويد, مشروع تطبيقي',
+                'cons' => 'لا يوجد احتكاك مع الموظفين, الخطة التدريبية لم تطبق, التدريب يشبه الجامعة',
                 'review_text' => 'تدربنا كمطورين اندرويد كنا خمسين بنت وكان عندنا مدربه تعلمنا على الاندرويد وسوينا بالنهاية مشروع خاص فينا. للاسف ماكان فيه اي احتكاك مع الموظفين غير السيشنز اللي مره كل اسبوع. بالخطه التدريبيه كانوا كاتبين اننا بنحتك مع الموظفين وكنا متوقعين نكون نفس السنوات اللي قبل بس للاسف كان نفس الجامعه. الشركة حلوه لكن ماكانت مثل ماتوقعت.',
             ], // file#2:113
             [
@@ -2225,6 +2251,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 1500, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 2, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'موظفين متعاونين وطيبين, بيئة مريحة',
+                'cons' => 'أعمال إدارية فقط, لا يوجد عمل تقني, لا استجابة لطلب التغيير',
                 'review_text' => 'في البداية بالمقابلة قالو لي اني راح اتدرب معهم لتطوير الموقع بحكم خبرتي فيه وانهم ممكن بعدها يدخلوني في مهام تقنية اخرى. قبلت وكنت متحمسه لكن الصدمه انهم خلوني طوال الشهرين اسوي اعمال ادارية بحته مثل عمل تقارير وعروض واصمم بوسترز. طلبت منهم اني اشتغل مع القسم التقني ولكن ماكان فيه استجابة. الموظفين بشكل عام متعاونين وطيبين جداً والبيئة مريحة لكن مساحة ان الطالب التقني يبدع عندهم ويتعلم اشياء جديدة جداً ضعيفة. لا انصح طلاب التقنية بالتدريب عندهم.',
             ], // file#2:115
             [
@@ -2241,6 +2269,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'تعامل سيء مع المتدرب, لا جهاز ولا إيميل, التيم بعيد عن التخصص التقني',
                 'review_text' => 'كان منسق تدريب مسؤول عن البيانات لكل موظف بقسم ادارة التعليم والتدريب. نسقنا وخططنا لبرنامج تطوير الخريجين برنامج القوي الامين الرابع. التيم خبرته كانت كلها عن التخطيط والعمليات. التعامل كان معي كمتدرب سيء وحتى ابسط حقوقي مثل جهاز شخصي او ايميل ماعطوني.',
             ], // file#2:118
             [
@@ -2248,6 +2277,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'غير مستعدين للمتدربين, لا خطة واضحة, لا أجهزة أو صلاحيات, تدريب نظري فقط, مجرد مشاهدة',
                 'review_text' => 'تدربت في مستشفى الحبيب كان معي خمس بنات وحطونا بقسم شركة مشغله لهم اللي هي حلول السحابة. القسم كان عبارة عن دعم فني عن طريق الرد على اتصالات الموظفين ومعرفة المشاكل اللي تواجههم وحلها. مااعطونا يوزرات او اجهزة بحيث نرد على الاتصالات. كنا مجرد نجلس بجانب الموظفين ونشوفهم يشتغلون. اللي يبي يستفيد من التدريب ما انصحه يتدرب عندهم لاسباب كثيرة: غير مستعدين للمتدربين وماعندهم خطه واضحة للتدريب، بتشوفينهم يشتغلون على نظام خاص بالمستشفى يعني حتى ماراح تاخذين خبرة. تدريبهم نظري يعني ماراح يكون فيه تطبيق عملي.',
             ], // file#2:119
             [
@@ -2311,6 +2341,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 3500, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'pros' => 'بيئة عمل جميلة ومتنوعة, خطة تدريب بكورسات',
+                'cons' => 'لا مشاريع حقيقية بسبب سرية المعلومات, فائدة عملية محدودة',
                 'review_text' => 'تدربت في فريق التعلم التعاوني والتقنية يتبع لقسم نقل المعرفة. ما راح تشتغل على مشاريع حقيقية بحكم حساسية المعلومات وكونك مجرد متدرب. طريقتهم انهم يبنون لك خطة تدريب بكورسات من عند نظام التعلم عندهم وممكن تشتغل على مشروع جانبي مع المشرف. لا أنصح بالتدرب مع أرامكو لمن يطمع بالفائدة العملية والتطوير المهني. انصحك فيها كتجربة لتطلع على بيئة عمل جداً جميلة ومتنوعة بشكل كبير.',
             ], // file#2:132
             [
@@ -2320,6 +2352,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'شغل على مشاريع حقيقية, تيم لطيف',
+                'cons' => 'التيم مشغول ودعم المتدربين قليل, شغل فوضوي, الخطة التدريبية لم تطبق',
                 'review_text' => 'تدربت في قسم إدارة تقنية المعلومات. كنت ماسكة أشغال web development. التيم لطيف لكنه مشغول أغلب الوقت فما فيه ذاك الدعم الكافي للمتدربين. كانوا يعطونني شغل على بروجكتس حقيقية عندهم. عيبهم بس إن شغلهم فوضوي ومشرفتي خططت لي خطة جدًا ممتازة لكن للأسف ما طبقتها.',
             ], // file#2:138
             [
@@ -2351,6 +2385,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => false,
                 'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 2, 'rating_organization' => 3,
+                'pros' => 'شغل على مشاريع حقيقية, تعلم .NET, دوام مرن',
+                'cons' => 'لا يوجد عمل جماعي, شركة صغيرة جداً',
                 'review_text' => 'كنت مطورة ويب. مامعي احد بس انا والمبرمج حقهم. خلوني اشتغل على موقعين للشركة. الشركة مره صغيره. تعلمت على .net واستفدت ومرنين بساعات العمل مايدققون علي ابد. لكن اللي يبحث عن تكوين علاقات وعمل كفريق ماتصلح له.',
             ], // file#2:150
             [
@@ -2413,7 +2449,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'ادارة المشاريع',
                 'duration_months' => 3, 'modality' => 'remote',
                 'stipend_sar' => 500, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'تدريبي كان اونلاين. القسم اللي تدربت فيه كان ادارة المشاريع PM. أول شهرين تقريبًا كانوا يعطونا زي المحاضرات كل اسبوع أو اسبوعين كان يجينا موظف مختلف ويكلمنا عن أحد المواضيع. واخر شيء اخذو متدربين من كل مسار وقسمونا ثلاث مجموعات واعطونا مشروع.',
             ], // file#2:162
             [
@@ -2422,7 +2458,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'Development',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 5, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'المسمى مطور ويب. تدربت في development department ثاني اهم قسم تقني في الخطوط. كنا ٦ اشخاص: ثلاث بنات وثلاث أولاد. وكان علينا ثلاث مشرفين. القسم كان برمجي بحت والمشروع اللي اشتغلنا عليه كان موجود لديهم ولكن يبغوا يشوفوا طريقتنا في برمجته وتصميمه. كان مشروع integrated وجدا كنا مستمتعين في العمل. انصح العمل في الخطوط في هذا القسم.',
             ], // file#2:174
             [
@@ -2430,7 +2466,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'تقنية المعلومات - تدريب الأنظمة',
                 'duration_months' => 2, 'modality' => 'remote',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'قسم تدريب الانظمة. التدريب كان عن بعد من الساعه ٩ الصباح الى ٤. التدريب عباره عن دروس ومبادئ تساعد بالاخير ان ننشئ web application development باستخدام لغات عده منها sql و C# و html css.',
             ], // file#2:175
             [
@@ -2446,7 +2482,7 @@ class RealDataSeeder extends Seeder
                 'company' => 'smart_methods',
                 'duration_months' => 3, 'modality' => 'hybrid',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
                 'review_text' => 'تدربت بمسار القوى الكهربائية والالكترونيات. المهمات كانت عبارة عن تكوين الدوائر الكهربائية والاردوينو. التدريب اونلاين او عن بعد حسب الرغبة وكل مسار ينفذ مهام مختلفه للمشاركة بتجهيز مشروع واحد ضخم. ما كان التدريب صعب فقط عبارة عن تعليم ذاتي ومستواه جيد حتى للمبتدئين. انصحكم تاخذوه بسنه مختلفه عن تدريب الجامعه.',
             ], // file#2:186
             [
@@ -2464,7 +2500,9 @@ class RealDataSeeder extends Seeder
                 'city' => 'جدة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 3500, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
+                'rating_mentorship' => 4, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 2,
+                'pros' => 'مشرف متعاون, تطوير مهارات, نصائح قيمة, فريق متعاون',
+                'cons' => 'لا يوجد خطة واضحة للتدريب, الشغل يعتمد على ما يجيهم أسبوعياً',
                 'review_text' => 'تدربت في قسم information security analysis في WRDD. المشرف كان متعاون جدا ونمى فيني مهارات كثيره واعطاني نصايح قيمه جدا. اشتغلت على مشروع معاهم عبارة عن IT optimizations. ما انصح كثير التدريب في هذا القسم لان ما كان عندهم خطه واضحه للتدريب على حسب الشغل اللي يجيهم ذاك الاسبوع. لكن من جهه الناس في القسم جدا متعاونين.',
             ], // file#2:190
             [
@@ -2474,6 +2512,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'remote',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 5, 'rating_learning' => 5, 'rating_real_work' => 5, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'pros' => 'تعلم كثير في المجال, كمية شغل مناسبة, فريق ممتاز علمياً وتوجيهياً, مشرف ممتاز',
                 'review_text' => 'المسمى الوظيفي: Machine Learning Engineer. الشركة تبني Customer Service ChatBot باللغة العربية. كان شغلي تطوير أحد أجزاء تعلم الآلة في الchatbot وبالتحديد معالجة لغات طبيعية Natural Language Processing (NLP). الشركة كانت صغيرة وقتها لكن مشرفي كان ممتاز جدًا والتواصل عن بعد ما كان عائق. المميزات: اتعلمت كثير في المجال، كمية الشغل مناسبة لفترة التدريب، فريق العمل ممتاز من ناحية علمية وتوجيهية. باختصار التجربة ممتازة جدًا بالنسبة لي.',
             ], // file#2:191
             [
@@ -2481,7 +2520,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'مطور تطبيقات',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 2000, 'job_offer' => true, 'mixed_env' => false,
-                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 2, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'مطور تطبيقات. التيم الي اشتغلت معاه كله متدربات معي واذا احتجنا شي نسأل الموظفات. اخذنا مشاريع صغيرة نجرب تقنيات جديدة وفي الأخير عطونا مشروع ويب يخدم الشركة. الجهة تبحث عن حديثي تخرج التقديم عليها من خلال لينكدان.',
             ], // file#2:204
             [
@@ -2498,6 +2537,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 1, 'rating_organization' => 1,
+                'cons' => 'لا يوجد تيم أو مشرف تقني, متطلبات غير واضحة, ضغط نفسي, لا خبرة مكتسبة',
                 'review_text' => 'مافيه اي مسمى وظيفي ولا عندهم تيم. كانوا يبون احد يسوي لهم داتابيس بدون ما يستعينون بمبرمج. ولا عندهم اي معرفه ولا خبرة بالموضوع ولا فيه اي احد نرجع له. هم بنفسهم مو عارفين ايش يبغون واعطونا متطلبات غير واضحه وراحت الشهرين كلها نعدل بشغل اول اسبوعين. بالمختصر تجربة سيئة وضغط نفسي ما انصح اي احد يتدرب عندهم.',
             ], // file#2:206
             [
@@ -2506,6 +2546,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 1, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'التيم متعاون',
+                'cons' => 'لا يوجد شغل حقيقي, سرية المعلومات تمنع العمل, مجرد مشاهدة واستماع',
                 'review_text' => 'متدربة في قسم ERP. التيم متساعد بس مايعطونك شغل بعذر انه فيه سرية للمعلومات وماتقدرين تشتغلين عليها. فقط تشتغلين مع موظفين وتكونين بس مستمعة وهم اللي يشتغلون. السيستم ممنوع تفتحينه بجهازك. باختصار مجرد متطلعة ماتسوين شي. انصح فيها للي يبي يعدي التدريب وبس وما انصح فيها للي يبي يستفيد.',
             ], // file#2:207
             [
@@ -2513,6 +2555,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'لا إشراف ولا تعليم, استغلال المتدربين, بطء الردود, لا يوجد تيم',
                 'review_text' => 'مافيه مسمى وظيفي ولا فيه تيم. تدربت انا وصاحبتي هناك. خلونا نسوي ٢ داتا بيس ومعاها فورمز. كل الشغل علينا مافيه اشراف ولا احد يعلمك ويشرح لك. قضينا تقريبا شهر على التعديلات وبال يالله يردون عليك واضح انهم استغلاليين يبونك تسوين لهم كل شي. بالمختصر تجربه سيئة ما انصح فيها ابد.',
             ], // file#2:208
             [
@@ -2537,6 +2580,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'مهام في المجال, شغل على بيانات حقيقية, موظفين محترمين ومتعاونين',
+                'cons' => 'مهام قليلة جداً, وقت فراغ كثير, لازم تنشب عشان تاخذ شغل',
                 'review_text' => 'اشتغلت في ادارة الحوسبة السحابية في قسم ادارة الخدمات. عادية جداً. طوال فترة تدريبي كانت تجيني تاسك الى ٢ تاسك بالأسبوع بعد ما انشب لهم واقدر اخلص التاسك الواحد بساعه او ساعتين باليوم وباقي الوقت فراغ. لكن التاسك نفسها للامانه تعجبني وفي مجالي خلوني اشتغل على نظامهم واخذ داتا حقيقية واحللها في اكسل وكانو فعلا يعتمدونها بعد مايراجعونها. موظفينهم محترمين متعاونين.',
             ], // file#2:212
             [
@@ -2594,7 +2639,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'Business Analyst',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 4000, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'Business analyst.',
             ], // file#2:220
             [
@@ -2602,7 +2647,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'محلل أعمال / مطور',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 3000, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
                 'review_text' => 'محلل أعمال مطور. شغلونا على مشاريعهم الحالية وكانوا داعمين لنا طول الوقت. عندهم أقسام نسائية لكن الاجتماعات غالبا مختلطة أو اونلاين.',
             ], // file#2:221
             [
@@ -2610,7 +2655,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'علم البيانات والذكاء الاصطناعي',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 2, 'rating_organization' => 3,
                 'review_text' => 'تدربت في قسم علم البيانات والذكاء الاصطناعي. اشتغلت مع مشرفتي على مشروع كمبيوتر ڤجن. كنت المتدربة الوحيدة مع مشرفتي فكان الوضع مرن وكانت تسألني اذا ابي تعطيني لكتشرز وكانت مفيدة جدًا. البيئة غير مختلطة الى حد كبير ساعات الدوام مرنة جدًا ولا يوجد بصمة.',
             ], // file#2:222
             [
@@ -2619,6 +2664,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
                 'rating_mentorship' => 5, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 5,
+                'pros' => 'شغل متنوع مع شركات عالمية, مكتب خاص لكل متدرب, ساعات مرنة, موظف مسؤول عن كل متدرب',
                 'review_text' => 'مكان التدريب: قسم الدراسات. التدريب كان متنوع ويعطونك من الشغل والمشاريع الي يشتغلون عليها واغلبها مع شركات عالمية. اشتغلت على إدارة المشاريع وتحليل الاعمال وتحليل البيانات. كل متدرب يكون مسؤول عنه موظف واحد. بيئة العمل مريحة وكل متدرب له مكتب خاص فيه تحس كأنك موظف مو متدرب. ساعات عمل مرنه. الجميع خلوقين وسلسين في التعامل وودهم يفيدون المتدربين بأكبر قدر ممكن.',
             ], // file#2:224
             [
@@ -2650,14 +2696,14 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'IT Project Manager Trainee',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 5700, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 4,
+                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'IT PROJECT MANAGER trainee. مافيه بوزشن واضح يحطونك بأي مكان. مهارات التواصل اهم من شغلك اللي تنجزه.',
             ], // file#2:241
             [
                 'company' => 'sp',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 4000, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'تجربة جميلة جداً ومثرية.',
             ], // file#2:242
             [
@@ -2673,6 +2719,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'استغلال المتدربين, لا يوجد موظفين, شهادة بدون توقيع أو ختم',
                 'review_text' => 'قسم التسويق. كل المتدربين هم طلاب جامعتنا والبقية متطوعين. يوجد موظفة واحدة تخصصها حاسب. لا أنصح بالتدرب لديهم. جهة التدريب تستغل الطالب والمتطوع. لا يوجد لديهم موظفين لذلك يستغلون الطلاب وحتى الشهادة الا يعطونك اياها شهادة ممزقه ولا يوجد بها لا توقيع ولا ختم.',
             ], // file#2:246 (file#2:247 byte-identical duplicate — skipped)
             [
@@ -2689,6 +2736,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'cons' => 'لا يناسب مخرجات طلاب الحاسب, لا خطة دقيقة, عدد متدربين كبير, لا تركيز فردي',
                 'review_text' => 'مطور تطبيقات الويب. قسم تقنية المعلومات. التيم عبارة عن متدربين من مختلف تخصصات الحاسب. المشروع عبارة عن عمل موقع بلغة سي شارب. لا انصح بالتدريب في هذه الجهة كون ان التدريب لا يناسب مخرجات طلاب الحاسب ولا يوجد خطة دقيقة للتدريب بالاضافة الى ان عدد المتدربين جداً كبير فمافي تركيز او تطوير على الصعيد الشخصي.',
             ], // file#2:250
             [
@@ -2753,7 +2801,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'حوكمة تقنية المعلومات',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 4,
                 'review_text' => 'تدربت بقسم حوكمة تقنية المعلومات. اشتغلنا على مشروع cmmi و iso اكثر من فئه وعطوني مهام تحليل للسياسات والاجراءات بادارة تقنية المعلومات والتحول الرقمي وعطوني بوزشنز تقنية اسوي لها وصف وظيفي. بيئة العمل مره حلوه. المكاتب ماهي مختلطه البنات لهم قسم مكاتب خاص مقفل بس الاجتماعات مختلطه.',
             ], // file#2:262
             [
@@ -2785,7 +2833,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'Technology Consultant',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 4000, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'Technology consultant.',
             ], // file#2:285
             [
@@ -2818,7 +2866,9 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'مطور / مساعد مشروع',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'pros' => 'تطور مهني جيد, تنوع المهام, حرص على تطوير المتدرب',
+                'cons' => 'يدخنون في المكتب',
                 'review_text' => 'اول شيء اشتغلت تحت مسمى مطور وبرمجت باستخدام فلاتر ثم بديت أساعدهم باشياء ثانيه زي التستنق وغيره وآخر الأسابيع اشتغلت كمساعد مشروع. من ناحية الشغل والتطور المهني فهم جيدين وحريصين تتطور بس البيئة حقيقة شينه شوي لأنهم يدخنون.',
             ], // file#2:290
             [
@@ -2834,7 +2884,9 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'مساعدة مدير مشاريع تقنية',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'rating_mentorship' => 2, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'pros' => 'فرصة تجربة كل شي, يعتمدون على المتدرب, تنوع المهام في SDLC',
+                'cons' => 'لا التزام بالخطة, تعلم ذاتي بدون توجيه, يدخنون في المكتب بكثرة',
                 'review_text' => 'في البداية كنت تقنية او مطورة بعدين تغير مسماي إلى مساعدة مدير المشاريع التقنية. جربت واشتغلت بكل شي من بداية التحليل وبعدين التصميم UI/UX وكل SDLC اللي هي نفس حقت أجايل. المميز في الشغل في startup خاصة منظار انهم يعطونك فرصة تجربين كل شي ويعتمدون عليك. بس للاسف ما يلتزمون مرة بالخطة واغلب التدريب انتي روحي دوري واكتشفي بنفسك. يدخنون في المكتب واجد وذا سبب لي ازمة.',
             ], // file#2:293
             [
@@ -2857,7 +2909,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'IT',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => 3500, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'قسم IT مانشتغل على مشاريع كمبتدئين لكن اشتغلنا على نظامهم المستخدم.',
             ], // file#2:298
             [
@@ -2889,7 +2941,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'التحول الرقمي',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 1,
                 'review_text' => 'كنت في قسم التحول الرقمي التيم كانو ممتازين لكن ماكان فيه شغل لمدة شهر لين لقى لي احد الموظفين موظف يشتغل ذكاء اصطناعي وكلمه يشغلني معه ودعست معه. لكن كان معي حول 8 متدربين كانو قاعدين فاضين فالغالب مب مكان تتدرب فيه لكن فيه فرصة هناك.',
             ], // file#2:308
             [
@@ -2898,7 +2950,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'التحول الرقمي',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 5, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'كنت front-end developer. تدربت في قسم التحول الرقمي. المشرف والقسم كانوا متعاونين جداً. طورت مكتبه UI تمثل هوية الهيئة يستفيدون منها المطورين.',
             ], // file#2:309
             [
@@ -2916,6 +2968,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 1, 'rating_learning' => 2, 'rating_real_work' => 1, 'rating_team_environment' => 3, 'rating_organization' => 1,
+                'cons' => 'لا مهام حقيقية, لا أجهزة للمتدربين, برزنتيشن ومهام بسيطة فقط',
                 'review_text' => 'ما فيه مسمى تدريبي. تدربت في قسم shared services. ما كان فيه مهام التدريب بس برزنتيشن ومهام بسيطة جدا sql query. ما أعطونا أجهزة عشان نبدأ نتدرب معهم. ما انصح في التدريب معهم إلا لو كنتوا تعرفون مين المشرف اللي بيمسكك.',
             ], // file#2:311
             [
@@ -2923,7 +2976,8 @@ class RealDataSeeder extends Seeder
                 'department' => 'Data Migration',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 3000, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 1, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'الفريق مشغول ومحد فاضي للمتدرب, لا شغل واضح, المكافأة توقفت بعد أول شهر',
                 'review_text' => 'كنت ضمن فريق data migration. طوال الست اشهر كان الفريق مشغول بمشروع ومحد فاضي يدربني ومافي شغل واضح. اذا ماركضت وراهم مايعطونك شي ولا كأنك موجود. المكافأة ٣٠٠٠ ريال اعطوني اياها اول شهر بس وسحبو بقية الاشهر بحجة مشكلة بالنظام.',
             ], // file#2:312
             [
@@ -2955,7 +3009,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'محلل أعمال',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => 2000, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'محلل أعمال. البيئة شبه مختلطة يعني فيه ادوار نسائيه بالكامل لكن عادي تشتغلين عن بعد او تحضرين اجتماعات مع رجال.',
             ], // file#2:328
             [
@@ -2964,7 +3018,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'أبشر',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 3000, 'job_offer' => true, 'mixed_env' => false,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 5, 'rating_organization' => 4,
                 'review_text' => 'مطور مواقع. التيم جداً متعاون ومريح كان لي مكتب. اغلب وقتي كنت ادرس والتاسكات كانت تعديلات على المواقع. تعلمت على تولز كثيرة جداً. انصح بالتدريب عندهم.',
             ], // file#2:329
             [
@@ -2972,7 +3026,8 @@ class RealDataSeeder extends Seeder
                 'department' => 'السايبر',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'الخطة لم تُطبق, شغل أوفيس فقط, لا خبرة سايبر حقيقية, تدريب تسليكي',
                 'review_text' => 'كنت متدرب في قسم السايبر. صراحة التدريب كان تسليكي جدا حتى الخطة الي كتبوها ما مشوا عليها وكان ٩٩٪ من شغلي بور بوينت وورد واكسل. فالخبرة المكتسبة قليلة جدا بالنسبة لمجال السايبر. اذا تبي فايدة من التدريب فما انصحك تتدرب.',
             ], // file#2:331
             [
@@ -2980,7 +3035,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'Datacenter',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => 1500, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'تدربت في Datacenter ونهاية التدريب بدوا يدخلوني على backup. البيئة اختلاط لكن القسم اللي اشتغلت فيه للبنات لحال.',
             ], // file#2:332
             [
@@ -2989,7 +3044,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'Business Application',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => 3500, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'تدربت في قسم ال Business Application في مسمى بزنس اناليست واشتغلت على مشروع خاص بسابك. كانت تجربة جميلة وتفرق التجربة على حسب المنجر اللي بيكون مشرفك. بيئة مختلطه لكن مكاتب البنات بجهه والعيال بجهه.',
             ], // file#2:333
             [
@@ -3021,7 +3076,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'Technology Consulting - GenAI CoE',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 4000, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'Technology Consulting, Digital Services > GenAI CoE.',
             ], // file#2:348
             [
@@ -3029,7 +3084,9 @@ class RealDataSeeder extends Seeder
                 'department' => 'System Operations - Digital Applications',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 3000, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'pros' => 'تيم متعاون, خبرة قوية ومجال عميق, مكان مثالي للتدرب',
+                'cons' => 'لازم تسعى وراهم بنفسك ما ينادونك',
                 'review_text' => 'System operations - digital applications. التيم جدًا متساعد ويعطيك وقته وجهده عشان تتعلم بس يبغى لك تسعين وراهم يعني ماراح ينادونك هم. الخبرة جدًا قوية هنا لو طلعتي وانتي عارفة كل شيء بتكون خبرتك واو لأن هالمجال فهالشركة مره deep. اشوفه مكان مثالي للتدرب فيه. البيئة مختلطة ولكن يوجد ladies section.',
             ], // file#2:349
             [
@@ -3038,6 +3095,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 4000, 'job_offer' => true, 'mixed_env' => true,
                 'rating_mentorship' => 4, 'rating_learning' => 5, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 4,
+                'pros' => 'بيئة تعليمية داعمة, شهادات ودورات مجانية, خبرة متنوعة بأكثر من مشروع',
+                'cons' => 'الكونسلتنق فيه بزنس أكثر من حاسب',
                 'review_text' => 'Technology consultant intern. التيم والمشاريع تختلف على حسب الجهة لان بتشتغلون في مكان العميل. الكونسلتنق يدخل فيه بزنس مره كثير يعني بتستفيدون بس مو مره من ناحية الحاسب. البيئة مره تساعد انكم تتعلمون الكل يبي يساعدك ويعلمك وعندهم شهادات ودورات مجاناً من udemy. بتكتسبين خبرة كبيرة لان بتشتغلون في اكثر من مشروع.',
             ], // file#2:354
             [
@@ -3046,6 +3105,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 6000, 'job_offer' => true, 'mixed_env' => true,
                 'rating_mentorship' => 4, 'rating_learning' => 5, 'rating_real_work' => 5, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'pros' => 'فرص مميزة في الاستشارات, تنقل بين شركات ومشاريع متنوعة, تعلم كثير, تعامل مع مناصب عالية',
+                'cons' => 'يعتمد على حظك بنوع المشروع والعميل, ضغط عالي, لا يوجد استقرار',
                 'review_text' => 'اشتغلت في القسم الاستشاري تحديدا Technology Strategy & Advisory. العميل كان احدى شركات PIF والبروجكت كان Operating model سوينا اعادة تصميم وتشغيل قسم الIT كامل عند الكلاينت. من الايجابيات: الفرص في الشركات الانترناشنل وفي اقسام الاستشارات مالها مثيل، تتنقل بين شركات كثير وبروجكتس متنوعة وتتعلم كثير. الexposure عالي جدا لان الشركة الاستشارية تتعامل مباشرةً مع اصحاب المناصب العالية. من السلبيات: انت وحظك بنوع البروجكت والكلاينت. ضغط عالي. مافيه استقرار.',
             ], // file#2:356
             [
@@ -3094,7 +3155,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'IT / Cybersecurity',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 1500, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 1,
                 'review_text' => 'كنت اول شهر مع IT وطلبت اروح مع الشبكات والامن السيبراني. مافيه خطه واضحه للتدريب.',
             ], // file#2:384
             [
@@ -3102,7 +3163,9 @@ class RealDataSeeder extends Seeder
                 'department' => 'الحوسبة السحابية - تطوير البرمجيات',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'خطة تدريب ومتابعة من المشرفة',
+                'cons' => 'لا مشاريع حقيقية, مشروع افتراضي فقط, لا مكاتب للمتدربين, لا اندماج مع الموظفين',
                 'review_text' => 'تدربت في إدارة الحوسبة السحابية تحديدًا تحت قسم تطوير البرمجيات. مشرفتي اعطتني خطة مدة التدريب أمشي عليها وكانت تراقب شغلي كل فترة. بس ماكنت اشتغل على مشاريع خاصة بسدايا كان مشروع افتراضي خاص فيني وماكنت أدخل معهم كموظفين. مافيه مكاتب للمتدربين بالقسم. الجهة مو أسوء شي بالتدريب بس مو أحسن شي.',
             ], // file#2:385
             [
@@ -3134,7 +3197,9 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'Cybersecurity Specialist',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 1, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'دوام مرن بدون تدقيق',
+                'cons' => 'لا شغل سايبر حقيقي, كل الشغل دوكيومنت فقط, لا فائدة مكتسبة',
                 'review_text' => 'المشرفه قالت لي اني سايبر سيكيورتي سبيشلت بس الصراحه الشغل كان كله دوكيومنت يعني مااشتغلت على تولز او شي فعليا سايبر. الحضور والانصراف مايدققون فيه. عرضوا علي فرصه تمهير بس رفضتها لان ماعندهم شغل سايبر. حسيت اني ماتعلمت او استفدت شي عندهم.',
             ], // file#2:402
             [
@@ -3159,6 +3224,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 1, 'rating_organization' => 1,
+                'cons' => 'بيئة سامة, لا وضوح لسياسات التدريب, تغيير مفاجئ بالمتطلبات',
                 'review_text' => 'بناء على تجربتي بالقسم اللي تدربت فيه البيئة توكسيك مره ماانصح وافضل انهم يكونون اخر خيار. مافيه وضوح لسياسات التدريب. فجأه صدموني اني لازم اتدرب عندهم ٦ شهور وفجأه قالوا لازم تسوي مشروع عشان ينتهي تدريبك.',
             ], // file#2:405
             [
@@ -3167,6 +3233,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => true, 'mixed_env' => true,
                 'rating_mentorship' => 4, 'rating_learning' => 5, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 4,
+                'pros' => 'خطة تدريب واضحة, rotation بين أقسام السايبر, دورات ولابات مجانية, بيئة شغل محفزة, شغل حقيقي',
                 'review_text' => 'تدريبي كان بقسم السايبر سيكوريتي rotation بين GRC, Architecture, Defense, Assurance. سوو لي خطة تدريب واسندوا لي داخل كل قسم بالسايبر وتحديدا كل موضوع مين الموظف المسؤول اللي بيعطيني شرح. اول شهر كان اوفرفيو عن السايبر كامل بعدها يعتمد على حسب احتياج اقسام السايبر ومدى التزامك وجديتك. دخلت معهم بالشغل عشان اساعد في GRC. من الايجابيات فيه موقع خاص لموظفين البنك فيه دورات ولابات بالسايبر. بيئة شغل صدقي الكل يشتغل ويكرف تتحمسين معهم.',
             ], // file#2:410
             [
@@ -3182,7 +3249,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'IT Innovation and Solutions',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 1500, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 2, 'rating_learning' => 4, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'تدربت تحت قسم IT Innovation and Solutions في تقنية المعلومات الداخلية Central Service مع فريق تحليل البيانات على Power BI. اشتغلت على مشاريع على Power BI وتعلمت عليه وساعدوني اخذ شهادة مايكروسوفت. لو تصدق اذا قالوا لك بتشتغل كثير ونعتبرك موظف لأني بالحسرة قدرت آخذ منهم شغل حقيقي.',
             ], // file#2:418
             [
@@ -3190,7 +3257,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'System Analysis',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 2, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'rating_mentorship' => 2, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
                 'review_text' => 'System analysis. التدريب مشروع فاشل بس يعطل الطلاب عن التخرج. لا تضيع وقتك تدور جهة تدربك حاول تخلصه بأسرع وقت عشان تاخذ الوثيقة وتتوظف.',
             ], // file#2:419
             [
@@ -3225,7 +3292,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'PMO',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 5, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'المسمى الوظيفي project coordinator. اتدربت في قسم PMO. التيم كان متعاون جدا وخبراتهم ممتازة. اشتغلت على مشاريع كثيرة ومريت على جميع مراحل المشاريع بدايته نهايته.',
             ], // file#2:426
             [
@@ -3234,7 +3301,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'تجربة المستخدم',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 4,
                 'review_text' => 'ux/ui قسم تجربة المستخدم. التيم جدا ممتاز ومتعاون واشتغلت على مشروع تصميم واجهات في تجربة المستخدم في فيقما.',
             ], // file#2:427
             [
@@ -3260,6 +3327,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 4, 'rating_organization' => 2,
+                'pros' => 'كوادر رائعة, بيئة ممتازة',
+                'cons' => 'مهام بسيطة خلال موسم الحج, لا خطة واضحة',
                 'review_text' => 'قسم أمن المعلومات. توجد كوادر رائعة وبيئة ممتازة لكن لابد ان يكون وقت التدريب مناسب للجهه لا يتزامن مع فترة الحج ورمضان وان تتأكد من وجود خطة واضحة مع المسؤولين. تزامن وقت تدريبنا مع فترة الحج والعمرة فكانت المهام بسيطه.',
             ], // file#2:431
             [
@@ -3318,7 +3387,9 @@ class RealDataSeeder extends Seeder
                 'department' => 'معهد أبحاث الأمن السيبراني',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
+                'pros' => 'جهة تدريب رهيبة, شغل على مشاريع حقيقية, تجربة مستخدم وواجهات',
+                'cons' => 'تتطلب سكن ومواصلات بالرياض, لا دعم من المدينة',
                 'review_text' => 'اخصائي تفاعل الإنسان مع الحاسب. تدربت في معهد أبحاث الأمن السيبراني. تدربت مع تيم دكتورة اثير. اشتغلت على مشروعين ومسكت الواجهات فيهم وتجربة المستخدم. جهة التدريب رهيبة جدًا انصح بها الكل لكنها بالرياض وتتطلب سكن ومواصلات ولا يوجد أي تعاون من المدينة من هذي الناحية.',
             ], // file#2:442
             [
@@ -3345,14 +3416,15 @@ class RealDataSeeder extends Seeder
                 'department' => 'ادارة الحلول - تحليل الاعمال',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => 2000, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 2,
                 'review_text' => 'محلل اعمال. القسم ممتاز وفيه شغل بس لازم تلاحق ورا الشغل او يخلونك تتدرب على مستندات تدريبية. فيه كم مشروع وبعضهم الحركة فيه قليلة وبعضهم حار وكثير الشغل فيه. التيم متعاون ولكن ضرووري تلحق ورا الشغل. التوظيف الان شبه موقف.',
             ], // file#2:446
             [
                 'company' => 'waraq',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => 1500, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 1, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'شغل Help Desk فقط, فائدة قليلة جداً, جهة سيئة',
                 'review_text' => 'فيها فريقين Infrastructure و Application. غالبا بيحطونك Help Desk تشوف مشاكل المستخدمين وتحلها. لا انصح فيها نهائيا. بالنسبة لي نشبت نفسي مع تيم الApplication وللامانه ما استفدت كثيرا. جهة سيئة جدا يروحها المضطر فقط.',
             ], // file#2:447
             [
@@ -3385,6 +3457,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'صفر مشاريع, كل واحد يرميك على الثاني, بيئة عمل كئيبة, لا فائدة',
                 'review_text' => 'المسمى الوظيفي: IT Trainee. قسم IT. ١١ موظف في قسم IT المدير و Seniors كلهم اجانب الباقين سعوديين اغلب التيم خصوصا السعوديين جديدين بالشركة. مشاريع اشتغلت عليها: صفر. ماراح تستفيد شي عندهم اذا بغيت شي من Senior كل واحد يرميك على الثاني. المكان اللي يداومون فيه IT كئيب جدا.',
             ], // file#2:458
             [
@@ -3393,7 +3466,7 @@ class RealDataSeeder extends Seeder
                 'department' => 'IT Central',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 1500, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 5, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'Department solution development and innovation under the IT department (central). I was basically doing advisory work internally, developing solutions for internal departments such as tax, audit, people, and help out in external projects. I was mainly working on the power platform, sometimes azure too. They offer LinkedIn learning and pluralsight subscriptions. Working hours are flexible but you got to do your tasks on time.',
             ], // file#2:459
             [
@@ -3401,7 +3474,7 @@ class RealDataSeeder extends Seeder
                 'role_title' => 'Backend Software Engineer',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 4000, 'job_offer' => true, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
                 'review_text' => 'مهندس برمجيات backend. البيئة جيدة وتعلمت كثير. التدريب كان ٦ شهور.',
             ], // file#2:484
             [
@@ -3427,7 +3500,9 @@ class RealDataSeeder extends Seeder
                 'department' => 'Technology Strategy and Advisory',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => 6000, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'رواتب ممتازة',
+                'cons' => 'مهام جانبية كثيرة متعبة تخص الشركة, المجال الاستشاري قد لا يناسب الجميع',
                 'review_text' => 'تدربت في قسم technology strategy and advisory. ولا انصح الصراحة بالتدريب يمكن لان المجال ما عجبني (الكونسلتنق). يطلبون منك اشياء جانبيه تخص اكسنتشر نفسهم اشياء كثير جدا متعبه غير الشغل اللي يخص الكلاينت. بخصوص رواتبهم ممتازه الانالست ياخذ اول راتب ٢٠ الف.',
             ], // file#2:494
             [
@@ -3478,6 +3553,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'pros' => 'تعلم أشياء كثيرة, برمجة موقع للقسم',
+                'cons' => 'لا يوجد كراسي تكفي المتدربات, عدد المتدربات كبير جداً',
                 'review_text' => 'فنية دعم فني. قسم تقنية المعلومات. برمجة اكسل وتصليح الاجهزة والطابعات وفرمتة للأجهزة. العيوب ما كان في كراسي تكفي كل البنات لاننا كنا تقريبا ٢٠ متدربة. المزايا اتعلمت اشياء كتير وكان في برمجة لموقع خاص بالقسم.',
             ], // file#7:5
             [
@@ -3487,6 +3564,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 3,
+                'pros' => 'بيئة محفزة, كفاءات سعودية ناجحة, تعرف على المجال عملياً ونظرياً',
+                'cons' => 'الإدارة لم تكن على علم بمجيء المتدرب مسبقاً',
                 'review_text' => 'عملت في ادارة تخص الأمن السيبراني وتعرفت على المجال عمليا ونظريا في أكثر من قسم. البيئة محفزة وتؤهلك لسوق العمل. الموظفين من الكفاءات السعودية الناجحة. عيب التدريب انه لم تكن ادارتي على علم بمجيئي مسبقا. انصح بسدايا جدا.',
             ], // file#7:6
             [
@@ -3495,7 +3574,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'hybrid',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 2,
                 'review_text' => 'مسار انترنت الاشياء. كانت في مهام كثير في مساري بالبداية قالوا سوي ٤ منها عشان تاخذي الشهادة بس بعدين قالو خلاص مهمتين تكفي. كان عددنا كبير فمحد منتبه انتي ايش سويتي او انتي فاهمة ولالا.',
             ], // file#7:7
             [
@@ -3583,6 +3662,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'pros' => 'تجربة حقيقية لشغلهم, تعلم أنظمة وسيرفرات',
+                'cons' => 'موظفين القسم قليلين ومشغولين, وقت التدريب غير كافٍ',
                 'review_text' => 'تدربت في قسم IT. المدرب يعلمنا عن كل شيء يخص IT للفندق. تعلمنا عن الانظمة السيرفرات اللي يستخدمونها وعن حل المشكلات التقنية. من مزايا التدريب انه تجربة حقيقية لشغلهم. عيوب التدريب: موظفين القسم قليلين فكانوا ينشغلون اغلب الوقت فما يكون عندهم وقت كافي يدربونا. اللغة الانجليزية مهمة جداً.',
             ], // file#7:27
             [
@@ -3618,7 +3699,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 3, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
                 'review_text' => 'عندهم اقسام متنوعه: ذكاء اصطناعي وانترنت الاشياء وأقسام متعلقة بالهاردوير. انا اخذت انترنت الاشياء كان عباره عن برمجة واجهات المستخدم: مواقع وداتابيس وتطبيقات.',
             ], // file#7:36
             [
@@ -3636,6 +3717,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 2,
+                'pros' => 'بيئة جيدة, موظفين متعاونين',
+                'cons' => 'لا يوجد خطة تدريبية مسبقة',
                 'review_text' => 'تدربت في مبنى تقنية المعلومات والبيئة كانت جيدة والموظفين متعاونين مع المتدربين. السلبية الوحيدة انه لم توجد خطة تدريبية مسبقة وكانت الخطة عشوائية.',
             ], // file#7:39
             [
@@ -3645,6 +3728,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 4,
+                'pros' => 'أجهزة متوفرة, تعليم احترافي',
+                'cons' => 'لازم تطلب المهام بنفسك من المدرب',
                 'review_text' => 'المسمى مهندس شبكات. قسم الشبكات. فقط مهام تعطى من المدرب. من المزايا الاجهزه متوفره وتعليم احترافي. العيوب يجب على المتدرب طلب مهام من المدرب.',
             ], // file#7:40
             [
@@ -3664,6 +3749,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'cons' => 'أغلبه نظري, سوء تنظيم, غير فاضيين للمتدربين, تجربة مخيبة للآمال',
                 'review_text' => 'تدربت في قسم المدن الذكية. من ناحية تدريب المدن الذكية كان اغلبه كلام نظري شرح لادارتهم. اخر شي طلبو مننا نقترح مبادرات ذكية. صار تغيير لمدير القسم وأرسلو لنا مهندس شرح لنا على السريع دورة حياة البرمجيات. باختصار تحسهم متورطين بالمتدربين ومو فاضيين لهم والمدير الجديد بنفسه قال لنا انه فيه سوء تنظيم للمتدربين هذا العام. تجربتي كانت مخيبة للامال.',
             ], // file#7:51
             [
@@ -3707,7 +3793,9 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'تغطي أكثر من تخصص, تجربة ممتعة',
+                'cons' => 'لا يوجد شهادة, فقط إفادة حضور',
                 'review_text' => 'تجربة ممتعه كطالبة علوم حاسب لانها تغطي اكثر من تخصص. موضوع التدريب كان يتمحور حول الروبوتات وكيفية بناءها ميكانيكياً واليكترونياً وهندسياً وبرمجياً. عيوب التدريب: لا يوجد شهادة للمتدربين في المسار المدفوع فقط افادة حضور.',
             ], // file#7:56
             [
@@ -3716,6 +3804,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 8, 'modality' => 'hybrid',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'rating_mentorship' => 4, 'rating_learning' => 5, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'pros' => 'سرعة التواصل والمساعدة, مهام كثيرة ومفيدة, مشاريع حقيقية',
+                'cons' => 'أغلب الأسبوع عن بعد ويوم واحد حضوري, بيئة العمل غير موفرة للمتدربات',
                 'review_text' => 'كنا ١٠ طالبات تقسمنا لقسمين: قسم لتطوير الويب وقسم للتطبيقات. المشاريع: تحليل نظام الشركة، رسم database، إنشاء تطبيق للشركة وربطه بالAPI. عيوب: كل الاسبوع عن بُعد ويوم واحد بس حضوري. بيئة العمل غير موفّرة للمتدربات. المزايا: سرعة التواصل ومساعدتهم لنا والتاسكات الكثيرة اللي كانت جدًا مفيدة.',
             ], // file#7:62
             [
@@ -3724,7 +3814,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'التدريب كان في قسم السجلات الطبية. اشتغلت في كل الاقسام الموجودة في القسم: الاستقبال والجودة والارشفة الالكترونية وكتبة جناح والترميز الطبي.',
             ], // file#7:73
             [
@@ -3759,7 +3849,9 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 4, 'rating_organization' => 2,
+                'pros' => 'المهندس المشرف محترم, بيئة محترمة ومتعاونة',
+                'cons' => 'المهام غير مرتبة, البداية بحث وبرزنتيشن فقط',
                 'review_text' => 'هندسة برمجيات ولكن التاسكات ما كانت مرتبه وفي البداية كان اغلبها ابحثي وسوي برزنتيشن. عبال ما تخطينا مرحلة البحث وبدينا نشتغل بروتوتايب وفلاتر. مزايا التدريب الرجال والمهندس المشرف جدا محترم والشركة كلها تراعي حدود التعامل ومتعاونين.',
             ], // file#7:79
 
@@ -3770,7 +3862,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 1, 'rating_team_environment' => 3, 'rating_organization' => 2,
                 'review_text' => 'بلاغات دعم فني. قسم ادارة تقنية المعلومات. ما اشتغلنا على مشاريع وصراحه اعتبر التدريب لعب. التدريب مايفيدني الا لو توظفت عندهم لأن بشتغل على نظام الأمانه. مره متعاونين من ناحية الحضور ولا فيه مراقبه او توقيع.',
             ], // file#4:2
             [
@@ -3788,7 +3880,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'قسم السجلات الطبية. وحدة حفظ الملفات والتصنيف والارشفه مريح وممتع اكثر من استقبال القسم او الرسبشن بالادوار.',
             ], // file#4:15
             [
@@ -3796,7 +3888,9 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'دوام خفيف يوم ايوه يوم لا',
+                'cons' => 'استفادة قليلة, نظام تعليمي نظري يشبه الجامعة',
                 'review_text' => 'المهام: تصميم شبكة - صيانة الحاسب. المزايا: شغلهم ماهو كثير والدوام يوم اي ويوم لا فما راح تتعبون. العيوب: الاستفادة ماهي كبيرة بنهاية التدريب لان النظام تعليمي كاننا بالجامعة فما حسيت مرة استفدت.',
             ], // file#4:16
             [
@@ -3814,7 +3908,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'دور مختص تقنية المعلومات. يعلمونك عن الشبكات والأسلاك ودور الدعم الفني واستقبال الاتصالات. يفيدك تتعلمين الcommon troubleshooting لكن لو توجهك تطوير برمجيات مواقع وتطبيقات مافيه.',
             ], // file#4:19
             [
@@ -3823,7 +3917,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'قسم الصحة الالكترونية. القسم فيه ٤ اقسام تم العمل في كل قسم لمدة من اسبوع الى ٢.',
             ], // file#4:20
             [
@@ -3841,6 +3935,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'hybrid',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 4, 'rating_learning' => 5, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'pros' => 'كورسات تقنية متنوعة, خبرات المهندسين مفيدة, تعلم بناء موقع من الصفر',
+                'cons' => 'الوقت قصير جداً وما كفى',
                 'review_text' => 'بالبداية تعلمنا عن الشركة وبعدين اخذنا كورسات في الدورة التقنية وفي القت هب وسوينا مركز مساعدة ورفعناه بالقت هب واخذنا دورات UI/UX وتحليل الانظمة. مره استفدنا من خبرات المهندسين وتعلمنا كيف نسوي موقع ويب من الصفر. العيب ان الوقت كان جدًا قصير وماكفانا.',
             ], // file#4:23
             [
@@ -3850,6 +3946,8 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'rating_mentorship' => 3, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'المدربين متعاونين, طبيعة العمل بسيطة',
+                'cons' => 'صلاحيات محدودة, غير مجهزين لاستقبال متدربين',
                 'review_text' => 'نساعد في قسم الدعم الفني بكل مره تكون عندهم مشكله نحلها. العيوب: اللي يبغى يتطور ويستفيد فعلا ما انصح لان صلاحياتك كمتدرب محدوده ولا عندهم استعداد فعلي ومجهزين لاستقبال متدربين. المزايا: المدربين متعاونين وطبيعه العمل بسيطة.',
             ], // file#4:24
             [
@@ -3883,7 +3981,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'rating_mentorship' => 2, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
                 'review_text' => 'تدربنا في أقسام مختلفة مثل برمجة واجهات وبرمجة تطبيقات وباك اند وهندسة برمجيات لكن المعرفة اللي اضيفت لنا بسيطة جدا ما اشتغلنا عمليا على مشاريع كانت كلها حاجات بسيطة لمبتدئين وسبق تعلمها في الجامعة بشكل أعمق. شرحوا بشكل نظري لغة php واكواد مشاريع حقيقية.',
             ], // file#4:34
             [
@@ -3909,7 +4007,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'الرياض',
                 'duration_months' => 4, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'تدربت في قسم الحوسبة السحابية تحت قسم دمج الحوسبة السحابية. العمل في هذا القسم يتطلب نقل مركز البيانات المادي الى السحابة بجميع السيرفرات والبيانات الموجودة عليها. ايضاً اجتماعات مع العملاء لفهم طلباتهم وبيئتهم وشرح السحابة لهم وكيف ستكون حل افضل لهم.',
             ], // file#4:47
 
@@ -3957,7 +4055,9 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'reviewer_major' => 'علم البيانات',
-                'rating_mentorship' => 2, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 1, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'pros' => 'مهام متكاملة في تحليل البيانات, استخدام اكسل وبايثون و Power BI',
+                'cons' => 'لا يوجد توجيه أو تعليم, تعلم ذاتي بالكامل, الشغل على أجهزة خاصة',
                 'review_text' => 'المهام كانت عبارة عن تحليل بيانات استخدمنا اكسل وبايثون سوينا داشبوردز على Power BI. حلاوة المهام كانت متكاملة تستلمي بيانات خام وترتبي وتنظفي وتشتغلي عليها لين توصليها لمرحلة انك تعملي داش بورد. العيوب: ماكان في احد يعلم ويوجه ابدا يعني كله اجتهاد وتعليم شخصي. الشغل كله كان على اجهزتنا الخاصة.',
             ], // file#1:11
             [
@@ -3968,7 +4068,9 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'reviewer_major' => 'ذكاء اصطناعي',
-                'rating_mentorship' => 3, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'pros' => 'مناسب لتخصص الشبكات والأمن السيبراني',
+                'cons' => 'لا يناسب التخصصات البرمجية, لا برمجة أو أكواد, شغل فيزيائي فقط',
                 'review_text' => 'متخصص IT في فندق. من ناحية تخصصي ذكاء اصطناعي ماله اي فائدة نهائيا مافيه اي برمجه ولا اكواد ولا مشاريع برمجية. اغلب الشغل كان فيزيائي شبكات واسلاك وتوصيل وسيرفرات. من ناحية برمجية ما تعلمت اي شي. ما انصحه للتخصصات البرمجيه لكن انصح اللي تخصصه هندسة شبكات او امن سيبراني.',
             ], // file#1:14
             [
@@ -3977,7 +4079,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 2, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'reviewer_major' => 'تفاعل الإنسان مع الحاسب',
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'rating_mentorship' => 2, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
                 'review_text' => 'مافيه مسمى وظيفي. في البداية علمونا على طريقة عمل موظفين الصيانة والدعم الفني وبعدين كلفونا بمهام غير مفيدة. السبب هو انهم مضغوطين في موسم الحج. لحد يتدرب في وزارة الحج والعمرة الترم الثالث بيكونون مضغوطين ومحد فاضي لك.',
             ], // file#1:21
             [
@@ -4060,6 +4162,8 @@ class RealDataSeeder extends Seeder
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => true,
                 'reviewer_major' => 'تفاعل الإنسان مع الحاسب',
                 'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
+                'pros' => 'شغل على منتجات حقيقية, بيئة مريحة ومحفزة',
+                'cons' => 'سوء إدارة, توقعات عالية من المتدربين, فريق غير متنوع بالتخصصات',
                 'review_text' => 'UX/UI specialist then transferred to PM. As PM we took charge on how a real product was going to work from internal tools to external real working products. Training area was clean comfortable and suitable. Work environment was encouraging and engaging. Cons: mismanagement and expectations from trainees since our team wasn\'t diverse in majors we faced roadblocks.',
             ], // file#1:43
             [
@@ -4079,6 +4183,8 @@ class RealDataSeeder extends Seeder
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => false,
                 'reviewer_major' => 'أمن سيبراني',
                 'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 1, 'rating_team_environment' => 2, 'rating_organization' => 1,
+                'pros' => 'أوقات الدوام مرنة',
+                'cons' => 'لا مهام فعلية, تكليفات سطحية, تدريب تسليكي',
                 'review_text' => 'ما كان فيه مهام فعلية أو واضحة. أغلب الوقت كان يمر بدون تكليفات مفيدة واذا تم إعطائي مهام فكانت سطحية جدًا أو مجرد تسليك. الميزة الوحيدة ان أوقات الدوام مرنة.',
             ], // file#1:56
 
@@ -4088,7 +4194,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'علوم ح��سب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 4, 'rating_learning' => 5, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 4,
                 'review_text' => 'تطوير الويب (web development) وتحليل البيانات. إضافة قوية للسيرة الذاتية والتعامل مع فريق متعاون وفرصة تعلّم تقنيات جديدة.',
             ], // file#8:6
@@ -4107,7 +4213,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علوم حاسب',
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'rating_mentorship' => 3, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
                 'review_text' => 'Web development. إشراف وتوجيه جيد والتعامل مع فريق متعاون.',
             ], // file#8:8
             [
@@ -4115,7 +4221,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => '��لوم حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 5, 'rating_learning' => 5, 'rating_real_work' => 5, 'rating_team_environment' => 5, 'rating_organization' => 5,
                 'review_text' => 'باك ايند. بيئة عمل محترفة ومهام عملية ومفيدة وإشراف وتوجيه جيد وفرصة تعلّم تقنيات جديدة.',
             ], // file#8:9
@@ -4133,7 +4239,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => '��لوم حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 4,
                 'review_text' => 'DevOps. مهام عملية ومفيدة وإشراف وتوجيه جيد وبيئة عمل محترفة. رح للقطاع الخاص الحكومي اغلبه تساهل وماراح تستفيد.',
             ], // file#8:11
@@ -4143,7 +4249,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'الذكاء الاصطناعي',
-                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 4,
+                'rating_mentorship' => 4, 'rating_learning' => 4, 'rating_real_work' => 4, 'rating_team_environment' => 4, 'rating_organization' => 3,
                 'review_text' => 'ذكاء اصطناعي. اعطونا 3 مشاريع تقريبا كل مشروع نشتغل عليه لفترة معينة وكل مرة نسوي برزنتيشن نوريهم الشغل ويعطونا فيد باك عليه.',
             ], // file#8:12
             [
@@ -4159,7 +4265,7 @@ class RealDataSeeder extends Seeder
             ], // file#8:13
             [
                 'company' => 'qanoniah',
-                'city' => 'مكة ��لمكرمة',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'هندسة البرمجيات',
@@ -4172,7 +4278,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علم البيانات',
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 2, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
                 'review_text' => 'API. المهام اننا نسوي سياسات في ال API مافي شي تاني الى الان.',
             ], // file#8:16
             [
@@ -4195,7 +4301,7 @@ class RealDataSeeder extends Seeder
             ], // file#8:18
             [
                 'company' => 'hajj',
-                'city' => 'مكة المك��مة',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علم البيانات',
@@ -4246,12 +4352,12 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علم البيانات',
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 4, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'تحليل بيانات. المهام اللي اخذها نفس اللي درسته بس ببيانات اكبر ومعقدة اكثر ولازم تكون مفهومة. الشغل مو معقد حلو ومفيد واتعلمت على اشياء الجامعة تسحب عليها.',
             ], // file#8:29
             [
                 'company' => 'haramain_authority',
-                'city' => 'مكة الم��رمة',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علوم حاسب',
@@ -4283,7 +4389,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علم البيانات',
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 4, 'rating_organization' => 3,
                 'review_text' => 'تحليل البيانات. تجربة جديدة وجميلة لكن شغلنا كله يقتصر حول الاكسل و POWER BI فقط وجمع وتنظيف البيانات. لاحظت ان اغلب الجهات الحكومية الكبيرة لازالت نوعا ما متأخرة من ناحية الحلول التقنية.',
             ], // file#8:41
             [
@@ -4291,14 +4397,14 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'عل��م حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 5, 'rating_learning' => 5, 'rating_real_work' => 4, 'rating_team_environment' => 5, 'rating_organization' => 5,
                 'review_text' => 'تدريب عام لكل شي يخص مجال الحاسب. تجربة ممتازه وانصح فيها.',
             ], // file#8:42
             [
                 'company' => 'holiday_inn_makkah',
                 'department' => 'IT',
-                'city' => 'مكة الم��رمة',
+                'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علوم حاسب',
@@ -4311,8 +4417,8 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'علو�� حاسب',
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 2,
+                'reviewer_major' => 'علوم حاسب',
+                'rating_mentorship' => 2, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 2, 'rating_organization' => 2,
                 'review_text' => 'تجربة سيئة للامانة بسبب انه شغل وكرف ولكن تحس بدون فائدة بسبب انه دعم فني. تعرف طابعات وتشبك كمبيوترات للممرضين والدكاتره وتفصل سلك وترجعه. مشاكل بسيطة تنحل بثواني ما تفيد تخصصك للأسف.',
             ], // file#8:48
             [
@@ -4320,8 +4426,8 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'ع��م البيانات',
-                'rating_mentorship' => 2, 'rating_learning' => 2, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 2,
+                'reviewer_major' => 'علم البيانات',
+                'rating_mentorship' => 1, 'rating_learning' => 1, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 1,
                 'review_text' => 'تحليل بيانات وذكاء أعمال. ما كانت مفيدة. إذا ما طلبت شغل بنفسك ماراح يعطونك لو تقعد فاضي طول مدة التدريب. المهام اللي أعطوني إياها كانت بسيطة مرة مو بمستواي. البيئة جميلة لكن الإستفادة قليلة ولا تكاد تذكر.',
             ], // file#8:49
             [
@@ -4332,6 +4438,8 @@ class RealDataSeeder extends Seeder
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 4, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 4, 'rating_organization' => 3,
+                'pros' => 'مهندسين متعاونين, تجربة مفيدة',
+                'cons' => 'الموقع بعيد جداً عن أحياء شمال ووسط جدة',
                 'review_text' => 'تدريب عام. التدريب في قسم الIT بالكليه. تجي طلبات صيانة معامل وحل مشاكل وتثبيت ايميج وإدخال الاجهزه للدومين. طبعا تعاون المهندسين ويحاولون يعطونكم تجربه ممتازه ومفيده. السلبيه الوحيده مكان الكليه بعيد جدا عن احياء شمال ووسط جدة.',
             ], // file#8:54
             [
@@ -4340,7 +4448,7 @@ class RealDataSeeder extends Seeder
                 'city' => 'مكة المكرمة',
                 'duration_months' => 6, 'modality' => 'onsite',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
-                'reviewer_major' => 'ع��وم حاسب',
+                'reviewer_major' => 'علوم حاسب',
                 'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'دعم فني. مهام عملية ومفيدة وإشراف وتوجيه جيد والتعامل مع فريق متعاون وفرصة تعلّم تقنيات جديدة وبيئة عمل محترفة.',
             ], // file#8:55
@@ -4350,7 +4458,7 @@ class RealDataSeeder extends Seeder
                 'duration_months' => 6, 'modality' => 'hybrid',
                 'stipend_sar' => null, 'job_offer' => false, 'mixed_env' => null,
                 'reviewer_major' => 'علوم حاسب',
-                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 3, 'rating_team_environment' => 3, 'rating_organization' => 3,
+                'rating_mentorship' => 3, 'rating_learning' => 3, 'rating_real_work' => 2, 'rating_team_environment' => 3, 'rating_organization' => 3,
                 'review_text' => 'تدريب عام. التدريب كويس. تقدر تقول اغلب الايام اونلاين ايام الدوام الحضوري قليلة. يعطون مهام تدريبية وورش العمل جدا مفيدة.',
             ], // file#8:56
         ];

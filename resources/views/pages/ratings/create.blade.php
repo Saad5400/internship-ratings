@@ -122,7 +122,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         $query = Company::approved()->orderBy('name');
 
         if ($this->companySearch !== '') {
-            $query->where('name', 'like', "%{$this->companySearch}%");
+            $query->searchByName($this->companySearch);
         }
 
         $results = $query->take(8)->get(['id', 'name'])

@@ -43,6 +43,7 @@ class Rating extends Model
         'application_method',
         'willing_to_help',
         'contact_method',
+        'is_imported',
     ];
 
     protected function casts(): array
