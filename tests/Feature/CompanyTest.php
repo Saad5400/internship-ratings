@@ -175,3 +175,57 @@ test('typing new search resets pagination', function () {
         ->set('search', 'رقم')
         ->assertSet('perPage', 12);
 });
+
+test('loadMore preserves existing company order when created_at ties', function () {
+    $createdAt = now();
+
+    for ($i = 1; $i <= 15; $i++) {
+        $company = Company::create(['name' => "شركة رقم {$i}", 'status' => 'approved']);
+        $company->forceFill(['created_at' => $createdAt, 'updated_at' => $createdAt])->save();
+    }
+
+    // All 15 share ratings_count=0 and created_at. The id desc tiebreaker yields
+    // ids [15..4] on the first page, and that prefix must not reshuffle after loadMore.
+    $component = Livewire::test('pages::companies.index');
+
+    $firstPageIds = $component->get('companies')->pluck('id')->all();
+    expect($firstPageIds)->toEqual(range(15, 4));
+
+    $component->call('loadMore');
+
+    $afterLoadIds = $component->get('companies')->pluck('id')->all();
+    expect($afterLoadIds)->toEqual(range(15, 1));
+    expect(array_slice($afterLoadIds, 0, 12))->toEqual($firstPageIds);
+});
+
+test('loadMore preserves existing rating order when created_at ties', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+    $createdAt = now();
+
+    for ($i = 1; $i <= 15; $i++) {
+        $rating = Rating::create([
+            'company_id' => $company->id,
+            'role_title' => "دور رقم {$i}",
+            'duration_months' => 3,
+            'modality' => 'onsite',
+            'rating_learning' => 5,
+            'rating_mentorship' => 4,
+            'rating_real_work' => 3,
+            'rating_team_environment' => 3,
+            'rating_organization' => 4,
+            'review_text' => "تجربة {$i}",
+        ]);
+        $rating->forceFill(['created_at' => $createdAt, 'updated_at' => $createdAt])->save();
+    }
+
+    $component = Livewire::test('pages::companies.show', ['company' => $company]);
+
+    $firstPageIds = $component->get('ratings')->pluck('id')->all();
+    expect($firstPageIds)->toEqual(range(15, 6));
+
+    $component->call('loadMore');
+
+    $afterLoadIds = $component->get('ratings')->pluck('id')->all();
+    expect($afterLoadIds)->toEqual(range(15, 1));
+    expect(array_slice($afterLoadIds, 0, 10))->toEqual($firstPageIds);
+});

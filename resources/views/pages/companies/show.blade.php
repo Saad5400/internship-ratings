@@ -39,6 +39,7 @@ new #[Layout('layouts.public')] class extends Component {
     {
         return $this->company->ratings()
             ->latest()
+            ->latest('id')
             ->take($this->perPage + 1)
             ->get();
     }

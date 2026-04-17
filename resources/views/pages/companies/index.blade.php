@@ -44,6 +44,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
             ->searchByName($this->search)
             ->orderByDesc('ratings_count')
             ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->take($this->perPage + 1)
             ->get();
     }
