@@ -10,6 +10,9 @@ new #[Layout('layouts.public')] class extends Component {
 
     public int $perPage = 10;
 
+    /** @var array<int, int> */
+    public array $revealedContacts = [];
+
     protected int $pageSize = 10;
 
     public function mount(Company $company): void
@@ -32,6 +35,23 @@ new #[Layout('layouts.public')] class extends Component {
 
         $this->perPage += $this->pageSize;
         unset($this->ratingResults, $this->ratings, $this->hasMore);
+    }
+
+    public function revealContact(int $ratingId): void
+    {
+        $isRevealable = $this->company->ratings()
+            ->whereKey($ratingId)
+            ->where('willing_to_help', true)
+            ->whereNotNull('contact_method')
+            ->exists();
+
+        if (! $isRevealable) {
+            return;
+        }
+
+        if (! in_array($ratingId, $this->revealedContacts, true)) {
+            $this->revealedContacts[] = $ratingId;
+        }
     }
 
     #[Computed]
@@ -109,7 +129,10 @@ new #[Layout('layouts.public')] class extends Component {
         <div class="space-y-4">
             @foreach($this->ratings as $rating)
                 <div wire:key="rating-{{ $rating->id }}">
-                    <x-public.rating-card :rating="$rating" />
+                    <x-public.rating-card
+                        :rating="$rating"
+                        :contact-revealed="in_array($rating->id, $revealedContacts, true)"
+                    />
                 </div>
             @endforeach
         </div>

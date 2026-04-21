@@ -228,3 +228,133 @@ test('typing new search resets pagination', function () {
         ->set('search', 'رقم')
         ->assertSet('perPage', 12);
 });
+
+test('company detail page shows reviewer academic background and application method', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+    Rating::create([
+        'company_id' => $company->id,
+        'role_title' => 'مبرمج',
+        'duration_months' => 3,
+        'modality' => 'onsite',
+        'rating_learning' => 5,
+        'rating_mentorship' => 4,
+        'rating_real_work' => 2,
+        'rating_team_environment' => 3,
+        'rating_organization' => 4,
+        'review_text' => 'تجربة ممتازة في البرمجة',
+        'reviewer_name' => 'أحمد',
+        'reviewer_university' => 'جامعة الملك سعود',
+        'reviewer_college' => 'كلية الحاسب',
+        'reviewer_major' => 'علوم الحاسب',
+        'reviewer_degree' => 'bachelor',
+        'application_method' => 'عبر الموقع الرسمي',
+    ]);
+
+    $response = $this->get(route('companies.show', $company));
+
+    $response->assertOk();
+    $response->assertSee('جامعة الملك سعود');
+    $response->assertSee('كلية الحاسب');
+    $response->assertSee('بكالوريوس');
+    $response->assertSee('عبر الموقع الرسمي');
+    $response->assertSee('الخلفية الأكاديمية');
+    $response->assertSee('طريقة التقديم');
+});
+
+test('contact method is hidden from crawlers by default', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+    Rating::create([
+        'company_id' => $company->id,
+        'role_title' => 'مبرمج',
+        'duration_months' => 3,
+        'modality' => 'onsite',
+        'rating_learning' => 5,
+        'rating_mentorship' => 4,
+        'rating_real_work' => 2,
+        'rating_team_environment' => 3,
+        'rating_organization' => 4,
+        'review_text' => 'تجربة ممتازة',
+        'willing_to_help' => true,
+        'contact_method' => 'twitter: @secret_handle',
+    ]);
+
+    $response = $this->get(route('companies.show', $company));
+
+    $response->assertOk();
+    $response->assertSee('مستعد لمساعدة الآخرين');
+    $response->assertSee('إظهار طريقة التواصل');
+    $response->assertDontSee('twitter: @secret_handle');
+    $response->assertDontSee('@secret_handle');
+});
+
+test('revealContact exposes the contact method after click', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+    $rating = Rating::create([
+        'company_id' => $company->id,
+        'role_title' => 'مبرمج',
+        'duration_months' => 3,
+        'modality' => 'onsite',
+        'rating_learning' => 5,
+        'rating_mentorship' => 4,
+        'rating_real_work' => 2,
+        'rating_team_environment' => 3,
+        'rating_organization' => 4,
+        'review_text' => 'تجربة ممتازة',
+        'willing_to_help' => true,
+        'contact_method' => 'twitter: @secret_handle',
+    ]);
+
+    Livewire::test('pages::companies.show', ['company' => $company])
+        ->assertDontSee('twitter: @secret_handle')
+        ->call('revealContact', $rating->id)
+        ->assertSet('revealedContacts', [$rating->id])
+        ->assertSee('twitter: @secret_handle');
+});
+
+test('revealContact is a no-op when rating is not willing to help', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+    $rating = Rating::create([
+        'company_id' => $company->id,
+        'role_title' => 'مبرمج',
+        'duration_months' => 3,
+        'modality' => 'onsite',
+        'rating_learning' => 5,
+        'rating_mentorship' => 4,
+        'rating_real_work' => 2,
+        'rating_team_environment' => 3,
+        'rating_organization' => 4,
+        'review_text' => 'تجربة ممتازة',
+        'willing_to_help' => false,
+        'contact_method' => 'twitter: @secret_handle',
+    ]);
+
+    Livewire::test('pages::companies.show', ['company' => $company])
+        ->call('revealContact', $rating->id)
+        ->assertSet('revealedContacts', [])
+        ->assertDontSee('twitter: @secret_handle');
+});
+
+test('revealContact ignores rating ids from other companies', function () {
+    $companyA = Company::create(['name' => 'شركة أ', 'status' => 'approved']);
+    $companyB = Company::create(['name' => 'شركة ب', 'status' => 'approved']);
+
+    $foreignRating = Rating::create([
+        'company_id' => $companyB->id,
+        'role_title' => 'مبرمج',
+        'duration_months' => 3,
+        'modality' => 'onsite',
+        'rating_learning' => 5,
+        'rating_mentorship' => 4,
+        'rating_real_work' => 2,
+        'rating_team_environment' => 3,
+        'rating_organization' => 4,
+        'review_text' => 'تجربة ممتازة',
+        'willing_to_help' => true,
+        'contact_method' => 'twitter: @foreign_handle',
+    ]);
+
+    Livewire::test('pages::companies.show', ['company' => $companyA])
+        ->call('revealContact', $foreignRating->id)
+        ->assertSet('revealedContacts', [])
+        ->assertDontSee('twitter: @foreign_handle');
+});
