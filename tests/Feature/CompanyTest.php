@@ -164,6 +164,59 @@ test('company detail loadMore does nothing when no more ratings', function () {
         ->assertSet('perPage', 10);
 });
 
+test('loadMore preserves order of previously loaded companies when ratings_count and created_at tie', function () {
+    // All companies share identical created_at AND zero ratings_count — only a
+    // stable tiebreaker (id) keeps the order deterministic across loadMore.
+    Carbon\Carbon::setTestNow('2024-01-01 12:00:00');
+
+    for ($i = 1; $i <= 20; $i++) {
+        Company::create(['name' => "شركة رقم {$i}", 'status' => 'approved']);
+    }
+
+    $component = Livewire::test('pages::companies.index');
+
+    $firstPage = $component->instance()->companies->pluck('id')->all();
+
+    $component->call('loadMore');
+
+    $afterLoadMore = $component->instance()->companies->pluck('id')->all();
+
+    // The first page's ids must appear in the exact same order and positions
+    // at the start of the combined list after loadMore.
+    expect(array_slice($afterLoadMore, 0, count($firstPage)))->toBe($firstPage);
+});
+
+test('loadMore preserves order of previously loaded ratings when created_at ties', function () {
+    Carbon\Carbon::setTestNow('2024-01-01 12:00:00');
+
+    $company = Company::create(['name' => 'شركة تجريبية', 'status' => 'approved']);
+
+    for ($i = 1; $i <= 15; $i++) {
+        Rating::create([
+            'company_id' => $company->id,
+            'role_title' => "دور رقم {$i}",
+            'duration_months' => 3,
+            'modality' => 'onsite',
+            'rating_learning' => 5,
+            'rating_mentorship' => 4,
+            'rating_real_work' => 3,
+            'rating_team_environment' => 3,
+            'rating_organization' => 4,
+            'review_text' => "تجربة {$i}",
+        ]);
+    }
+
+    $component = Livewire::test('pages::companies.show', ['company' => $company]);
+
+    $firstPage = $component->instance()->ratings->pluck('id')->all();
+
+    $component->call('loadMore');
+
+    $afterLoadMore = $component->instance()->ratings->pluck('id')->all();
+
+    expect(array_slice($afterLoadMore, 0, count($firstPage)))->toBe($firstPage);
+});
+
 test('typing new search resets pagination', function () {
     for ($i = 1; $i <= 15; $i++) {
         Company::create(['name' => "شركة رقم {$i}", 'status' => 'approved']);
