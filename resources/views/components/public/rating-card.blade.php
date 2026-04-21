@@ -1,4 +1,7 @@
-@props(['rating'])
+@props([
+    'rating',
+    'contactRevealed' => false,
+])
 
 @php
     $modalityLabel = $rating->modality?->label() ?? $rating->modality;
@@ -16,6 +19,14 @@
         ['label' => 'بيئة الفريق', 'value' => $rating->rating_team_environment],
         ['label' => 'التنظيم', 'value' => $rating->rating_organization],
     ];
+    $degreeLabel = $rating->reviewer_degree?->label() ?? $rating->reviewer_degree;
+    $academicParts = array_filter([
+        $rating->reviewer_university,
+        $rating->reviewer_college,
+        $rating->reviewer_major,
+        $degreeLabel,
+    ]);
+    $hasContact = $rating->willing_to_help === true && filled($rating->contact_method);
 @endphp
 
 <article class="rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs transition-shadow hover:shadow-sm">
@@ -127,6 +138,51 @@
                     <div class="mt-0.5 text-sm text-slate-700">{{ $rating->cons }}</div>
                 </div>
             @endif
+        </div>
+    @endif
+
+    {{-- Academic background + application method --}}
+    @if(! empty($academicParts) || $rating->application_method)
+        <dl class="mt-4 grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+            @if(! empty($academicParts))
+                <div class="rounded-lg bg-slate-50/70 px-3 py-2 ring-1 ring-inset ring-slate-200">
+                    <dt class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">الخلفية الأكاديمية</dt>
+                    <dd class="mt-0.5 text-sm text-slate-700">{{ implode(' — ', $academicParts) }}</dd>
+                </div>
+            @endif
+            @if($rating->application_method)
+                <div class="rounded-lg bg-slate-50/70 px-3 py-2 ring-1 ring-inset ring-slate-200">
+                    <dt class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">طريقة التقديم</dt>
+                    <dd class="mt-0.5 text-sm text-slate-700">{{ $rating->application_method }}</dd>
+                </div>
+            @endif
+        </dl>
+    @endif
+
+    {{-- Willing to help + click-to-reveal contact (hidden from crawlers) --}}
+    @if($hasContact)
+        <div class="mt-4 rounded-lg border border-sky-200/70 bg-sky-50/60 px-3 py-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span class="inline-flex items-center gap-1.5 font-medium text-sky-800">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    مستعد لمساعدة الآخرين
+                </span>
+                @if($contactRevealed)
+                    <span class="inline-flex min-w-0 items-center gap-1.5 rounded-md bg-white px-2 py-1 font-medium text-sky-900 ring-1 ring-inset ring-sky-300 break-all">
+                        <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        {{ $rating->contact_method }}
+                    </span>
+                @else
+                    <button type="button"
+                        wire:click="revealContact({{ $rating->id }})"
+                        wire:loading.attr="disabled"
+                        wire:target="revealContact({{ $rating->id }})"
+                        class="inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1 text-[11px] font-semibold text-sky-700 shadow-xs ring-1 ring-inset ring-sky-300 transition-all hover:bg-sky-100 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60">
+                        <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        إظهار طريقة التواصل
+                    </button>
+                @endif
+            </div>
         </div>
     @endif
 
