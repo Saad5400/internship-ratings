@@ -69,18 +69,16 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
     {
         $query = Company::approved()
             ->withCount('ratings')
-            ->withAvg('ratings', 'overall_rating')
-            ->withMax('ratings', 'created_at')
             ->searchByName($this->search);
 
         match ($this->sort) {
             'most_rated' => $query->orderByDesc('ratings_count'),
-            'most_recently_rated' => $query
-                ->orderByRaw('ratings_max_created_at IS NULL')
-                ->orderByDesc('ratings_max_created_at'),
-            default => $query
-                ->orderByRaw('ratings_avg_overall_rating IS NULL')
-                ->orderByDesc('ratings_avg_overall_rating'),
+            'most_recently_rated' => $query->orderByRaw(
+                '(select max(created_at) from ratings where ratings.company_id = companies.id) desc nulls last'
+            ),
+            default => $query->orderByRaw(
+                '(select avg(overall_rating) from ratings where ratings.company_id = companies.id) desc nulls last'
+            ),
         };
 
         return $query
