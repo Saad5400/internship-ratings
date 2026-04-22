@@ -75,8 +75,12 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
 
         match ($this->sort) {
             'most_rated' => $query->orderByDesc('ratings_count'),
-            'most_recently_rated' => $query->orderByDesc('ratings_max_created_at'),
-            default => $query->orderByDesc('ratings_avg_overall_rating'),
+            'most_recently_rated' => $query
+                ->orderByRaw('ratings_max_created_at IS NULL')
+                ->orderByDesc('ratings_max_created_at'),
+            default => $query
+                ->orderByRaw('ratings_avg_overall_rating IS NULL')
+                ->orderByDesc('ratings_avg_overall_rating'),
         };
 
         return $query
@@ -148,6 +152,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                 aria-label="ترتيب حسب"
                 offline
                 :clearable="false"
+                class="!h-[46px] !min-h-[46px] rounded-xl"
             >
                 @scope('item', $option)
                     <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50">
