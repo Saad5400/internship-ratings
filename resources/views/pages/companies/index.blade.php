@@ -144,7 +144,12 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
             </div>
         </div>
 
-        <div class="w-36 shrink-0 sm:w-52" wire:key="sort-select-wrapper">
+        <div class="relative size-[46px] shrink-0 compact-select-trigger" wire:key="sort-select-wrapper" title="ترتيب حسب">
+            <span class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-slate-500">
+                <svg class="size-5 compact-select-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h13M3 12h9M3 18h5M17 4v16m0 0l-3-3m3 3l3-3"/>
+                </svg>
+            </span>
             <x-public.nice-select
                 name="sort"
                 wire:model.live="sort"
@@ -152,7 +157,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                 aria-label="ترتيب حسب"
                 offline
                 :clearable="false"
-                class="!h-[46px] !min-h-[46px] rounded-xl"
+                class="!size-[46px] !min-h-[46px] rounded-xl"
             >
                 @scope('item', $option)
                     <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50">

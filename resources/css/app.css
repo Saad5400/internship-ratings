@@ -119,6 +119,27 @@
     flex-shrink: 0;
 }
 
+/* Icon-only compact trigger for a single-select that should only show an icon.
+   The dropdown options remain unaffected; only the button/label collapses. */
+.compact-select-trigger [x-ref="container"] {
+    padding: 0 !important;
+    justify-content: center;
+}
+
+.compact-select-trigger [x-ref="container"] > div {
+    display: none !important;
+}
+
+.compact-select-trigger [x-ref="container"] svg:not(.compact-select-icon) {
+    display: none !important;
+}
+
+/* Widen the dropdown so options are readable even though the trigger is narrow. */
+.compact-select-trigger [wire\:key^="options-list-main-"] > [wire\:key^="options-list-"] {
+    width: max-content !important;
+    min-width: 12rem;
+}
+
 /* Respect reduced-motion: tame all transitions and animations. */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
