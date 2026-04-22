@@ -11,14 +11,42 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
     #[Url(as: 'search', except: '')]
     public string $search = '';
 
+    #[Url(as: 'sort', except: 'highest_rated')]
+    public string $sort = 'highest_rated';
+
     public int $perPage = 12;
 
     protected int $pageSize = 12;
+
+    /**
+     * @return array<int, array{id: string, name: string}>
+     */
+    public function getSortOptionsProperty(): array
+    {
+        return [
+            ['id' => 'highest_rated', 'name' => 'الأعلى تقييماً'],
+            ['id' => 'most_rated', 'name' => 'الأكثر تقييماً'],
+            ['id' => 'most_recently_rated', 'name' => 'الأحدث تقييماً'],
+        ];
+    }
 
     public function updatingSearch(): void
     {
         $this->perPage = $this->pageSize;
         $this->resetPage();
+    }
+
+    public function updatingSort(): void
+    {
+        $this->perPage = $this->pageSize;
+        $this->resetPage();
+    }
+
+    public function updatedSort(mixed $value): void
+    {
+        if (! in_array($value, ['highest_rated', 'most_rated', 'most_recently_rated'], true)) {
+            $this->sort = 'highest_rated';
+        }
     }
 
     public function loadMore(): void
@@ -39,9 +67,19 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
     #[Computed]
     public function companyResults()
     {
-        return Company::approved()
+        $query = Company::approved()
             ->withCount('ratings')
-            ->searchByName($this->search)
+            ->withAvg('ratings', 'overall_rating')
+            ->withMax('ratings', 'created_at')
+            ->searchByName($this->search);
+
+        match ($this->sort) {
+            'most_rated' => $query->orderByDesc('ratings_count'),
+            'most_recently_rated' => $query->orderByDesc('ratings_max_created_at'),
+            default => $query->orderByDesc('ratings_avg_overall_rating'),
+        };
+
+        return $query
             ->orderByDesc('ratings_count')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -70,34 +108,53 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         </div>
     </div>
 
-    {{-- Debounced live search --}}
-    <div class="relative">
-        <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-slate-400">
-            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        </span>
-        <input
-            type="text"
-            wire:model.live.debounce.300ms="search"
-            placeholder="ابحث عن جهة..."
-            class="w-full rounded-xl border border-slate-200 bg-white ps-11 pe-11 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-            aria-label="ابحث عن جهة"
-        />
+    {{-- Debounced live search + sort, single row on all viewports --}}
+    <div class="flex flex-row items-stretch gap-3">
+        <div class="relative min-w-0 flex-1">
+            <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-slate-400">
+                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </span>
+            <input
+                type="text"
+                wire:model.live.debounce.300ms="search"
+                placeholder="ابحث عن جهة..."
+                class="w-full rounded-xl border border-slate-200 bg-white ps-11 pe-11 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                aria-label="ابحث عن جهة"
+            />
 
-        {{-- Clear button --}}
-        @if($search !== '')
-            <button
-                type="button"
-                wire:click="$set('search', '')"
-                class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 transition-colors hover:text-slate-600"
-                aria-label="مسح البحث"
+            {{-- Clear button --}}
+            @if($search !== '')
+                <button
+                    type="button"
+                    wire:click="$set('search', '')"
+                    class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 transition-colors hover:text-slate-600"
+                    aria-label="مسح البحث"
+                >
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            @endif
+
+            {{-- Inline spinner while the search request is in flight --}}
+            <div wire:loading wire:target="search" class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400">
+                <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+            </div>
+        </div>
+
+        <div class="w-36 shrink-0 sm:w-52" wire:key="sort-select-wrapper">
+            <x-public.nice-select
+                name="sort"
+                wire:model.live="sort"
+                :options="$this->sortOptions"
+                aria-label="ترتيب حسب"
+                offline
+                :clearable="false"
             >
-                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        @endif
-
-        {{-- Inline spinner while the search request is in flight --}}
-        <div wire:loading wire:target="search" class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400">
-            <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                @scope('item', $option)
+                    <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50">
+                        <div class="font-medium text-slate-900">{{ data_get($option, 'name') }}</div>
+                    </div>
+                @endscope
+            </x-public.nice-select>
         </div>
     </div>
 

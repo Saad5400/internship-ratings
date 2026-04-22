@@ -217,6 +217,122 @@ test('loadMore preserves order of previously loaded ratings when created_at ties
     expect(array_slice($afterLoadMore, 0, count($firstPage)))->toBe($firstPage);
 });
 
+test('default sort orders companies by highest average rating', function () {
+    $low = Company::create(['name' => 'شركة منخفضة', 'status' => 'approved']);
+    $high = Company::create(['name' => 'شركة عالية', 'status' => 'approved']);
+    $mid = Company::create(['name' => 'شركة متوسطة', 'status' => 'approved']);
+
+    foreach ([$low->id => 1, $high->id => 5, $mid->id => 3] as $companyId => $score) {
+        Rating::create([
+            'company_id' => $companyId,
+            'role_title' => 'مبرمج',
+            'duration_months' => 3,
+            'modality' => 'onsite',
+            'rating_learning' => $score,
+            'rating_mentorship' => $score,
+            'rating_real_work' => $score,
+            'rating_team_environment' => $score,
+            'rating_organization' => $score,
+        ]);
+    }
+
+    $ids = Livewire::test('pages::companies.index')
+        ->assertSet('sort', 'highest_rated')
+        ->instance()->companies->pluck('id')->all();
+
+    expect($ids)->toBe([$high->id, $mid->id, $low->id]);
+});
+
+test('most_rated sort orders companies by ratings count descending', function () {
+    $few = Company::create(['name' => 'شركة قليلة', 'status' => 'approved']);
+    $many = Company::create(['name' => 'شركة كثيرة', 'status' => 'approved']);
+
+    // Only one rating but the highest score — proves count beats average.
+    Rating::create([
+        'company_id' => $few->id,
+        'role_title' => 'مبرمج',
+        'duration_months' => 3,
+        'modality' => 'onsite',
+        'rating_learning' => 5,
+        'rating_mentorship' => 5,
+        'rating_real_work' => 5,
+        'rating_team_environment' => 5,
+        'rating_organization' => 5,
+    ]);
+
+    for ($i = 0; $i < 3; $i++) {
+        Rating::create([
+            'company_id' => $many->id,
+            'role_title' => 'مبرمج',
+            'duration_months' => 3,
+            'modality' => 'onsite',
+            'rating_learning' => 1,
+            'rating_mentorship' => 1,
+            'rating_real_work' => 1,
+            'rating_team_environment' => 1,
+            'rating_organization' => 1,
+        ]);
+    }
+
+    $ids = Livewire::test('pages::companies.index')
+        ->set('sort', 'most_rated')
+        ->instance()->companies->pluck('id')->all();
+
+    expect($ids)->toBe([$many->id, $few->id]);
+});
+
+test('most_recently_rated sort orders companies by latest rating timestamp descending', function () {
+    $companyOld = Company::create(['name' => 'شركة قديمة', 'status' => 'approved']);
+    $companyMid = Company::create(['name' => 'شركة وسطى', 'status' => 'approved']);
+    $companyNew = Company::create(['name' => 'شركة جديدة', 'status' => 'approved']);
+
+    $payload = [
+        'role_title' => 'مبرمج',
+        'duration_months' => 3,
+        'modality' => 'onsite',
+        'rating_learning' => 3,
+        'rating_mentorship' => 3,
+        'rating_real_work' => 3,
+        'rating_team_environment' => 3,
+        'rating_organization' => 3,
+    ];
+
+    Carbon\Carbon::setTestNow('2024-01-01 12:00:00');
+    Rating::create(['company_id' => $companyOld->id] + $payload);
+
+    Carbon\Carbon::setTestNow('2024-06-01 12:00:00');
+    Rating::create(['company_id' => $companyMid->id] + $payload);
+
+    Carbon\Carbon::setTestNow('2024-12-01 12:00:00');
+    Rating::create(['company_id' => $companyNew->id] + $payload);
+
+    Carbon\Carbon::setTestNow();
+
+    $ids = Livewire::test('pages::companies.index')
+        ->set('sort', 'most_recently_rated')
+        ->instance()->companies->pluck('id')->all();
+
+    expect($ids)->toBe([$companyNew->id, $companyMid->id, $companyOld->id]);
+});
+
+test('changing sort resets pagination', function () {
+    for ($i = 1; $i <= 15; $i++) {
+        Company::create(['name' => "شركة رقم {$i}", 'status' => 'approved']);
+    }
+
+    Livewire::test('pages::companies.index')
+        ->call('loadMore')
+        ->assertSet('perPage', 24)
+        ->set('sort', 'most_rated')
+        ->assertSet('perPage', 12);
+});
+
+test('invalid sort value falls back to highest_rated', function () {
+    Livewire::test('pages::companies.index')
+        ->set('sort', 'bogus')
+        ->assertSet('sort', 'highest_rated');
+});
+
 test('typing new search resets pagination', function () {
     for ($i = 1; $i <= 15; $i++) {
         Company::create(['name' => "شركة رقم {$i}", 'status' => 'approved']);

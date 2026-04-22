@@ -1,5 +1,5 @@
 @props([
-    'label',
+    'label' => null,
     'name',
     'options' => [],
     'placeholder' => null,
@@ -30,7 +30,7 @@
             :clearable="$resolvedClearable"
             omit-error
         >
-            @if($single)
+            @if($single && $clearable)
                 @scope('selection', $option)
                     <span class="inline-flex items-center gap-1.5">
                         <span>{{ data_get($option, 'name') }}</span>
@@ -62,7 +62,7 @@
             :clearable="$resolvedClearable"
             omit-error
         >
-            @if($single)
+            @if($single && $clearable)
                 @scope('selection', $option)
                     <span class="inline-flex items-center gap-1.5">
                         <span>{{ data_get($option, 'name') }}</span>
