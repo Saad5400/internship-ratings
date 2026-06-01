@@ -43,17 +43,25 @@ class LatestRatingsTable extends TableWidget
                 TextColumn::make('recommendation')
                     ->label('التوصية')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'yes' => 'أنصح بها',
-                        'maybe' => 'ربما',
-                        'no' => 'لا أنصح',
-                        default => $state,
+                    ->formatStateUsing(function ($state): string {
+                        $value = $state instanceof \BackedEnum ? $state->value : $state;
+
+                        return match ($value) {
+                            'yes' => 'أنصح بها',
+                            'maybe' => 'ربما',
+                            'no' => 'لا أنصح',
+                            default => (string) $value,
+                        };
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'yes' => 'success',
-                        'maybe' => 'warning',
-                        'no' => 'danger',
-                        default => 'gray',
+                    ->color(function ($state): string {
+                        $value = $state instanceof \BackedEnum ? $state->value : $state;
+
+                        return match ($value) {
+                            'yes' => 'success',
+                            'maybe' => 'warning',
+                            'no' => 'danger',
+                            default => 'gray',
+                        };
                     }),
                 TextColumn::make('reviewer_name')
                     ->label('المقيّم')
