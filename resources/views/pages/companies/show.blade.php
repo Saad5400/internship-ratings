@@ -25,6 +25,12 @@ new #[Layout('layouts.public')] class extends Component {
     public function rendering($view): void
     {
         $view->title($this->company->name);
+
+        $description = filled($this->company->description)
+            ? \Illuminate\Support\Str::limit($this->company->description, 155)
+            : 'اقرأ تقييمات وتجارب المتدربين في '.$this->company->name.' للتدريب التعاوني والصيفي، وشارك تجربتك لمساعدة غيرك على اختيار جهة التدريب المناسبة.';
+
+        $view->with('metaDescription', $description);
     }
 
     public function loadMore(): void
@@ -153,4 +159,48 @@ new #[Layout('layouts.public')] class extends Component {
             </div>
         @endif
     @endif
+
+    @php
+        $orgJsonLd = array_filter([
+            '@type' => 'Organization',
+            'name' => $company->name,
+            'url' => route('companies.show', $company),
+            'description' => $company->description ?: null,
+            'sameAs' => $company->website ? [$company->website] : null,
+            'aggregateRating' => ($company->average_rating && $company->ratings_count)
+                ? array_filter([
+                    '@type' => 'AggregateRating',
+                    'ratingValue' => round((float) $company->average_rating, 1),
+                    'reviewCount' => $company->ratings_count,
+                    'bestRating' => 5,
+                    'worstRating' => 1,
+                ])
+                : null,
+        ]);
+
+        $jsonLd = [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                $orgJsonLd,
+                [
+                    '@type' => 'BreadcrumbList',
+                    'itemListElement' => [
+                        [
+                            '@type' => 'ListItem',
+                            'position' => 1,
+                            'name' => 'الجهات',
+                            'item' => route('companies.index'),
+                        ],
+                        [
+                            '@type' => 'ListItem',
+                            'position' => 2,
+                            'name' => $company->name,
+                            'item' => route('companies.show', $company),
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
 </div>

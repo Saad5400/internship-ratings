@@ -30,6 +30,11 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         ];
     }
 
+    public function rendering($view): void
+    {
+        $view->with('metaDescription', 'تصفّح تقييمات جهات التدريب التعاوني والصيفي من المتدربين أنفسهم. قارن بين الشركات والجهات حسب تقييمات المتدربين، واطّلع على التجارب الحقيقية قبل اختيار جهة تدريبك.');
+    }
+
     public function updatingSearch(): void
     {
         $this->perPage = $this->pageSize;
@@ -199,4 +204,41 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
             </div>
         @endif
     @endif
+
+    @php
+        $itemListElements = $this->companies->values()->map(fn ($company, $index) => [
+            '@type' => 'ListItem',
+            'position' => $index + 1,
+            'name' => $company->name,
+            'url' => route('companies.show', $company),
+        ])->all();
+
+        $jsonLd = [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'WebSite',
+                    '@id' => url('/').'#website',
+                    'url' => url('/'),
+                    'name' => 'تقييم التدريب',
+                    'description' => 'منصّة عربية لتقييم جهات التدريب التعاوني والصيفي من المتدربين أنفسهم.',
+                    'inLanguage' => 'ar',
+                    'publisher' => ['@id' => url('/').'#organization'],
+                ],
+                [
+                    '@type' => 'Organization',
+                    '@id' => url('/').'#organization',
+                    'name' => 'تقييم التدريب',
+                    'url' => url('/'),
+                    'logo' => url('/og-image.png'),
+                ],
+                [
+                    '@type' => 'ItemList',
+                    'name' => 'جهات التدريب',
+                    'itemListElement' => $itemListElements,
+                ],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
 </div>
