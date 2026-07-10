@@ -12,6 +12,7 @@ use App\Filament\Resources\Ratings\Pages\ViewRating;
 use App\Filament\Resources\Ratings\Schemas\RatingForm;
 use App\Filament\Resources\Ratings\Tables\RatingsTable;
 use App\Models\Rating;
+use App\Support\ModerationStatus;
 use BackedEnum;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
@@ -91,18 +92,8 @@ class RatingResource extends Resource
                         TextEntry::make('status')
                             ->label('الحالة')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'approved' => 'success',
-                                'rejected' => 'danger',
-                                'pending' => 'warning',
-                                default => 'gray',
-                            })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'approved' => 'موافق عليه',
-                                'rejected' => 'مرفوض',
-                                'pending' => 'قيد المراجعة',
-                                default => $state,
-                            })
+                            ->color(fn (string $state): string => ModerationStatus::color($state))
+                            ->formatStateUsing(fn (string $state): string => ModerationStatus::label($state))
                             ->columnSpanFull(),
                         TextEntry::make('company.name')
                             ->label('الجهة')

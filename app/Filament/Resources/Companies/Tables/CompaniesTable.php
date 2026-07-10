@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Companies\Tables;
 
 use App\Enums\CompanyType;
+use App\Support\ModerationStatus;
+use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -14,6 +16,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class CompaniesTable
 {
@@ -30,18 +33,8 @@ class CompaniesTable
                 TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'approved' => 'success',
-                        'rejected' => 'danger',
-                        'pending' => 'warning',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'approved' => 'موافق عليه',
-                        'rejected' => 'مرفوض',
-                        'pending' => 'قيد المراجعة',
-                        default => $state,
-                    })
+                    ->color(fn (string $state): string => ModerationStatus::color($state))
+                    ->formatStateUsing(fn (string $state): string => ModerationStatus::label($state))
                     ->sortable(),
                 TextColumn::make('type')
                     ->label('نوع الجهة')
@@ -85,11 +78,7 @@ class CompaniesTable
             ->filters([
                 SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options([
-                        'pending' => 'قيد المراجعة',
-                        'approved' => 'موافق عليه',
-                        'rejected' => 'مرفوض',
-                    ]),
+                    ->options(ModerationStatus::options()),
                 SelectFilter::make('type')
                     ->label('نوع الجهة')
                     ->options(CompanyType::options()),
@@ -101,6 +90,20 @@ class CompaniesTable
                     ),
             ])
             ->recordActions([
+                Action::make('approve')
+                    ->label('موافقة')
+                    ->color('success')
+                    ->icon('heroicon-o-check-circle')
+                    ->action(fn (Model $record) => $record->update(['status' => 'approved']))
+                    ->requiresConfirmation()
+                    ->visible(fn (Model $record): bool => $record->status !== 'approved'),
+                Action::make('reject')
+                    ->label('رفض')
+                    ->color('danger')
+                    ->icon('heroicon-o-x-circle')
+                    ->action(fn (Model $record) => $record->update(['status' => 'rejected']))
+                    ->requiresConfirmation()
+                    ->visible(fn (Model $record): bool => $record->status !== 'rejected'),
                 ViewAction::make(),
                 EditAction::make(),
             ])

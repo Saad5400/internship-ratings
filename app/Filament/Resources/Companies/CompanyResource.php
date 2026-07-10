@@ -11,6 +11,7 @@ use App\Filament\Resources\Companies\RelationManagers\RatingsRelationManager;
 use App\Filament\Resources\Companies\Schemas\CompanyForm;
 use App\Filament\Resources\Companies\Tables\CompaniesTable;
 use App\Models\Company;
+use App\Support\ModerationStatus;
 use BackedEnum;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -104,18 +105,8 @@ class CompanyResource extends Resource
                         TextEntry::make('status')
                             ->label('الحالة')
                             ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'approved' => 'success',
-                                'rejected' => 'danger',
-                                'pending' => 'warning',
-                                default => 'gray',
-                            })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'approved' => 'موافق عليه',
-                                'rejected' => 'مرفوض',
-                                'pending' => 'قيد المراجعة',
-                                default => $state,
-                            }),
+                            ->color(fn (string $state): string => ModerationStatus::color($state))
+                            ->formatStateUsing(fn (string $state): string => ModerationStatus::label($state)),
                         TextEntry::make('average_rating')
                             ->label('متوسط التقييم')
                             ->formatStateUsing(fn ($state) => $state ? number_format($state, 1).' / 5' : 'لا يوجد')

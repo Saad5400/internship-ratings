@@ -19,6 +19,12 @@ test('the admin panel login page is reachable', function () {
     $this->get('/admin/login')->assertOk();
 });
 
+test('the admin panel renders right-to-left', function () {
+    $this->get('/admin/login')
+        ->assertOk()
+        ->assertSee('dir="rtl"', false);
+});
+
 test('non-admin users are denied entry to the admin panel', function () {
     $user = User::factory()->create();
 

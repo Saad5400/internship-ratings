@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Ratings\Schemas;
 use App\Enums\Modality;
 use App\Enums\Recommendation;
 use App\Enums\SaudiCity;
+use App\Support\ModerationStatus;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -46,11 +47,7 @@ class RatingForm
                             ->label('الحالة')
                             ->required()
                             ->default('approved')
-                            ->options([
-                                'pending' => 'قيد المراجعة',
-                                'approved' => 'موافق عليه',
-                                'rejected' => 'مرفوض',
-                            ])
+                            ->options(ModerationStatus::options())
                             ->native(false),
                     ]),
                 Section::make('تفاصيل التدريب')

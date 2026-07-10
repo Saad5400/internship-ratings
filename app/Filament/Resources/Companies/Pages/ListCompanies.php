@@ -3,9 +3,10 @@
 namespace App\Filament\Resources\Companies\Pages;
 
 use App\Filament\Resources\Companies\CompanyResource;
+use App\Models\Company;
 use Filament\Actions\CreateAction;
-use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListCompanies extends ListRecords
@@ -27,14 +28,17 @@ class ListCompanies extends ListRecords
             'pending' => Tab::make('قيد المراجعة')
                 ->icon('heroicon-o-clock')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'pending'))
+                ->badge(Company::query()->where('status', 'pending')->count())
                 ->badgeColor('warning'),
             'approved' => Tab::make('موافق عليها')
                 ->icon('heroicon-o-check-circle')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'approved'))
+                ->badge(Company::query()->where('status', 'approved')->count())
                 ->badgeColor('success'),
             'rejected' => Tab::make('مرفوضة')
                 ->icon('heroicon-o-x-circle')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'rejected'))
+                ->badge(Company::query()->where('status', 'rejected')->count())
                 ->badgeColor('danger'),
         ];
     }
