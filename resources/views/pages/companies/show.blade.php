@@ -46,6 +46,7 @@ new #[Layout('layouts.public')] class extends Component {
     public function revealContact(int $ratingId): void
     {
         $isRevealable = $this->company->ratings()
+            ->approved()
             ->whereKey($ratingId)
             ->where('willing_to_help', true)
             ->whereNotNull('contact_method')
@@ -64,6 +65,7 @@ new #[Layout('layouts.public')] class extends Component {
     public function ratingResults()
     {
         return $this->company->ratings()
+            ->approved()
             ->latest()
             ->latest('id')
             ->take($this->perPage + 1)

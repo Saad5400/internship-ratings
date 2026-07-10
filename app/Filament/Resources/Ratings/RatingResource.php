@@ -42,12 +42,19 @@ class RatingResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Rating::count();
+        $count = Rating::where('status', 'pending')->count();
+
+        return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return 'primary';
+        return 'warning';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'تقييمات قيد المراجعة';
     }
 
     public static function getGloballySearchableAttributes(): array
@@ -81,6 +88,22 @@ class RatingResource extends Resource
                     ->icon('heroicon-o-briefcase')
                     ->columns(2)
                     ->schema([
+                        TextEntry::make('status')
+                            ->label('الحالة')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'approved' => 'success',
+                                'rejected' => 'danger',
+                                'pending' => 'warning',
+                                default => 'gray',
+                            })
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'approved' => 'موافق عليه',
+                                'rejected' => 'مرفوض',
+                                'pending' => 'قيد المراجعة',
+                                default => $state,
+                            })
+                            ->columnSpanFull(),
                         TextEntry::make('company.name')
                             ->label('الجهة')
                             ->weight('bold')

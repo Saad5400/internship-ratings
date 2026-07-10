@@ -4,6 +4,8 @@ namespace App\Filament\Resources\Companies\RelationManagers;
 
 use App\Enums\Modality;
 use App\Enums\Recommendation;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -20,6 +22,8 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class RatingsRelationManager extends RelationManager
 {
@@ -88,6 +92,21 @@ class RatingsRelationManager extends RelationManager
                 TextColumn::make('role_title')
                     ->label('المسمى الوظيفي')
                     ->searchable(),
+                TextColumn::make('status')
+                    ->label('الحالة')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        'pending' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'approved' => 'موافق عليه',
+                        'rejected' => 'مرفوض',
+                        'pending' => 'قيد المراجعة',
+                        default => $state,
+                    }),
                 TextColumn::make('overall_rating')
                     ->label('التقييم')
                     ->badge()
@@ -147,12 +166,40 @@ class RatingsRelationManager extends RelationManager
                 CreateAction::make(),
             ])
             ->recordActions([
+                Action::make('approve')
+                    ->label('موافقة')
+                    ->color('success')
+                    ->icon('heroicon-o-check-circle')
+                    ->action(fn (Model $record) => $record->update(['status' => 'approved']))
+                    ->requiresConfirmation()
+                    ->visible(fn (Model $record): bool => $record->status !== 'approved'),
+                Action::make('reject')
+                    ->label('رفض')
+                    ->color('danger')
+                    ->icon('heroicon-o-x-circle')
+                    ->action(fn (Model $record) => $record->update(['status' => 'rejected']))
+                    ->requiresConfirmation()
+                    ->visible(fn (Model $record): bool => $record->status !== 'rejected'),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make()->label('حذف'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('approve')
+                        ->label('موافقة')
+                        ->color('success')
+                        ->icon('heroicon-o-check-circle')
+                        ->action(fn (Collection $records) => $records->each->update(['status' => 'approved']))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('reject')
+                        ->label('رفض')
+                        ->color('danger')
+                        ->icon('heroicon-o-x-circle')
+                        ->action(fn (Collection $records) => $records->each->update(['status' => 'rejected']))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
                     DeleteBulkAction::make()->label('حذف'),
                 ]),
             ]);

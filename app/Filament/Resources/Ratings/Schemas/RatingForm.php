@@ -42,6 +42,16 @@ class RatingForm
                             ->options(SaudiCity::toOptions())
                             ->searchable()
                             ->native(false),
+                        Select::make('status')
+                            ->label('الحالة')
+                            ->required()
+                            ->default('approved')
+                            ->options([
+                                'pending' => 'قيد المراجعة',
+                                'approved' => 'موافق عليه',
+                                'rejected' => 'مرفوض',
+                            ])
+                            ->native(false),
                     ]),
                 Section::make('تفاصيل التدريب')
                     ->description('معلومات عن مدة ونمط التدريب')

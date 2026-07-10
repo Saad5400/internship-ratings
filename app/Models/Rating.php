@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\Modality;
 use App\Enums\Recommendation;
 use App\Enums\ReviewerDegree;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -44,6 +45,7 @@ class Rating extends Model
         'willing_to_help',
         'contact_method',
         'is_imported',
+        'status',
     ];
 
     protected function casts(): array
@@ -124,6 +126,11 @@ class Rating extends Model
         }
 
         return round($weightedScore, 1);
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', 'approved');
     }
 
     public function company(): BelongsTo

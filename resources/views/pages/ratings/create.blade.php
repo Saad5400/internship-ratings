@@ -386,7 +386,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             $company = Company::approved()->findOrFail($this->companyId);
             $targetCompanyId = $company->id;
             $redirectRoute = route('companies.show', $company);
-            $successMessage = 'شكراً! تم إضافة تقييمك بنجاح.';
+            $successMessage = 'شكراً! تم إرسال تقييمك وسيظهر بعد المراجعة.';
         }
 
         Rating::create([
@@ -417,6 +417,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             'application_method' => $this->application_method,
             'willing_to_help' => $this->willing_to_help,
             'contact_method' => $this->willing_to_help ? $this->contact_method : null,
+            'status' => 'pending',
         ]);
 
         session()->flash('success', $successMessage);

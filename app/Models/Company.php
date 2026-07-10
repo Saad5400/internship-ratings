@@ -38,6 +38,11 @@ class Company extends Model
         return $this->hasMany(Rating::class);
     }
 
+    public function approvedRatings(): HasMany
+    {
+        return $this->hasMany(Rating::class)->where('status', 'approved');
+    }
+
     public function scopeApproved(Builder $query): Builder
     {
         return $query->where('status', 'approved');
@@ -67,13 +72,13 @@ class Company extends Model
 
     public function getAverageRatingAttribute(): ?float
     {
-        $avg = $this->ratings()->avg('overall_rating');
+        $avg = $this->approvedRatings()->avg('overall_rating');
 
         return $avg ? round($avg, 1) : null;
     }
 
     public function getRatingsCountAttribute(): int
     {
-        return $this->ratings()->count();
+        return $this->approvedRatings()->count();
     }
 }
