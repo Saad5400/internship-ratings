@@ -6,6 +6,7 @@ use App\Enums\Modality;
 use App\Enums\Recommendation;
 use App\Support\ModerationStatus;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -159,21 +160,25 @@ class RatingsRelationManager extends RelationManager
             ->recordActions([
                 Action::make('approve')
                     ->label('موافقة')
+                    ->button()
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->action(fn (Model $record) => $record->update(['status' => 'approved']))
-                    ->requiresConfirmation()
+                    ->successNotificationTitle('تمت الموافقة')
                     ->visible(fn (Model $record): bool => $record->status !== 'approved'),
                 Action::make('reject')
                     ->label('رفض')
+                    ->button()
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->action(fn (Model $record) => $record->update(['status' => 'rejected']))
-                    ->requiresConfirmation()
+                    ->successNotificationTitle('تم الرفض')
                     ->visible(fn (Model $record): bool => $record->status !== 'rejected'),
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make()->label('حذف'),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make()->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -182,14 +187,12 @@ class RatingsRelationManager extends RelationManager
                         ->color('success')
                         ->icon('heroicon-o-check-circle')
                         ->action(fn (Collection $records) => $records->each->update(['status' => 'approved']))
-                        ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('reject')
                         ->label('رفض')
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')
                         ->action(fn (Collection $records) => $records->each->update(['status' => 'rejected']))
-                        ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                     DeleteBulkAction::make()->label('حذف'),
                 ]),
