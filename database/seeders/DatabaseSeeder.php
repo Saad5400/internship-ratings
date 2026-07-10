@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'مدير النظام',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
+            'is_admin' => true,
         ]);
 
         // Approved companies with ratings

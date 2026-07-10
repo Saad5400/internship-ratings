@@ -12,6 +12,7 @@ use App\Filament\Resources\Ratings\Pages\ViewRating;
 use App\Filament\Resources\Ratings\Schemas\RatingForm;
 use App\Filament\Resources\Ratings\Tables\RatingsTable;
 use App\Models\Rating;
+use App\Support\ModerationStatus;
 use BackedEnum;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\Section;
@@ -42,12 +43,19 @@ class RatingResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Rating::count();
+        $count = Rating::where('status', 'pending')->count();
+
+        return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return 'primary';
+        return 'warning';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'تقييمات قيد المراجعة';
     }
 
     public static function getGloballySearchableAttributes(): array
@@ -81,6 +89,12 @@ class RatingResource extends Resource
                     ->icon('heroicon-o-briefcase')
                     ->columns(2)
                     ->schema([
+                        TextEntry::make('status')
+                            ->label('الحالة')
+                            ->badge()
+                            ->color(fn (string $state): string => ModerationStatus::color($state))
+                            ->formatStateUsing(fn (string $state): string => ModerationStatus::label($state))
+                            ->columnSpanFull(),
                         TextEntry::make('company.name')
                             ->label('الجهة')
                             ->weight('bold')

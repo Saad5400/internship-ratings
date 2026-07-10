@@ -73,16 +73,16 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
     public function companyResults()
     {
         $query = Company::approved()
-            ->withCount('ratings')
+            ->withCount(['ratings as ratings_count' => fn ($q) => $q->where('status', 'approved')])
             ->searchByName($this->search);
 
         match ($this->sort) {
             'most_rated' => $query->orderByDesc('ratings_count'),
             'most_recently_rated' => $query->orderByRaw(
-                '(select max(created_at) from ratings where ratings.company_id = companies.id) desc nulls last'
+                "(select max(created_at) from ratings where ratings.company_id = companies.id and status = 'approved') desc nulls last"
             ),
             default => $query->orderByRaw(
-                '(select avg(overall_rating) from ratings where ratings.company_id = companies.id) desc nulls last'
+                "(select avg(overall_rating) from ratings where ratings.company_id = companies.id and status = 'approved') desc nulls last"
             ),
         };
 

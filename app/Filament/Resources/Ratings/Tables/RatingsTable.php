@@ -5,6 +5,9 @@ namespace App\Filament\Resources\Ratings\Tables;
 use App\Enums\CompanyType;
 use App\Enums\Modality;
 use App\Enums\Recommendation;
+use App\Support\ModerationStatus;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -16,6 +19,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class RatingsTable
 {
@@ -32,6 +37,12 @@ class RatingsTable
                     ->label('المسمى الوظيفي')
                     ->searchable()
                     ->description(fn ($record) => $record->department),
+                TextColumn::make('status')
+                    ->label('الحالة')
+                    ->badge()
+                    ->color(fn (string $state): string => ModerationStatus::color($state))
+                    ->formatStateUsing(fn (string $state): string => ModerationStatus::label($state))
+                    ->sortable(),
                 TextColumn::make('company.type')
                     ->label('نوع الجهة')
                     ->formatStateUsing(fn ($state): string => $state?->label() ?? CompanyType::tryFrom((string) $state)?->label() ?? 'غير محدد')
@@ -92,6 +103,9 @@ class RatingsTable
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                SelectFilter::make('status')
+                    ->label('الحالة')
+                    ->options(ModerationStatus::options()),
                 SelectFilter::make('modality')
                     ->label('نمط التدريب')
                     ->options(Modality::options()),
@@ -133,12 +147,40 @@ class RatingsTable
             ])
             ->filtersFormColumns(3)
             ->recordActions([
+                Action::make('approve')
+                    ->label('موافقة')
+                    ->color('success')
+                    ->icon('heroicon-o-check-circle')
+                    ->action(fn (Model $record) => $record->update(['status' => 'approved']))
+                    ->requiresConfirmation()
+                    ->visible(fn (Model $record): bool => $record->status !== 'approved'),
+                Action::make('reject')
+                    ->label('رفض')
+                    ->color('danger')
+                    ->icon('heroicon-o-x-circle')
+                    ->action(fn (Model $record) => $record->update(['status' => 'rejected']))
+                    ->requiresConfirmation()
+                    ->visible(fn (Model $record): bool => $record->status !== 'rejected'),
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make()->label('حذف'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('approve')
+                        ->label('موافقة')
+                        ->color('success')
+                        ->icon('heroicon-o-check-circle')
+                        ->action(fn (Collection $records) => $records->each->update(['status' => 'approved']))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('reject')
+                        ->label('رفض')
+                        ->color('danger')
+                        ->icon('heroicon-o-x-circle')
+                        ->action(fn (Collection $records) => $records->each->update(['status' => 'rejected']))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
                     DeleteBulkAction::make()->label('حذف'),
                 ]),
             ]);

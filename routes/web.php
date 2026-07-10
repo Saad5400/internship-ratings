@@ -23,10 +23,3 @@ Route::get('/sitemap.xml', function () {
 Route::livewire('/ratings/create', 'pages::ratings.create')
     ->middleware(app()->isLocal() ? 'web' : 'throttle:10,60')
     ->name('ratings.create');
-
-// Admin auth routes (from starter kit)
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
-});
-
-require __DIR__.'/settings.php';

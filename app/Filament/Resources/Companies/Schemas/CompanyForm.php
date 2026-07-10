@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Companies\Schemas;
 
 use App\Enums\CompanyType;
+use App\Support\ModerationStatus;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -45,11 +46,7 @@ class CompanyForm
                     ->schema([
                         Select::make('status')
                             ->label('الحالة')
-                            ->options([
-                                'pending' => 'قيد المراجعة',
-                                'approved' => 'موافق عليه',
-                                'rejected' => 'مرفوض',
-                            ])
+                            ->options(ModerationStatus::options())
                             ->required()
                             ->default('pending')
                             ->native(false),

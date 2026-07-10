@@ -17,6 +17,7 @@ class StatsOverview extends StatsOverviewWidget
         $pendingCount = Company::pending()->count();
         $approvedCount = Company::approved()->count();
         $totalRatings = Rating::count();
+        $pendingRatings = Rating::where('status', 'pending')->count();
         $avgRating = Rating::avg('overall_rating');
         $avgStipend = Rating::whereNotNull('stipend_sar')->where('stipend_sar', '>', 0)->avg('stipend_sar');
         $jobOfferRate = $totalRatings > 0
@@ -27,6 +28,11 @@ class StatsOverview extends StatsOverviewWidget
             Stat::make('جهات قيد المراجعة', $pendingCount)
                 ->description($totalCompanies.' جهة إجمالاً')
                 ->descriptionIcon('heroicon-o-building-office-2')
+                ->color('warning')
+                ->icon('heroicon-o-clock'),
+            Stat::make('تقييمات قيد المراجعة', $pendingRatings)
+                ->description($totalRatings.' تقييم إجمالاً')
+                ->descriptionIcon('heroicon-o-inbox')
                 ->color('warning')
                 ->icon('heroicon-o-clock'),
             Stat::make('جهات موافق عليها', $approvedCount)

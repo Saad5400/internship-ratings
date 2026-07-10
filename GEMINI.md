@@ -347,3 +347,10 @@ livewire(ListUsers::class)
 - **Never assume full-width layout.** `Grid`, `Section`, and `Fieldset` do not span all columns by default. Explicitly set column spans when needed.
 
 </laravel-boost-guidelines>
+
+## Project principles
+
+This project has two short docs capturing the conventions all contributors (human or AI) are held to. Read them before making changes, and extend the existing patterns rather than forking new ones:
+
+- `docs/ux-principles.md` — UX doctrine: RTL-first Arabic UI, moderation ergonomics, empty states, progressive disclosure, feedback discipline.
+- `docs/code-principles.md` — code/abstraction rules: one source of truth per concern (enums, model scopes, `ModerationStatus`, the `Arabic` normalizer), thin Filament resources delegating to Schemas/Tables, frozen public routes/SEO contracts, the `is_admin` gate, and test-per-change.
