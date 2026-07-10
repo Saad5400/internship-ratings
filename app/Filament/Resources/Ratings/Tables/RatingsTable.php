@@ -7,6 +7,7 @@ use App\Enums\Modality;
 use App\Enums\Recommendation;
 use App\Support\ModerationStatus;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -47,10 +48,10 @@ class RatingsTable
                     ->label('نوع الجهة')
                     ->formatStateUsing(fn ($state): string => $state?->label() ?? CompanyType::tryFrom((string) $state)?->label() ?? 'غير محدد')
                     ->badge()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('city')
                     ->label('المدينة')
-                    ->toggleable()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->icon('heroicon-o-map-pin'),
                 TextColumn::make('overall_rating')
                     ->label('التقييم')
@@ -66,7 +67,8 @@ class RatingsTable
                     ->label('المكافأة')
                     ->formatStateUsing(fn (?int $state): string => $state ? number_format($state).' ر.س' : 'بدون')
                     ->sortable()
-                    ->color(fn (?int $state): string => $state ? 'success' : 'gray'),
+                    ->color(fn (?int $state): string => $state ? 'success' : 'gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('modality')
                     ->label('النمط')
                     ->formatStateUsing(fn (string|Modality $state): string => $state instanceof Modality
@@ -75,7 +77,8 @@ class RatingsTable
                     ->badge()
                     ->color(fn (string|Modality $state): string => $state instanceof Modality
                         ? $state->color()
-                        : Modality::tryFrom((string) $state)?->color() ?? 'gray'),
+                        : Modality::tryFrom((string) $state)?->color() ?? 'gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('recommendation')
                     ->label('توصية')
                     ->formatStateUsing(fn (string|Recommendation $state): string => $state instanceof Recommendation
@@ -94,12 +97,12 @@ class RatingsTable
                     ->default('مجهول')
                     ->searchable()
                     ->icon('heroicon-o-user')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('التاريخ')
                     ->date()
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -149,21 +152,25 @@ class RatingsTable
             ->recordActions([
                 Action::make('approve')
                     ->label('موافقة')
+                    ->button()
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->action(fn (Model $record) => $record->update(['status' => 'approved']))
-                    ->requiresConfirmation()
+                    ->successNotificationTitle('تمت الموافقة')
                     ->visible(fn (Model $record): bool => $record->status !== 'approved'),
                 Action::make('reject')
                     ->label('رفض')
+                    ->button()
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->action(fn (Model $record) => $record->update(['status' => 'rejected']))
-                    ->requiresConfirmation()
+                    ->successNotificationTitle('تم الرفض')
                     ->visible(fn (Model $record): bool => $record->status !== 'rejected'),
-                ViewAction::make(),
-                EditAction::make(),
-                DeleteAction::make()->label('حذف'),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make()->label('حذف'),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -172,14 +179,12 @@ class RatingsTable
                         ->color('success')
                         ->icon('heroicon-o-check-circle')
                         ->action(fn (Collection $records) => $records->each->update(['status' => 'approved']))
-                        ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('reject')
                         ->label('رفض')
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')
                         ->action(fn (Collection $records) => $records->each->update(['status' => 'rejected']))
-                        ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                     DeleteBulkAction::make()->label('حذف'),
                 ]),

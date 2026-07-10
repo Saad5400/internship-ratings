@@ -23,13 +23,13 @@ class ListCompanies extends ListRecords
     public function getTabs(): array
     {
         return [
-            'all' => Tab::make('الكل')
-                ->icon('heroicon-o-list-bullet'),
             'pending' => Tab::make('قيد المراجعة')
                 ->icon('heroicon-o-clock')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'pending'))
                 ->badge(Company::query()->where('status', 'pending')->count())
                 ->badgeColor('warning'),
+            'all' => Tab::make('الكل')
+                ->icon('heroicon-o-list-bullet'),
             'approved' => Tab::make('موافق عليها')
                 ->icon('heroicon-o-check-circle')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'approved'))

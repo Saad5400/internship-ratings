@@ -11,7 +11,7 @@ class RatingsDistributionChart extends ChartWidget
 
     protected ?string $description = 'عدد التقييمات حسب الدرجة';
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 3;
 
     protected ?string $maxHeight = '300px';
 

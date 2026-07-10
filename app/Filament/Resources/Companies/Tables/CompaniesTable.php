@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Companies\Tables;
 use App\Enums\CompanyType;
 use App\Support\ModerationStatus;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -92,20 +93,24 @@ class CompaniesTable
             ->recordActions([
                 Action::make('approve')
                     ->label('موافقة')
+                    ->button()
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->action(fn (Model $record) => $record->update(['status' => 'approved']))
-                    ->requiresConfirmation()
+                    ->successNotificationTitle('تمت الموافقة')
                     ->visible(fn (Model $record): bool => $record->status !== 'approved'),
                 Action::make('reject')
                     ->label('رفض')
+                    ->button()
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
                     ->action(fn (Model $record) => $record->update(['status' => 'rejected']))
-                    ->requiresConfirmation()
+                    ->successNotificationTitle('تم الرفض')
                     ->visible(fn (Model $record): bool => $record->status !== 'rejected'),
-                ViewAction::make(),
-                EditAction::make(),
+                ActionGroup::make([
+                    ViewAction::make(),
+                    EditAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -114,14 +119,12 @@ class CompaniesTable
                         ->color('success')
                         ->icon('heroicon-o-check-circle')
                         ->action(fn (Collection $records) => $records->each->update(['status' => 'approved']))
-                        ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                     BulkAction::make('reject')
                         ->label('رفض')
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')
                         ->action(fn (Collection $records) => $records->each->update(['status' => 'rejected']))
-                        ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
                     DeleteBulkAction::make()
                         ->label('حذف'),
