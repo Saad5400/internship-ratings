@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+/* Font faces are injected by scripts/og-image.mjs as base64 data URIs. */
+__FONT_CSS__
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    background: #f4f7fb;
+    color: #0f172a;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Backdrop: faint dot grid plus two soft brand-tinted glows. */
+.backdrop { position: absolute; inset: 0; }
+
+.backdrop::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 26px 26px;
+    opacity: .55;
+    -webkit-mask-image: radial-gradient(120% 100% at 20% 10%, #000 0%, transparent 72%);
+    mask-image: radial-gradient(120% 100% at 20% 10%, #000 0%, transparent 72%);
+}
+
+.glow { position: absolute; border-radius: 9999px; filter: blur(90px); }
+.glow-a { width: 620px; height: 620px; left: -180px; top: -220px; background: rgba(59, 130, 246, .22); }
+.glow-b { width: 520px; height: 520px; right: -140px; bottom: -260px; background: rgba(14, 165, 233, .16); }
+
+/* Top accent hairline. */
+.accent {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 6px;
+    background: linear-gradient(90deg, #0ea5e9, #3b82f6 45%, #6366f1);
+}
+
+.stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    height: 100%;
+    padding: 0 68px;
+}
+
+/* ---------------- Copy column ---------------- */
+
+.copy { width: 560px; flex: none; }
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 16px 9px 18px;
+    border-radius: 9999px;
+    background: #ffffff;
+    border: 1px solid #dbeafe;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+    font-size: 17px;
+    font-weight: 600;
+    color: #1d4ed8;
+}
+
+.pill svg { width: 18px; height: 18px; }
+
+h1 {
+    margin-top: 22px;
+    font-size: 62px;
+    font-weight: 700;
+    line-height: 1.22;
+    letter-spacing: -0.5px;
+    color: #0f172a;
+}
+
+h1 .hl {
+    background: linear-gradient(180deg, transparent 80%, rgba(147, 197, 253, .6) 80%);
+    border-radius: 4px;
+    padding: 0 6px;
+}
+
+.lede {
+    margin-top: 20px;
+    font-size: 23px;
+    line-height: 1.7;
+    color: #475569;
+    max-width: 520px;
+}
+
+.features {
+    margin-top: 34px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.feature { display: flex; align-items: center; gap: 13px; }
+
+.feature .ico {
+    width: 38px;
+    height: 38px;
+    flex: none;
+    border-radius: 11px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2563eb;
+}
+
+.feature .ico svg { width: 20px; height: 20px; }
+
+.feature span { font-size: 20px; font-weight: 500; color: #334155; }
+
+/* ---------------- Card stack ---------------- */
+
+.figure {
+    position: relative;
+    flex: 1;
+    height: 470px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card {
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+}
+
+/* Two ghost cards fanned behind, reading as "more providers to compare". */
+.card.ghost {
+    width: 372px;
+    padding: 18px 20px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+}
+
+.card.ghost-far {
+    top: 16px;
+    right: 74px;
+    transform: rotate(4.5deg);
+    opacity: .7;
+}
+
+.card.ghost-near {
+    top: 56px;
+    right: 40px;
+    transform: rotate(2deg);
+    opacity: .88;
+}
+
+.ghost-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+
+.ghost-name { height: 13px; border-radius: 7px; background: #e2e8f0; }
+.ghost-meta { height: 9px; border-radius: 5px; background: #edf1f6; margin-top: 11px; }
+
+.card.main {
+    width: 434px;
+    top: 104px;
+    right: 0;
+    padding: 26px 26px 24px;
+    box-shadow: 0 26px 60px -18px rgba(15, 23, 42, .30), 0 8px 20px -8px rgba(15, 23, 42, .10);
+}
+
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+
+.card-title { font-size: 22px; font-weight: 600; color: #0f172a; }
+
+.card-sub {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 15px;
+    color: #94a3b8;
+}
+
+.card-sub svg { width: 15px; height: 15px; }
+
+/* Score chip mirrors the product's overall-score component. */
+.score {
+    flex: none;
+    min-width: 74px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: #f0f9ff;
+    box-shadow: inset 0 0 0 1px rgba(2, 132, 199, .18);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.score b { direction: ltr; font-size: 30px; font-weight: 700; line-height: 1; color: #0369a1; font-variant-numeric: tabular-nums; }
+.score i { direction: ltr; margin-top: 3px; font-size: 11px; font-style: normal; font-weight: 500; letter-spacing: .4px; color: #0ea5e9; }
+
+.metrics {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.metric { display: flex; align-items: center; gap: 12px; }
+.metric .label { width: 96px; flex: none; font-size: 15px; font-weight: 500; color: #475569; }
+.metric .track { display: block; flex: 1; height: 7px; border-radius: 9999px; background: #eef2f7; overflow: hidden; }
+.metric .fill { display: block; height: 100%; border-radius: 9999px; background: #0284c7; }
+.metric .fill.muted { background: #94a3b8; }
+.metric .val { width: 20px; flex: none; text-align: center; font-size: 14px; font-weight: 600; color: #0369a1; font-variant-numeric: tabular-nums; }
+.metric .val.muted { color: #475569; }
+
+.card-foot {
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    border-radius: 9999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.chip svg { width: 13px; height: 13px; }
+.chip.good { background: #f0fdf4; border-color: #dcfce7; color: #15803d; }
+
+.score.ghost-score { min-width: 58px; padding: 9px 10px; background: #f8fafc; box-shadow: inset 0 0 0 1px #e2e8f0; }
+.score.ghost-score b { font-size: 22px; color: #64748b; }
+</style>
+</head>
+<body>
+<div class="backdrop">
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+</div>
+<div class="accent"></div>
+
+<div class="stage">
+    <div class="copy">
+        <div class="pill">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.6l2.6 5.5 6 .85-4.35 4.2 1.03 5.95L12 16.3l-5.28 2.8 1.03-5.95L3.4 8.95l6-.85L12 2.6z"/></svg>
+            تقييمات من متدربين حقيقيين
+        </div>
+
+        <h1>اعرف <span class="hl">جهة تدريبك</span><br>قبل أن تبدأ</h1>
+
+        <p class="lede">قارن جهات التدريب التعاوني والصيفي بتقييمات مفصّلة كتبها متدربون مرّوا بالتجربة فعلاً.</p>
+
+        <div class="features">
+            <div class="feature">
+                <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V10M10 19V5M16 19v-6M22 19H2"/></svg></span>
+                <span>خمسة معايير لكل تقييم</span>
+            </div>
+            <div class="feature">
+                <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h13M3 12h9M3 18h5M18 4v16m0 0l3-3m-3 3l-3-3"/></svg></span>
+                <span>رتّب الجهات حسب الأعلى تقييماً</span>
+            </div>
+            <div class="feature">
+                <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></span>
+                <span>شارك تجربتك بدون اسمك</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="figure">
+        <div class="card ghost ghost-far">
+            <div class="ghost-row">
+                <div style="flex:1">
+                    <div class="ghost-name" style="width: 150px"></div>
+                    <div class="ghost-meta" style="width: 96px"></div>
+                </div>
+                <div class="score ghost-score">
+                    <b>3.6</b>
+                </div>
+            </div>
+        </div>
+
+        <div class="card ghost ghost-near">
+            <div class="ghost-row">
+                <div style="flex:1">
+                    <div class="ghost-name" style="width: 186px"></div>
+                    <div class="ghost-meta" style="width: 118px"></div>
+                </div>
+                <div class="score ghost-score">
+                    <b>4.1</b>
+                </div>
+            </div>
+        </div>
+
+        <div class="card main">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">جهة التدريب</div>
+                    <div class="card-sub">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+                        <span>٢٤ تقييماً من متدربين</span>
+                    </div>
+                </div>
+                <div class="score">
+                    <b>4.5</b>
+                    <i>/ 5</i>
+                </div>
+            </div>
+
+            <div class="metrics">
+                <div class="metric">
+                    <span class="label">التعلّم</span>
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="val">5</span>
+                </div>
+                <div class="metric">
+                    <span class="label">الإرشاد</span>
+                    <span class="track"><span class="fill" style="width: 80%"></span></span>
+                    <span class="val">4</span>
+                </div>
+                <div class="metric">
+                    <span class="label">العمل الحقيقي</span>
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="val">5</span>
+                </div>
+                <div class="metric">
+                    <span class="label">بيئة الفريق</span>
+                    <span class="track"><span class="fill" style="width: 80%"></span></span>
+                    <span class="val">4</span>
+                </div>
+                <div class="metric">
+                    <span class="label">التنظيم</span>
+                    <span class="track"><span class="fill muted" style="width: 60%"></span></span>
+                    <span class="val muted">3</span>
+                </div>
+            </div>
+
+            <div class="card-foot">
+                <span class="chip good">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                    أنصح به
+                </span>
+                <span class="chip">حضوري</span>
+                <span class="chip">٦ أشهر</span>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
