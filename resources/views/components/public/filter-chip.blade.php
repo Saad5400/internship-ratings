@@ -24,14 +24,66 @@
     };
 @endphp
 
+{{-- The panel hangs off the chip (`start-0`, i.e. its right edge in RTL) and
+     extends toward the viewport's left. A chip sitting near that edge — the last
+     one on a wrapped row, which on mobile is most of them — would push the panel
+     past the boundary and make the whole page scroll sideways. `shift` nudges the
+     panel's inline-start inset until it sits inside, instead of flipping the anchor:
+     flipping only helps a chip with room on the other side, a clamp is correct everywhere.
+     The measurement runs on open (and on resize / chip re-layout); until Alpine
+     boots, `x-cloak` keeps the panel display:none, so there is nothing to overflow. --}}
 <div
     class="relative"
-    x-data="{ open: false, query: '' }"
+    x-data="{
+        open: false,
+        query: '',
+        shift: 0,
+        reposition() {
+            if (! this.open || ! this.$refs.panel) { return; }
+
+            const panel = this.$refs.panel;
+            const gutter = 8;
+            const rtl = getComputedStyle(panel).direction === 'rtl';
+
+            // Drop the previous correction before measuring, so what we read is the
+            // panel's natural position — never a guess about what is already applied.
+            panel.style.insetInlineStart = '';
+
+            // Measure against the page box rather than the viewport: an absolutely
+            // positioned overflow can leave the document scrolled sideways, and the
+            // body rect scrolls with the panel, so this stays right either way.
+            const page = document.body.getBoundingClientRect();
+            const rect = panel.getBoundingClientRect();
+            const left = rect.left - page.left;
+            const right = rect.right - page.left;
+
+            const correction = left < gutter
+                ? gutter - left
+                : Math.min(0, (page.width - gutter) - right);
+
+            this.shift = Math.round(rtl ? -correction : correction);
+            panel.style.insetInlineStart = this.shift ? this.shift + 'px' : '';
+        },
+        toggle() {
+            this.open = ! this.open;
+            this.query = '';
+            this.$nextTick(() => this.reposition());
+        },
+    }"
+    {{-- Re-measure when the chip itself changes shape: ResizeObserver for reflow,
+         MutationObserver for a Livewire morph (applying a filter grows the chip's
+         label, which can move the panel). Only content is observed, never
+         attributes, so writing the shift back cannot feed itself. --}}
+    x-init="
+        new ResizeObserver(() => reposition()).observe($el);
+        new MutationObserver(() => reposition()).observe($el, { childList: true, subtree: true, characterData: true });
+    "
     @keydown.escape.window="open = false"
+    @resize.window="reposition()"
 >
     <button
         type="button"
-        @click="open = ! open; query = ''"
+        @click="toggle()"
         :aria-expanded="open ? 'true' : 'false'"
         class="inline-flex max-w-full items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors
             @if($selectedCount > 0)
@@ -49,9 +101,12 @@
     <div
         x-show="open"
         x-cloak
+        x-ref="panel"
         @click.outside="open = false"
         x-transition.opacity.duration.150ms
-        class="absolute top-full start-0 z-30 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+        {{-- Inline-axis inset, not `transform` — x-transition owns the transform property. --}}
+        :style="{ insetInlineStart: shift ? shift + 'px' : '' }"
+        class="absolute top-full start-0 z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-800 dark:bg-slate-900"
         role="group"
         aria-label="{{ $label }}"
     >

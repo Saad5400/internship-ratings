@@ -530,9 +530,11 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                         type="button"
                         wire:click="$set('search', '')"
                         @click="empty = true"
-                        {{-- Shares its corner with the spinner, so it steps aside while one is in flight. --}}
+                        {{-- Shares its corner with the spinner, so exactly one of
+                             the two is ever mounted. Same targets as the
+                             spinner, or they overlap. --}}
                         wire:loading.remove
-                        wire:target="search, useExample, toggleFilter, clearFacet, clearFilters, sort"
+                        wire:target="search, useExample"
                         class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                         aria-label="مسح البحث"
                     >
@@ -540,8 +542,12 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                     </button>
                 @endif
 
-                {{-- Inline spinner while the search request is in flight --}}
-                <div wire:loading wire:target="search, useExample, toggleFilter, clearFacet, clearFilters, sort" class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 dark:text-slate-500">
+                {{-- Inline spinner while the search request is in flight.
+                     Scoped to the search box's own actions: a spinner here for a
+                     city filter claims the wrong control is working, and with an
+                     empty box it just floats in a corner with nothing to explain
+                     it. Filters and sort are answered by the grid skeleton. --}}
+                <div wire:loading wire:target="search, useExample" class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 dark:text-slate-500">
                     <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
                 </div>
 
