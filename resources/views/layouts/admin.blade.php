@@ -2,6 +2,25 @@
 <html lang="ar" dir="rtl">
     <head>
         @include('partials.head')
+        @fluxAppearance
+        {{--
+            The admin panel is light-only (its components carry no dark:
+            variants yet). @fluxAppearance stamps `.dark` on <html> from the
+            OS/stored preference, and the dark theme override repaints the
+            page base to slate-900 — under the panel's translucent light
+            surfaces that reads as a murky gray. Strip it before paint, and
+            again after wire:navigate (the <html> element persists).
+        --}}
+        <script data-navigate-once>
+            (() => {
+                const forceLight = () => {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.style.colorScheme = 'light';
+                };
+                forceLight();
+                document.addEventListener('livewire:navigated', forceLight);
+            })();
+        </script>
     </head>
     <body class="min-h-screen bg-slate-50/50 font-sans antialiased text-slate-900">
         @php
