@@ -45,11 +45,15 @@ class ProbeCompanyLogosCommand extends Command
         $withoutLogo = 0;
         $unanswered = 0;
 
+        // Fetched once, not per company: it is the same artwork every time, and
+        // the CDN starts refusing at volume.
+        $placeholder = CompanyBranding::placeholderIcon();
+
         $bar = $this->output->createProgressBar($companies->count());
         $bar->start();
 
         foreach ($companies as $company) {
-            $hasLogo = CompanyBranding::probeLogo($company->website);
+            $hasLogo = CompanyBranding::probeLogo($company->website, $placeholder);
             $bar->advance();
 
             if ($hasLogo === null) {

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Company;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -14,9 +15,10 @@ use Throwable;
  * backfilling `companies.website` is what puts a logo on the card.
  *
  * One thing about that mark cannot be derived, only measured: whether the CDN
- * has an icon for the host at all. It answers 200 either way, handing back a
- * generic grey globe when it has nothing, which is why `companies.has_logo`
- * exists and why {@see probeLogo()} is a network call rather than a rule.
+ * has an icon for the host at all. It answers 404 when it does not — but with a
+ * grey globe in the body, which browsers happily render, so the client never
+ * sees a failure. That is why `companies.has_logo` exists and why
+ * {@see probeLogo()} is a network call rather than a rule.
  */
 final class CompanyBranding
 {
@@ -79,13 +81,9 @@ final class CompanyBranding
     }
 
     /**
-     * A host that cannot exist, used to learn what "no icon" looks like.
+     * A host the CDN is certain to have no icon for.
      *
-     * The CDN answers every request with 200 — a host with no favicon gets a
-     * generic grey globe rather than a 404 — so the placeholder can only be
-     * recognised by fetching a known-missing host and comparing bytes. Asking
-     * each time rather than hard-coding a checksum means the check keeps
-     * working when the CDN changes its placeholder artwork.
+     * Used to capture the placeholder artwork; see {@see placeholderIcon()}.
      */
     private const UNKNOWN_HOST = 'domain.invalid';
 
@@ -111,34 +109,56 @@ final class CompanyBranding
      * Whether the CDN serves a real favicon for this website, or null when the
      * question could not be answered.
      *
+     * The CDN answers 404 for a host it has no icon for — but with a decodable
+     * image in the body, a grey globe. A browser renders that body and fires
+     * `load`, not `error`, which is why the avatar's own fallback cannot catch
+     * it and why this has to be asked server-side.
+     *
+     * Status is therefore the signal. `$placeholder` is a belt-and-braces
+     * second one for the day the CDN starts answering 200 with the same globe:
+     * pass the bytes from {@see placeholderIcon()} and a body-identical
+     * response counts as "no icon" too.
+     *
      * Null is not "no": a timeout must leave {@see Company::$has_logo} alone
      * rather than demote a company that does have a logo. Callers persist only
      * a definite answer.
      */
-    public static function probeLogo(?string $website): ?bool
+    public static function probeLogo(?string $website, ?string $placeholder = null): ?bool
     {
         if (blank($website)) {
             return false;
         }
 
-        $placeholder = self::fetchIcon(self::UNKNOWN_HOST);
-        $icon = self::fetchIcon(self::host($website));
+        $response = self::fetchIcon(self::host($website));
 
-        if ($placeholder === null || $icon === null) {
+        if ($response === null) {
             return null;
         }
 
-        return $icon !== $placeholder;
+        if (! $response->successful()) {
+            return false;
+        }
+
+        return $placeholder === null || $response->body() !== $placeholder;
     }
 
-    /** The icon bytes for a host, or null if the fetch failed. */
-    private static function fetchIcon(string $host): ?string
+    /**
+     * The artwork the CDN serves for a host it has no icon for, or null if it
+     * could not be fetched. Fetch it once per run and hand it to
+     * {@see probeLogo()} — asking beats hard-coding a checksum that would go
+     * stale the day the artwork changes.
+     */
+    public static function placeholderIcon(): ?string
+    {
+        return self::fetchIcon(self::UNKNOWN_HOST)?->body();
+    }
+
+    /** The CDN's response for a host, or null if the request never completed. */
+    private static function fetchIcon(string $host): ?Response
     {
         try {
-            $response = Http::timeout(self::PROBE_TIMEOUT)
+            return Http::timeout(self::PROBE_TIMEOUT)
                 ->get('https://www.google.com/s2/favicons', ['domain' => $host, 'sz' => 128]);
-
-            return $response->successful() ? $response->body() : null;
         } catch (Throwable) {
             return null;
         }

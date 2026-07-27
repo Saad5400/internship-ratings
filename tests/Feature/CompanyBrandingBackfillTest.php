@@ -2,6 +2,7 @@
 
 use App\Models\Company;
 use App\Support\CompanyBranding;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -141,10 +142,12 @@ test('deriveWebsite refuses an Arabic-only name', function () {
 });
 
 /**
- * The favicon CDN never 404s. Asked about a host it has no icon for it answers
- * 200 with a generic grey globe, so "no logo" is indistinguishable from "logo"
- * unless the bytes are compared against a known-missing host. These tests fake
- * that CDN: the placeholder body is what `domain.invalid` returns.
+ * The favicon CDN answers 404 for a host it has no icon for — but with a
+ * decodable grey globe in the body, which browsers render rather than treating
+ * as an error. These tests fake that: an unknown host gets 404 + placeholder
+ * bytes, a known one gets 200 + its own artwork.
+ *
+ * @param  array<string, string>  $bodyByHost
  */
 function fakeIconCdn(array $bodyByHost, string $placeholder = 'GENERIC-GLOBE'): void
 {
@@ -152,20 +155,36 @@ function fakeIconCdn(array $bodyByHost, string $placeholder = 'GENERIC-GLOBE'): 
         'www.google.com/s2/favicons*' => function ($request) use ($bodyByHost, $placeholder) {
             $host = $request->data()['domain'] ?? '';
 
-            return Http::response($bodyByHost[$host] ?? $placeholder);
+            return array_key_exists($host, $bodyByHost)
+                ? Http::response($bodyByHost[$host])
+                : Http::response($placeholder, 404);
         },
     ]);
 }
 
-test('probeLogo tells a real favicon from the placeholder the CDN serves instead of a 404', function () {
+test('probeLogo reads the CDN 404 that the browser cannot see as "no icon"', function () {
     fakeIconCdn(['real.example' => 'PNG-REAL-LOGO']);
 
     expect(CompanyBranding::probeLogo('https://real.example'))->toBeTrue()
         ->and(CompanyBranding::probeLogo('https://iconless.example'))->toBeFalse();
 });
 
+test('probeLogo also catches the placeholder served with a 200, given its bytes', function () {
+    // The day the CDN stops 404ing, status alone would call every host a hit.
+    Http::fake(['www.google.com/s2/favicons*' => Http::response('GENERIC-GLOBE')]);
+
+    expect(CompanyBranding::probeLogo('https://iconless.example'))->toBeTrue()
+        ->and(CompanyBranding::probeLogo('https://iconless.example', 'GENERIC-GLOBE'))->toBeFalse();
+});
+
+test('placeholderIcon returns the artwork even though the CDN 404s it', function () {
+    fakeIconCdn([]);
+
+    expect(CompanyBranding::placeholderIcon())->toBe('GENERIC-GLOBE');
+});
+
 test('probeLogo answers null when the CDN cannot be reached, so a timeout never demotes a company', function () {
-    Http::fake(['www.google.com/s2/favicons*' => Http::response('', 503)]);
+    Http::fake(['www.google.com/s2/favicons*' => fn () => throw new ConnectionException('timed out')]);
 
     expect(CompanyBranding::probeLogo('https://real.example'))->toBeNull();
 });
