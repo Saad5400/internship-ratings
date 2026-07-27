@@ -30,8 +30,15 @@ cmds = [
 
 [phases.build]
 cmds = [
-    # Download RoadRunner binary for Octane
-    "./vendor/bin/rr get-binary --quiet",
+    # Download RoadRunner binary for Octane.
+    #
+    # This resolves the release through the GitHub API unauthenticated, so it is
+    # subject to anonymous rate limits shared across everything else leaving this
+    # box — several deploys in quick succession is enough to earn a 403 and fail
+    # a build for reasons that have nothing to do with the code being deployed.
+    # Retry with a widening backoff, then assert the binary really landed so a
+    # genuine failure still stops the build instead of shipping a broken image.
+    "for attempt in 1 2 3 4 5; do ./vendor/bin/rr get-binary --quiet && break; echo \"rr get-binary failed (attempt ${attempt}), retrying\"; sleep $((attempt * 15)); done; test -x ./rr",
 
     # Cache configs for prod
     "php artisan config:cache",
