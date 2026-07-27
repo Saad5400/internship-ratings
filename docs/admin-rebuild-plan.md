@@ -36,7 +36,7 @@ meaningfully *better to use*, not just equivalent. UX doctrine:
   cards (the exact public rating card wrapped with company context), one-click
   approve/reject with undo toasts, stats + distribution + top companies below
   the queue.
-- [ ] **3b. Moderation power flows** (user-requested):
+- [x] **3b. Moderation power flows** (user-requested):
   - *Reassign a rating's company* — inline searchable company picker on the
     rating card/edit, for the duplicate-company case; plus a proactive
     suggestion ("same as approved «X»? move the rating") powered by
@@ -46,21 +46,21 @@ meaningfully *better to use*, not just equivalent. UX doctrine:
     dialog (destructive-action ladder rung 2), offering to move ratings first.
   - *Duplicate warning at approve time* — approving a company similar to an
     existing approved one warns and suggests merging instead.
-- [ ] **4. Ratings workspace** — list (tabs/filters/search/sort), detail page,
+- [x] **4. Ratings workspace** — list (tabs/filters/search/sort), detail page,
   edit form with progressive disclosure. Model stays the source of
   `overall_rating` / derived recommendation.
-- [ ] **5. Companies workspace** — list, detail with inline ratings tab
+- [x] **5. Companies workspace** — list, detail with inline ratings tab
   (replaces the relation manager), edit, approve/reject.
-- [ ] **6. Users** — list + create/edit; keep: hashed password, blank-password
+- [x] **6. Users** — list + create/edit; keep: hashed password, blank-password
   keeps hash, unique email, cannot delete self, cannot demote/delete last admin.
   *Invite flow* (user-requested): add an admin with name+email only → the app
   issues a temporary **signed setup link** (copy button, no mailer dependency);
   the invitee opens it, sets their own password, and is signed in. Same
   machinery reused as a "reset password link" action for existing admins.
   Manual password entry stays as a collapsed advanced option.
-- [ ] **7. Global search (Ctrl/Cmd-K) + polish** — command palette across
+- [x] **7. Global search (Ctrl/Cmd-K) + polish** — command palette across
   companies/ratings/users, mobile pass, a11y pass.
-- [ ] **8. Cleanup** — delete `app/Filament`, Filament deps, provider, parked
+- [x] **8. Cleanup** — delete `app/Filament`, Filament deps, provider, parked
   routes; rewrite remaining Filament-coupled tests; update README + docs.
 
 ## Feature inventory (parity checklist)
@@ -75,15 +75,15 @@ blank password on edit keeps the hash.
 | Admin login (RTL, Arabic) | panel `->login()` | `pages/admin/login` | ✅ phase 1 |
 | `is_admin` gate → 403 | `canAccessPanel()` | `EnsureUserIsAdmin` | ✅ phase 1 |
 | Pending-count nav badges | resource nav badges | layout nav badge (المراجعة) | ✅ phase 1 |
-| Moderation queue, 1-click approve/reject | table row/bulk actions | review inbox (phase 3) | ⬜ |
-| Ratings list: status tabs + counts | `ListRatings` 7 tabs | phase 4 (tabs simplified) | ⬜ |
-| Ratings filters (status/modality/recommendation/company type/score/job offer/supervisor) | `RatingsTable` | phase 4 | ⬜ |
-| Rating create/edit (validation per `RatingForm`) | `RatingForm` | phase 4 | ⬜ |
-| Rating detail (all sections, empty-state fallbacks) | `RatingResource::infolist` | phase 4 | ⬜ |
-| Companies list: tabs, filters, avg/count columns | `CompaniesTable` | phase 5 | ⬜ |
-| Company create/edit | `CompanyForm` | phase 5 | ⬜ |
-| Company detail + its ratings (approve/reject inline) | infolist + `RatingsRelationManager` | phase 5 | ⬜ |
-| Users CRUD + protections | `UserResource` | phase 6 | ⬜ |
-| Dashboard stats (6 cards), top companies, distribution | widgets | phase 3 | ⬜ |
-| Global search Ctrl/Cmd-K | panel global search | phase 7 command palette | ⬜ |
+| Moderation queue, 1-click approve/reject | table row/bulk actions | review inbox (phase 3) | ✅ |
+| Ratings list: status tabs + counts | `ListRatings` 7 tabs | phase 4 (tabs simplified) | ✅ |
+| Ratings filters (status/modality/recommendation/company type/score/job offer/supervisor) | `RatingsTable` | phase 4 | ✅ |
+| Rating create/edit (validation per `RatingForm`) | `RatingForm` | phase 4 | ✅ |
+| Rating detail (all sections, empty-state fallbacks) | `RatingResource::infolist` | phase 4 | ✅ |
+| Companies list: tabs, filters, avg/count columns | `CompaniesTable` | phase 5 | ✅ |
+| Company create/edit | `CompanyForm` | phase 5 | ✅ |
+| Company detail + its ratings (approve/reject inline) | infolist + `RatingsRelationManager` | phase 5 | ✅ |
+| Users CRUD + protections | `UserResource` | phase 6 | ✅ |
+| Dashboard stats (6 cards), top companies, distribution | widgets | phase 3 | ✅ |
+| Global search Ctrl/Cmd-K | panel global search | phase 7 command palette | ✅ |
 | Deliberately dropped | DB notifications bell (never dispatched to), per-column show/hide toggling | — | 🚫 |
