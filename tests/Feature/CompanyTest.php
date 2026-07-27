@@ -6,13 +6,13 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
-test('homepage renders the footer blurb and the nav link to companies', function () {
+test('homepage renders the footer blurb and no nav link to companies', function () {
     $response = $this->get(route('companies.index'));
 
     $response->assertOk();
     $response->assertSee('منصّة مستقلة لتقييم جهات التدريب التعاوني والصيفي، بتجارب حقيقية من المتدربين أنفسهم.');
     $response->assertSee('صُنع بحب لمجتمع المتدربين');
-    $response->assertSeeInOrder(['الجهات', 'أضف تقييم']);
+    $response->assertDontSee('rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100', false);
 });
 
 test('homepage renders the dark mode toggle and the FOUC-guard script', function () {
@@ -23,6 +23,8 @@ test('homepage renders the dark mode toggle and the FOUC-guard script', function
     $response->assertSee('data-navigate-once', false);
     $response->assertSee("localStorage.getItem('theme')", false);
     $response->assertSee("document.documentElement.classList.toggle('dark', isDark);", false);
+    $response->assertDontSee('fluxAppearance', false);
+    $response->assertDontSee('rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100', false);
 });
 
 test('homepage displays approved companies', function () {
@@ -36,9 +38,9 @@ test('homepage displays approved companies', function () {
     $response->assertDontSee('شركة معلقة');
 });
 
-test('homepage query count does not grow with the number of companies rendered', function () {
-    $makeCompanyWithRating = function (string $name): void {
-        $company = Company::create(['name' => $name, 'status' => 'approved']);
+test('ratings_count and average_rating reuse eager-loaded columns instead of querying per company', function () {
+    foreach (range(1, 9) as $i) {
+        $company = Company::create(['name' => "شركة {$i}", 'status' => 'approved']);
 
         Rating::create([
             'company_id' => $company->id,
@@ -51,30 +53,28 @@ test('homepage query count does not grow with the number of companies rendered',
             'rating_team_environment' => 4,
             'rating_organization' => 4,
         ]);
-    };
-
-    foreach (range(1, 3) as $i) {
-        $makeCompanyWithRating("شركة {$i}");
     }
+
+    // Warm the request-independent caches (public stats, latest review ids)
+    // first so the request under test isn't the one that populates them —
+    // otherwise a cache miss would add queries unrelated to the thing this
+    // test guards against.
+    $this->get(route('companies.index'))->assertOk();
 
     DB::enableQueryLog();
     $this->get(route('companies.index'))->assertOk();
-    $queriesForThree = count(DB::getQueryLog());
-    DB::flushQueryLog();
-
-    foreach (range(4, 9) as $i) {
-        $makeCompanyWithRating("شركة {$i}");
-    }
-
-    $this->get(route('companies.index'))->assertOk();
-    $queriesForNine = count(DB::getQueryLog());
+    $queries = DB::getQueryLog();
     DB::disableQueryLog();
 
-    // `ratings_count` and `average_rating` are eager-loaded via `withCount`/
-    // `withAvg` — accessing them on each card must reuse those columns
-    // instead of firing a fresh query per company (regression guard for the
-    // accessor-vs-eager-load precedence bug).
-    expect($queriesForNine)->toBe($queriesForThree);
+    // `companyResults()` eager-loads both via `withCount`/`withAvg`. If the
+    // model's accessors ever stop preferring that eager-loaded data, each of
+    // the 9 rendered cards fires its own extra `avg`/`count` query here —
+    // this fails whether that regresses to 1 extra query per company or 2.
+    $perCompanyAggregateQueries = collect($queries)->filter(
+        fn (array $query): bool => str_contains($query['query'], 'from "ratings" where "ratings"."company_id" = ?')
+    )->count();
+
+    expect($perCompanyAggregateQueries)->toBe(0);
 });
 
 test('company detail page shows ratings', function () {
@@ -619,8 +619,8 @@ test('homepage hero displays heading, subline, and live stats', function () {
     $response = $this->get(route('companies.index'));
 
     $response->assertOk();
-    $response->assertSee('تجارب تدريب حقيقية، من متدربين مثلك');
-    $response->assertSee('اقرأ تقييمات صادقة عن جهات التدريب التعاوني والصيفي قبل أن تختار جهتك.');
+    $response->assertSee('جهات التدريب');
+    $response->assertSee('تقييمات من متدربين سبقوك تساعدك في اختيار جهتك.');
 
     $stats = Livewire::test('pages::companies.index')->instance()->stats;
 

@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
     <head>
+        <meta name="theme-color" content="#f8fafc">
         <script data-navigate-once>
             (function () {
-                var stored = localStorage.getItem('theme');
-                var isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.documentElement.classList.toggle('dark', isDark);
+                {{-- wire:navigate swaps in a server-rendered <html> without the dark class, so re-apply on every navigation --}}
+                var applyTheme = function () {
+                    var isDark = localStorage.getItem('theme') === 'dark';
+                    document.documentElement.classList.toggle('dark', isDark);
+                    var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+                    if (themeColorMeta) {
+                        themeColorMeta.setAttribute('content', isDark ? '#020617' : '#f8fafc');
+                    }
+                };
+                applyTheme();
+                document.addEventListener('livewire:navigated', applyTheme);
             })();
         </script>
         @include('partials.head')
-        <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
-        <meta name="theme-color" content="#020617" media="(prefers-color-scheme: dark)">
     </head>
     <body class="min-h-screen bg-slate-50/50 font-sans antialiased text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <nav class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
@@ -21,10 +28,6 @@
                         تقييم التدريب
                     </a>
                     <div class="flex items-center gap-1 sm:gap-2">
-                        <a href="{{ route('companies.index') }}" wire:navigate
-                            class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 {{ request()->routeIs('companies.*') ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100' : '' }}">
-                            الجهات
-                        </a>
                         <a href="{{ route('ratings.create') }}" wire:navigate
                             class="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-xs transition-all hover:bg-blue-600 hover:shadow-sm active:scale-[0.98]">
                             <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -32,11 +35,15 @@
                         </a>
                         <button
                             type="button"
-                            x-data="{ dark: document.documentElement.classList.contains('dark') }"
+                            x-data="{ dark: localStorage.getItem('theme') === 'dark' }"
                             x-on:click="
                                 dark = !dark;
                                 document.documentElement.classList.toggle('dark', dark);
                                 localStorage.setItem('theme', dark ? 'dark' : 'light');
+                                let themeColorMeta = document.querySelector('meta[name=theme-color]');
+                                if (themeColorMeta) {
+                                    themeColorMeta.setAttribute('content', dark ? '#020617' : '#f8fafc');
+                                }
                             "
                             class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                             aria-label="تبديل المظهر"

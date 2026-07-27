@@ -269,7 +269,7 @@ new #[Layout('layouts.admin')] #[Title('تعديل تقييم')] class extends C
     public function durationChoices(): array
     {
         return collect(range(1, 12))
-            ->map(fn (int $month): array => ['id' => $month, 'name' => $month.' '.($month <= 2 ? ($month === 1 ? 'شهر' : 'شهران') : ($month <= 10 ? 'أشهر' : 'شهراً'))])
+            ->map(fn (int $month): array => ['id' => $month, 'name' => trans_choice('counts.months', $month)])
             ->all();
     }
 

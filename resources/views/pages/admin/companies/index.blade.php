@@ -475,7 +475,7 @@ new #[Layout('layouts.admin')] #[Title('الجهات')] class extends Component
                     $duplicateOf = $company->status === 'pending' ? $company->findSimilarApproved() : null;
                     $linkedRatings = (int) $company->ratings_total_count;
                     $confirmReject = $linkedRatings > 0
-                        ? 'لدى هذه الجهة '.$linkedRatings.' تقييم؛ برفضها ستُخفى هي وتقييماتها من الموقع. يمكنك أولاً نقل التقييمات إلى جهة أخرى من بطاقة كل تقييم.'
+                        ? 'لدى هذه الجهة '.trans_choice('counts.ratings', $linkedRatings).'؛ برفضها ستُخفى هي وتقييماتها من الموقع. يمكنك أولاً نقل التقييمات إلى جهة أخرى من بطاقة كل تقييم.'
                         : null;
                     $rowAverage = $company->approved_ratings_avg === null ? null : (float) $company->approved_ratings_avg;
                 @endphp

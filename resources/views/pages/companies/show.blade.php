@@ -151,8 +151,7 @@ new #[Layout('layouts.public')] class extends Component {
         <div class="mt-6 flex items-center gap-4 border-t border-slate-100 pt-4 text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
             <span class="inline-flex items-center gap-1.5">
                 <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
-                <x-public.count-up :value="$company->ratings_count" :duration="800" class="tabular-nums" />
-                {{ $company->ratings_count === 1 ? 'تقييم' : 'تقييمات' }}
+                <x-public.count-noun :count="$company->ratings_count" noun="ratings" :duration="800" class="tabular-nums" />
             </span>
         </div>
     </div>

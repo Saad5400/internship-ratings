@@ -198,10 +198,10 @@ new #[Layout('layouts.admin')] class extends Component
         $inputClass = 'w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none';
         $host = $company->website ? (parse_url($company->website, PHP_URL_HOST) ?: $company->website) : null;
         $confirmReject = $this->ratingsTotal > 0
-            ? 'لدى هذه الجهة '.$this->ratingsTotal.' تقييم؛ برفضها ستُخفى هي وتقييماتها من الموقع. يمكنك أولاً نقل التقييمات إلى جهة أخرى من بطاقة كل تقييم.'
+            ? 'لدى هذه الجهة '.trans_choice('counts.ratings', $this->ratingsTotal).'؛ برفضها ستُخفى هي وتقييماتها من الموقع. يمكنك أولاً نقل التقييمات إلى جهة أخرى من بطاقة كل تقييم.'
             : null;
         $deleteMessage = $this->ratingsTotal > 0
-            ? 'سيؤدي حذف «'.$company->name.'» إلى إزالتها نهائياً من قاعدة البيانات مع حذف '.$this->ratingsTotal.' تقييم مرتبط بها نهائياً معها. لا يمكن التراجع عن هذا الإجراء.'
+            ? 'سيؤدي حذف «'.$company->name.'» إلى إزالتها نهائياً من قاعدة البيانات، مع حذف كل التقييمات المرتبطة بها ('.trans_choice('counts.ratings', $this->ratingsTotal).') نهائياً. لا يمكن التراجع عن هذا الإجراء.'
             : 'سيؤدي حذف «'.$company->name.'» إلى إزالتها نهائياً من قاعدة البيانات. لا توجد تقييمات مرتبطة بها. لا يمكن التراجع عن هذا الإجراء.';
     @endphp
 
@@ -227,7 +227,7 @@ new #[Layout('layouts.admin')] class extends Component
             </div>
             <p class="mt-2 text-slate-500">
                 @if($this->approvedStats['count'] > 0)
-                    متوسط {{ number_format($this->approvedStats['average'], 1) }} من {{ $this->approvedStats['count'] }} تقييم معتمد
+                    متوسط {{ number_format($this->approvedStats['average'], 1) }} من {{ trans_choice('counts.ratings', $this->approvedStats['count']) }} معتمد
                 @else
                     لا توجد تقييمات معتمدة بعد
                 @endif

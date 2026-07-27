@@ -168,5 +168,5 @@ test('rejecting a company that has ratings requires confirmation with counts', f
 
     Livewire::actingAs($admin)
         ->test('pages::admin.dashboard')
-        ->assertSee('لدى هذه الجهة 1 تقييم');
+        ->assertSee('لدى هذه الجهة تقييم واحد');
 });

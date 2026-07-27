@@ -50,7 +50,7 @@
                     </span>
                 @endif
                 <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                    {{ $rating->duration_months }} {{ $rating->duration_months === 1 ? 'شهر' : 'أشهر' }}
+                    <x-public.count-noun :count="$rating->duration_months" noun="months" :animate="false" />
                 </span>
                 @if($rating->modality)
                     <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{{ $modalityLabel }}</span>

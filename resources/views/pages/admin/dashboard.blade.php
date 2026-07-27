@@ -75,7 +75,7 @@ new #[Layout('layouts.admin')] #[Title('المراجعة')] class extends Compon
             [
                 'label' => 'جهات موافق عليها',
                 'value' => (string) $approvedCompanies,
-                'description' => $totalCompanies > 0 ? round($approvedCompanies / $totalCompanies * 100).'% من إجمالي '.$totalCompanies.' جهة' : null,
+                'description' => $totalCompanies > 0 ? round($approvedCompanies / $totalCompanies * 100).'% من إجمالي '.trans_choice('counts.companies', $totalCompanies) : null,
                 'color' => 'success',
                 'icon' => 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
             ],
@@ -134,7 +134,7 @@ new #[Layout('layouts.admin')] #[Title('المراجعة')] class extends Compon
     <x-admin.page-header
         title="المراجعة"
         :subtitle="$pendingTotal > 0
-            ? 'بانتظارك '.$this->pendingRatingsTotal.' تقييم و'.$this->pendingCompanies->count().' جهة'
+            ? 'بانتظارك '.trans_choice('counts.ratings', $this->pendingRatingsTotal).' و'.trans_choice('counts.companies', $this->pendingCompanies->count())
             : 'لا يوجد شيء بانتظار المراجعة'"
     />
 
@@ -228,7 +228,7 @@ new #[Layout('layouts.admin')] #[Title('المراجعة')] class extends Compon
                     @foreach([5, 4, 3, 2, 1] as $score)
                         <div class="flex items-center gap-3">
                             <span class="flex w-5 shrink-0 items-center gap-0.5 text-xs font-semibold tabular-nums text-slate-600">{{ $score }}</span>
-                            <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100" role="img" aria-label="{{ $distribution[$score] }} تقييم بدرجة {{ $score }}">
+                            <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100" role="img" aria-label="{{ trans_choice('counts.ratings', $distribution[$score]) }} بدرجة {{ $score }}">
                                 <div class="h-full rounded-full {{ $bucketStyles[$score] }}" style="width: {{ round($distribution[$score] / $maxBucket * 100) }}%"></div>
                             </div>
                             <span class="w-8 shrink-0 text-end text-xs tabular-nums text-slate-500">{{ $distribution[$score] }}</span>
@@ -252,7 +252,7 @@ new #[Layout('layouts.admin')] #[Title('المراجعة')] class extends Compon
                                     <span class="truncate text-sm font-medium text-slate-900">{{ $company->name }}</span>
                                 </div>
                                 <div class="flex shrink-0 items-center gap-2">
-                                    <span class="text-xs text-slate-400">{{ $company->ratings_count }} تقييم</span>
+                                    <span class="text-xs text-slate-400">{{ trans_choice('counts.ratings', $company->ratings_count) }}</span>
                                     <x-admin.score-badge :score="$company->ratings_avg_overall_rating" />
                                 </div>
                             </li>

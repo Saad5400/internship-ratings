@@ -155,6 +155,27 @@
     flex-shrink: 0;
 }
 
+/*
+ * The vendor combobox toggles its options list with a bare `x-show`, so it
+ * snapped open while the filter chips faded in. Same reasoning as the dialog
+ * animations above: a CSS animation replays whenever `display` flips, which
+ * matches the chips' 150ms fade without patching vendor markup.
+ *
+ * Open only. The close can't be animated from here — `x-show` writes
+ * `display: none` synchronously, so the element is already unrendered before
+ * any animation could play, and a `display ... allow-discrete` transition never
+ * fires on this element (it latches `display: block` and leaves the list
+ * invisible). Animating the close needs `x-transition` on the vendor markup, or
+ * swapping this control for a first-party popover.
+ */
+[wire\:key^="options-list-main-"] {
+    animation: dropdown-in 0.15s ease-out;
+}
+
+@keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-0.25rem); }
+}
+
 /* Icon-only compact trigger for a single-select that should only show an icon.
    The dropdown options remain unaffected; only the button/label collapses. */
 .compact-select-trigger [x-ref="container"] {
