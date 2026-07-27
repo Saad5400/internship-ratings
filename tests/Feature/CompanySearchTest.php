@@ -567,3 +567,26 @@ test('a similarity the whole field shares does not rank, however high it reads',
     // Nothing stands out, so nothing is returned — not even the band itself.
     expect($hits)->toBeEmpty();
 });
+
+test('a field where most companies share one value cannot invent a standout', function () {
+    // Low-cardinality fields are the norm, not the exception: 244 companies draw
+    // on a handful of cities. When more than half share a value the median
+    // absolute deviation is exactly zero, and an earlier revision read that as
+    // "anything above the median is infinitely unusual" — handing a perfect
+    // semantic score to whichever city happened to sit a hair above the tie,
+    // which ranked a medical city first for a query about web development.
+    $band = array_merge(array_fill(0, 20, 0.30), [0.36, 0.42]);
+
+    [$query, $companies] = gradedCorpus($band, 0.34);
+
+    $hits = app(CompanySearch::class)->search($query);
+    $marginal = end($companies);      // 0.34 — above the tie, but unremarkable
+    $genuine = $companies[21];        // 0.42 — the one real outlier
+
+    expect($hits->keys())->not->toContain($marginal->id);
+    expect($hits)->toHaveKey($genuine->id);
+    // Scored on its merits rather than saturated, which is what INF produced.
+    expect($hits[$genuine->id]->fields[SearchField::Name->value]['semantic'])
+        ->toBeGreaterThan(0.0)
+        ->toBeLessThan(1.0);
+});

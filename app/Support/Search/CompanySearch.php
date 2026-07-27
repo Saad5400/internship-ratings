@@ -378,16 +378,44 @@ class CompanySearch
             array_map(fn (float $similarity): float => abs($similarity - $centre), $similarities)
         );
 
+        if ($spread <= 1e-9) {
+            // More than half a field can share a single value: 244 companies
+            // draw on a handful of cities, and the reviewer line repeats across
+            // ratings. Median absolute deviation collapses to zero on ties like
+            // that, and treating everything above the median as infinitely
+            // unusual ranked a medical city first for a query about web
+            // development. Standard deviation is the weaker estimator in
+            // general and the only usable one here, because ties do not break it.
+            $spread = $this->standardDeviation($similarities);
+        }
+
+        if ($spread <= 1e-9) {
+            // Every document scores identically, so nothing distinguishes
+            // anything and the field has no opinion to contribute.
+            return array_fill(0, count($similarities), 0.0);
+        }
+
         return array_map(
-            // A spread of zero means the field cannot discriminate at all:
-            // every document sits on the centre. Anything strictly above it is
-            // then the only signal there is, and anything at or below it says
-            // nothing.
-            fn (float $similarity): float => $spread > 1e-9
-                ? ($similarity - $centre) / $spread
-                : ($similarity > $centre ? INF : 0.0),
+            fn (float $similarity): float => ($similarity - $centre) / $spread,
             $similarities
         );
+    }
+
+    /**
+     * @param  list<float>  $values
+     */
+    protected function standardDeviation(array $values): float
+    {
+        $count = count($values);
+
+        if ($count === 0) {
+            return 0.0;
+        }
+
+        $mean = array_sum($values) / $count;
+        $variance = array_sum(array_map(fn (float $value): float => ($value - $mean) ** 2, $values)) / $count;
+
+        return sqrt($variance);
     }
 
     /**
