@@ -99,6 +99,27 @@
 
 [x-cloak] { display: none !important; }
 
+/*
+ * Dialog entrance animations. CSS animations (not Alpine x-transition) on
+ * purpose: class-based x-transition breaks x-show inside x-teleport'ed
+ * content, while CSS animations replay whenever display toggles.
+ */
+@utility animate-overlay-in {
+    animation: overlay-in 0.15s ease-out;
+}
+
+@utility animate-dialog-in {
+    animation: dialog-in 0.2s ease-out;
+}
+
+@keyframes overlay-in {
+    from { opacity: 0; }
+}
+
+@keyframes dialog-in {
+    from { opacity: 0; transform: translateY(0.5rem); }
+}
+
 .mary-choices-element {
     display: inline-flex !important;
     width: fit-content;

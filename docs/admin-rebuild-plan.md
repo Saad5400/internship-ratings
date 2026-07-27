@@ -28,15 +28,24 @@ meaningfully *better to use*, not just equivalent. UX doctrine:
 - [x] **1. Foundation** — `EnsureUserIsAdmin` middleware, `routes/admin.php`,
   `layouts/admin` (topbar nav + mobile bottom tab bar, thumb zone), login page,
   dashboard shell, Filament parked at `/filament`. Tests: `AdminLoginTest`.
-- [ ] **2. Shared admin component layer** — `components/admin/*`: page header,
-  stat card, data-table primitives (sortable header, status tabs with counts,
-  filter row, pagination), score badge (threshold colors centralized), confirm
-  dialog, toast bridge, empty states; migrate remaining inline status `match()`
-  arms to `ModerationStatus`.
-- [ ] **3. Review inbox dashboard** — the front door is the moderation queue:
-  pending ratings/companies as rich inline cards (full context, no drill-in),
-  one-click approve/reject, keyboard next/prev, stats row + top companies +
-  distribution below the queue.
+- [x] **2. Shared admin component layer** — `components/admin/*` (page-header,
+  stat-card, score-badge, empty-state, toast-host with undo,
+  moderation-actions, review cards) + shared `<x-badge>` semantic-color map;
+  `ModeratesRecords` trait; public status-badge migrated to `ModerationStatus`.
+- [x] **3. Review inbox dashboard** — pending ratings/companies as rich inline
+  cards (the exact public rating card wrapped with company context), one-click
+  approve/reject with undo toasts, stats + distribution + top companies below
+  the queue.
+- [ ] **3b. Moderation power flows** (user-requested):
+  - *Reassign a rating's company* — inline searchable company picker on the
+    rating card/edit, for the duplicate-company case; plus a proactive
+    suggestion ("same as approved «X»? move the rating") powered by
+    `name_normalized` similarity, so approve-rating-then-reject-duplicate is a
+    two-click flow.
+  - *Reject/delete a company that has ratings* — consequence-count confirm
+    dialog (destructive-action ladder rung 2), offering to move ratings first.
+  - *Duplicate warning at approve time* — approving a company similar to an
+    existing approved one warns and suggests merging instead.
 - [ ] **4. Ratings workspace** — list (tabs/filters/search/sort), detail page,
   edit form with progressive disclosure. Model stays the source of
   `overall_rating` / derived recommendation.
@@ -44,6 +53,11 @@ meaningfully *better to use*, not just equivalent. UX doctrine:
   (replaces the relation manager), edit, approve/reject.
 - [ ] **6. Users** — list + create/edit; keep: hashed password, blank-password
   keeps hash, unique email, cannot delete self, cannot demote/delete last admin.
+  *Invite flow* (user-requested): add an admin with name+email only → the app
+  issues a temporary **signed setup link** (copy button, no mailer dependency);
+  the invitee opens it, sets their own password, and is signed in. Same
+  machinery reused as a "reset password link" action for existing admins.
+  Manual password entry stays as a collapsed advanced option.
 - [ ] **7. Global search (Ctrl/Cmd-K) + polish** — command palette across
   companies/ratings/users, mobile pass, a11y pass.
 - [ ] **8. Cleanup** — delete `app/Filament`, Filament deps, provider, parked

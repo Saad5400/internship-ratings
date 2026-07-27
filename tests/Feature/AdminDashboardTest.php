@@ -116,3 +116,57 @@ test('the dashboard celebrates an empty queue', function () {
         ->test('pages::admin.dashboard')
         ->assertSee('كل شيء تمت مراجعته');
 });
+
+test('a rating can be reassigned to another company and undone', function () {
+    $admin = User::factory()->admin()->create();
+    $duplicate = Company::create(['name' => 'ارامكو', 'type' => 'private', 'status' => 'pending']);
+    $original = Company::create(['name' => 'شركة أرامكو السعودية', 'type' => 'private', 'status' => 'approved']);
+    $rating = dashboardPendingRating($duplicate);
+
+    $page = Livewire::actingAs($admin)->test('pages::admin.dashboard');
+
+    $page->call('reassignRating', $rating->id, $original->id)
+        ->assertDispatched('toast');
+    expect($rating->fresh()->company_id)->toBe($original->id);
+
+    $page->call('undoReassignRating', $rating->id, $duplicate->id);
+    expect($rating->fresh()->company_id)->toBe($duplicate->id);
+});
+
+test('the manual reassign picker moves the rating', function () {
+    $admin = User::factory()->admin()->create();
+    $from = Company::create(['name' => 'جهة أولى', 'type' => 'private', 'status' => 'approved']);
+    $to = Company::create(['name' => 'جهة ثانية', 'type' => 'private', 'status' => 'approved']);
+    $rating = dashboardPendingRating($from);
+
+    Livewire::actingAs($admin)
+        ->test('pages::admin.dashboard')
+        ->call('startReassign', $rating->id)
+        ->set('reassignCompanyId', $to->id)
+        ->call('confirmReassign')
+        ->assertSet('reassignRatingId', null);
+
+    expect($rating->fresh()->company_id)->toBe($to->id);
+});
+
+test('a pending company similar to an approved one is flagged as a duplicate', function () {
+    $admin = User::factory()->admin()->create();
+    Company::create(['name' => 'شركة أرامكو السعودية', 'type' => 'private', 'status' => 'approved']);
+    $duplicate = Company::create(['name' => 'ارامكو', 'type' => 'private', 'status' => 'pending']);
+    dashboardPendingRating($duplicate);
+
+    Livewire::actingAs($admin)
+        ->test('pages::admin.dashboard')
+        ->assertSee('نسخة مكررة')
+        ->assertSee('نقل التقييم إليها');
+});
+
+test('rejecting a company that has ratings requires confirmation with counts', function () {
+    $admin = User::factory()->admin()->create();
+    $company = Company::create(['name' => 'جهة بتقييمات', 'type' => 'private', 'status' => 'pending']);
+    dashboardPendingRating($company);
+
+    Livewire::actingAs($admin)
+        ->test('pages::admin.dashboard')
+        ->assertSee('لدى هذه الجهة 1 تقييم');
+});

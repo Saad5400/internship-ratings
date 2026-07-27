@@ -34,7 +34,7 @@ new #[Layout('layouts.admin')] #[Title('المراجعة')] class extends Compon
     #[Computed]
     public function pendingCompanies()
     {
-        return Company::pending()->withCount('ratings')->oldest()->get();
+        return Company::pending()->withCount('ratings as ratings_total_count')->oldest()->get();
     }
 
     #[Computed]
@@ -174,7 +174,7 @@ new #[Layout('layouts.admin')] #[Title('المراجعة')] class extends Compon
             <div class="mx-auto max-w-3xl space-y-4">
                 @foreach($this->pendingRatings as $rating)
                     <div wire:key="pending-rating-{{ $rating->id }}">
-                        <x-admin.rating-review-card :rating="$rating" />
+                        <x-admin.rating-review-card :rating="$rating" :reassigning="$reassignRatingId === $rating->id" />
                     </div>
                 @endforeach
 

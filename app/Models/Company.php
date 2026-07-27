@@ -70,6 +70,32 @@ class Company extends Model
         return $query;
     }
 
+    /**
+     * The approved company this one most likely duplicates, if any — matched
+     * on the normalized name (exact or containment either way). Used by the
+     * moderation flows to suggest reassigning ratings instead of approving a
+     * duplicate entry.
+     */
+    public function findSimilarApproved(): ?Company
+    {
+        $normalized = $this->name_normalized ?? Arabic::normalize($this->name);
+
+        if (blank($normalized)) {
+            return null;
+        }
+
+        return static::approved()
+            ->whereKeyNot($this->getKey())
+            ->where(function (Builder $query) use ($normalized) {
+                $query->where('name_normalized', $normalized)
+                    ->orWhere('name_normalized', 'like', '%'.$normalized.'%')
+                    ->orWhereRaw("? like '%' || name_normalized || '%'", [$normalized]);
+            })
+            ->withCount('ratings as ratings_total_count')
+            ->orderByRaw('length(name_normalized) asc')
+            ->first();
+    }
+
     public function getAverageRatingAttribute(): ?float
     {
         $avg = $this->approvedRatings()->avg('overall_rating');
