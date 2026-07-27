@@ -30,15 +30,22 @@ cmds = [
 
 [phases.build]
 cmds = [
-    # Download RoadRunner binary for Octane.
+    # RoadRunner binary for Octane, fetched straight from the release asset.
     #
-    # This resolves the release through the GitHub API unauthenticated, so it is
-    # subject to anonymous rate limits shared across everything else leaving this
-    # box — several deploys in quick succession is enough to earn a 403 and fail
-    # a build for reasons that have nothing to do with the code being deployed.
-    # Retry with a widening backoff, then assert the binary really landed so a
-    # genuine failure still stops the build instead of shipping a broken image.
-    "for attempt in 1 2 3 4 5; do ./vendor/bin/rr get-binary --quiet && break; echo \"rr get-binary failed (attempt ${attempt}), retrying\"; sleep $((attempt * 15)); done; test -x ./rr",
+    # `rr get-binary` resolves the version through the GitHub *API*, which is
+    # unauthenticated here and so draws on an hourly anonymous rate limit shared
+    # by everything leaving this host. Once that limit is spent every build 403s
+    # until the window rolls over — deploy 7f6c487 spent five retries across
+    # 151s and still failed, because no retry schedule that fits inside a build
+    # can outlast an hourly limit. Release *downloads* are not metered the same
+    # way, so this sidesteps the API entirely and pins the version besides,
+    # which makes the build reproducible rather than "whatever is latest today".
+    #
+    # KEEP IN SYNC with spiral/roadrunner in composer.lock. `rr get-binary`
+    # stays as the fallback for the case where this URL 404s because the two
+    # drifted, and --version is asserted so a wrong or truncated binary fails
+    # the build here instead of at boot.
+    "RR_VERSION=2025.1.12; curl -fsSL \"https://github.com/roadrunner-server/roadrunner/releases/download/v${RR_VERSION}/roadrunner-${RR_VERSION}-linux-amd64.tar.gz\" -o /tmp/rr.tar.gz && tar -xzf /tmp/rr.tar.gz --strip-components=1 --wildcards -C . '*/rr' && chmod +x ./rr; ./rr --version || ./vendor/bin/rr get-binary --quiet; ./rr --version",
 
     # Cache configs for prod
     "php artisan config:cache",
