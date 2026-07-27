@@ -35,7 +35,7 @@ test('the ratings view page renders for an admin', function () {
     $rating = Rating::create(adminRatingPayload($company));
 
     $this->actingAs($admin)
-        ->get("/admin/ratings/{$rating->id}")
+        ->get("/filament/ratings/{$rating->id}")
         ->assertOk()
         ->assertSee('التقييمات', false);
 });
@@ -46,32 +46,32 @@ test('the ratings edit page renders for an admin', function () {
     $rating = Rating::create(adminRatingPayload($company));
 
     $this->actingAs($admin)
-        ->get("/admin/ratings/{$rating->id}/edit")
+        ->get("/filament/ratings/{$rating->id}/edit")
         ->assertOk();
 });
 
 test('the ratings list and create pages render for an admin', function () {
     $admin = User::factory()->admin()->create();
 
-    $this->actingAs($admin)->get('/admin/ratings')->assertOk();
-    $this->actingAs($admin)->get('/admin/ratings/create')->assertOk();
+    $this->actingAs($admin)->get('/filament/ratings')->assertOk();
+    $this->actingAs($admin)->get('/filament/ratings/create')->assertOk();
 });
 
 test('the companies resource pages render for an admin', function () {
     $admin = User::factory()->admin()->create();
     $company = Company::create(['name' => 'شركة تجريبية', 'type' => 'private', 'status' => 'approved']);
 
-    $this->actingAs($admin)->get('/admin/companies')->assertOk();
-    $this->actingAs($admin)->get('/admin/companies/create')->assertOk();
-    $this->actingAs($admin)->get("/admin/companies/{$company->id}")->assertOk();
-    $this->actingAs($admin)->get("/admin/companies/{$company->id}/edit")->assertOk();
+    $this->actingAs($admin)->get('/filament/companies')->assertOk();
+    $this->actingAs($admin)->get('/filament/companies/create')->assertOk();
+    $this->actingAs($admin)->get("/filament/companies/{$company->id}")->assertOk();
+    $this->actingAs($admin)->get("/filament/companies/{$company->id}/edit")->assertOk();
 });
 
 test('the users resource pages render for an admin', function () {
     $admin = User::factory()->admin()->create();
     $user = User::factory()->create();
 
-    $this->actingAs($admin)->get('/admin/users')->assertOk();
-    $this->actingAs($admin)->get('/admin/users/create')->assertOk();
-    $this->actingAs($admin)->get("/admin/users/{$user->id}/edit")->assertOk();
+    $this->actingAs($admin)->get('/filament/users')->assertOk();
+    $this->actingAs($admin)->get('/filament/users/create')->assertOk();
+    $this->actingAs($admin)->get("/filament/users/{$user->id}/edit")->assertOk();
 });

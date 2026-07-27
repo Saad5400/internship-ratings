@@ -27,7 +27,9 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            // Temporarily parked at /filament while the Livewire panel takes
+            // over /admin; this provider is deleted in the final cleanup phase.
+            ->path('filament')
             ->login()
             ->profile()
             ->brandName('تقييم التدريب')

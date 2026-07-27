@@ -133,6 +133,11 @@ class Rating extends Model
         return $query->where('status', 'approved');
     }
 
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', 'pending');
+    }
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);

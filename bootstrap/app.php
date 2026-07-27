@@ -12,6 +12,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+
+        /*
+         * One combined call on purpose: `redirectUsersTo()` after
+         * `redirectGuestsTo()` silently overwrites the guest redirect with a
+         * `fn () => null` (Middleware::redirectTo wraps its null $guests
+         * default into a truthy closure and re-registers it).
+         */
+        $middleware->redirectTo(
+            guests: fn (): string => route('login'),
+            users: fn (): string => route('admin.dashboard'),
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
