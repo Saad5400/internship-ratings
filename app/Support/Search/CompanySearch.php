@@ -44,6 +44,8 @@ class CompanySearch
     /** @var array<string, Collection<int, SearchHit>> */
     protected array $memo = [];
 
+    protected ?bool $indexed = null;
+
     public function __construct(private readonly Embedder $embedder) {}
 
     /**
@@ -70,6 +72,22 @@ class CompanySearch
     public function ids(?string $term): array
     {
         return $this->search($term)->keys()->all();
+    }
+
+    /**
+     * Whether there is an index to search at all.
+     *
+     * There is a window on every deploy where the table exists and is empty —
+     * migrations run before `search:index` does. Without this check the ranker
+     * would correctly report "nothing matched" for every query, and the site
+     * would look like it had lost all its data. Callers fall back to literal
+     * name matching until the index is built.
+     */
+    public function hasIndex(): bool
+    {
+        return $this->indexed ??= SearchDocument::query()
+            ->ofType((new Company)->getMorphClass())
+            ->exists();
     }
 
     /** @return Collection<int, SearchHit> */

@@ -121,7 +121,16 @@ class Company extends Model
             return $query;
         }
 
-        $ids = app(CompanySearch::class)->ids($term);
+        $search = app(CompanySearch::class);
+
+        // Deploys migrate before they index. Ranking against an empty index is
+        // technically correct and catastrophic — every search would return
+        // nothing — so fall back to literal name matching until it is built.
+        if (! $search->hasIndex()) {
+            return $query->searchByName($term);
+        }
+
+        $ids = $search->ids($term);
 
         return $ids === []
             ? $query->whereRaw('1 = 0')

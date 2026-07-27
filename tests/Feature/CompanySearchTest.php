@@ -352,6 +352,20 @@ test('facet counts describe the searched list, not the whole catalogue', functio
     expect($options->firstWhere('value', 'جدة')['count'])->toBe(1);
 });
 
+test('search falls back to name matching when the index is empty', function () {
+    // The window on every deploy: migrations have run, `search:index` has not.
+    $company = searchableCompany('شركة الأفق');
+    SearchDocument::query()->delete();
+    app()->forgetScopedInstances();
+
+    expect(Company::approved()->matchingSearch('الأفق')->pluck('id')->all())
+        ->toBe([$company->id]);
+
+    Livewire::test('pages::companies.index')
+        ->set('search', 'الأفق')
+        ->assertSee('شركة الأفق');
+});
+
 test('a search matching nothing returns no companies', function () {
     // Semantics off: the fake embedder buckets tokens by hash, so on a corpus
     // this small an unrelated query can collide into a weak similarity. This
