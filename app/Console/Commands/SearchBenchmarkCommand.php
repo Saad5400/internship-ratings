@@ -76,15 +76,28 @@ class SearchBenchmarkCommand extends Command
         }
 
         $rows = [];
+        $scored = 0;
         $withinDepth = 0;
         $firstPlace = 0;
         $reciprocalRankSum = 0.0;
 
         foreach (self::EXPECTATIONS as $query => $accepted) {
+            // "The answer is not in this catalogue" is not a ranking failure,
+            // and scoring it as one makes the metric meaningless anywhere but
+            // production — a local database of five companies would report 47%
+            // and imply a broken ranker. Skipped rows are excluded from the
+            // totals rather than counted against them.
+            if (! $this->catalogueContains($accepted)) {
+                $rows[] = [$query, '—', 'n/a', 'not in this catalogue'];
+
+                continue;
+            }
+
             $results = $search->search($query)->take(20);
             $names = Company::whereIn('id', $results->pluck('companyId'))->pluck('name', 'id');
 
             [$rank, $matched] = $this->locate($results, $names, $accepted);
+            $scored++;
 
             if ($rank !== null) {
                 $reciprocalRankSum += 1 / $rank;
@@ -101,19 +114,43 @@ class SearchBenchmarkCommand extends Command
             ];
         }
 
-        $total = count(self::EXPECTATIONS);
-
         $this->table(['query', 'rank', "hit@{$depth}", 'matched / top result'], $rows);
         $this->newLine();
+
+        if ($scored === 0) {
+            $this->components->warn('No expectation applies to this catalogue — nothing was scored.');
+
+            return self::SUCCESS;
+        }
+
+        $skipped = count(self::EXPECTATIONS) - $scored;
+
         $this->line(sprintf(
-            '  hit@%d %d/%d (%d%%)    top-1 %d/%d (%d%%)    MRR %.3f',
+            '  hit@%d %d/%d (%d%%)    top-1 %d/%d (%d%%)    MRR %.3f%s',
             $depth,
-            $withinDepth, $total, round(100 * $withinDepth / $total),
-            $firstPlace, $total, round(100 * $firstPlace / $total),
-            $reciprocalRankSum / $total,
+            $withinDepth, $scored, round(100 * $withinDepth / $scored),
+            $firstPlace, $scored, round(100 * $firstPlace / $scored),
+            $reciprocalRankSum / $scored,
+            $skipped > 0 ? "    ({$skipped} n/a)" : '',
         ));
 
-        return $withinDepth === $total ? self::SUCCESS : self::FAILURE;
+        return $withinDepth === $scored ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * Whether any acceptable answer exists here at all.
+     *
+     * @param  list<string>  $accepted
+     */
+    protected function catalogueContains(array $accepted): bool
+    {
+        return Company::approved()
+            ->where(function ($query) use ($accepted): void {
+                foreach ($accepted as $fragment) {
+                    $query->orWhere('name', 'like', '%'.$fragment.'%');
+                }
+            })
+            ->exists();
     }
 
     /**
