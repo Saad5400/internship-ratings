@@ -20,9 +20,14 @@ Route::prefix('admin')->middleware(SetAdminLocale::class)->group(function () {
         Route::livewire('/login', 'pages::admin.login')->name('login');
     });
 
-    // Invited admins set their own password via a temporary signed link.
+    /*
+     * Invited admins set their own password via a temporary signed link.
+     * Relative signatures on purpose: the link must survive host/port
+     * differences (localhost:8000 vs APP_URL, proxies in production) —
+     * generate with `absolute: false` and prefix with url() for display.
+     */
     Route::livewire('/setup/{user}', 'pages::admin.setup')
-        ->middleware('signed')
+        ->middleware('signed:relative')
         ->name('admin.setup');
 
     Route::middleware(['auth', 'auth.session', EnsureUserIsAdmin::class])->name('admin.')->group(function () {

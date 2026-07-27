@@ -198,7 +198,7 @@ test('a regular user can be deleted', function () {
 test('a signed setup link renders and lets the invitee set a password and sign in', function () {
     $invitee = User::factory()->admin()->unverified()->create();
 
-    $url = URL::temporarySignedRoute('admin.setup', now()->addDays(7), ['user' => $invitee->id]);
+    $url = url(URL::temporarySignedRoute('admin.setup', now()->addDays(7), ['user' => $invitee->id], absolute: false));
 
     $this->get($url)
         ->assertOk()
@@ -239,7 +239,7 @@ test('an unsigned setup URL returns 403', function () {
 test('an expired setup URL returns 403', function () {
     $invitee = User::factory()->admin()->create();
 
-    $url = URL::temporarySignedRoute('admin.setup', now()->addDays(7), ['user' => $invitee->id]);
+    $url = url(URL::temporarySignedRoute('admin.setup', now()->addDays(7), ['user' => $invitee->id], absolute: false));
 
     $this->travel(8)->days();
 
