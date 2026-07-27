@@ -2,12 +2,12 @@
 
 @php
     $latestRating = $company->relationLoaded('latestApprovedRating') ? $company->latestApprovedRating : null;
-    $quote = $latestRating && filled($latestRating->review_text) ? $latestRating->review_text : null;
 
-    // While searching, say what the card matched on. A result found by meaning
-    // rather than by literal text has no visible overlap with the query, so
-    // without this it reads as a bug (docs/ux-principles.md §4).
-    $matchedFields = $hit?->matchedFields() ?? [];
+    // The card used to quote the latest review and list which fields the search
+    // matched on. Both were dropped: a quote pulled out of one review reads as
+    // the company's own words, and the match chips explain the ranker rather
+    // than the company. $hit is still accepted so callers need no change, and
+    // SearchHit::matchedFields() stays covered by CompanySearchTest.
 @endphp
 
 <a href="{{ route('companies.show', $company) }}" wire:navigate
@@ -27,21 +27,6 @@
                     <x-public.overall-score :value="$company->average_rating" />
                 @endif
             </div>
-
-            @if($quote)
-                <p class="mt-3 line-clamp-1 text-sm italic text-slate-500 dark:text-slate-400">&rdquo;{{ $quote }}&ldquo;</p>
-            @endif
-
-            @if($matchedFields !== [])
-                <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
-                    <span class="text-slate-400 dark:text-slate-500">
-                        {{ $hit->isSemanticMatch() ? 'مطابقة بالمعنى:' : 'طابق:' }}
-                    </span>
-                    @foreach($matchedFields as $field)
-                        <span class="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">{{ $field->label() }}</span>
-                    @endforeach
-                </div>
-            @endif
 
             <div class="mt-3 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
                 @if($company->ratings_count === 0)

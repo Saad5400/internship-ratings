@@ -18,7 +18,11 @@
 @endphp
 
 <div {{ $attributes->class(["relative flex items-center justify-center overflow-hidden rounded-xl ring-1 ring-inset ring-slate-200 dark:ring-slate-700", $bgClass, $sizeClass]) }}>
-    <span class="font-bold {{ $textClass }} {{ $textSizeClass }}">{{ $company->initial }}</span>
+    {{-- Exactly one of the two is ever visible. The letter is the fallback, so
+         it is hidden while a favicon is present and revealed again if that
+         favicon fails to load — otherwise a logo with a transparent background
+         shows the initial through it. --}}
+    <span @class(['font-bold', $textClass, $textSizeClass, 'hidden' => filled($company->favicon_url)])>{{ $company->initial }}</span>
 
     @if($company->favicon_url)
         <img
@@ -27,7 +31,7 @@
             aria-hidden="true"
             loading="lazy"
             referrerpolicy="no-referrer"
-            onerror="this.remove()"
+            onerror="this.previousElementSibling?.classList.remove('hidden'); this.remove()"
             class="absolute inset-0 m-auto {{ $imgSizeClass }} object-contain"
         >
     @endif

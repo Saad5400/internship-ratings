@@ -10,6 +10,7 @@ use App\Support\Search\CompanySearch;
 use App\Support\Search\Embedder;
 use App\Support\Search\SearchIndexer;
 use App\Support\Search\Vector;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
@@ -375,13 +376,31 @@ test('an explicit sort choice survives typing a search', function () {
         ->assertSet('sort', 'most_rated');
 });
 
-test('a result explains which field it matched on', function () {
-    searchableCompany('مؤسسة النخبة', ['city' => 'حائل']);
+test('a result card describes the company, not the ranker or one reviewer', function () {
+    // The card used to print "طابق: <field>" and quote the latest review. Both
+    // are gone: the first narrates the ranker instead of the company, and the
+    // second reads as something the company said rather than one intern's
+    // opinion. The match reason still exists on the hit — see the topField
+    // tests above — it just is not shown.
+    $company = searchableCompany('مؤسسة النخبة', [
+        'city' => 'حائل',
+        'review_text' => 'رأي متدرب واحد لا يمثل الجهة.',
+    ]);
 
-    Livewire::test('pages::companies.index')
-        ->set('search', 'حائل')
-        ->assertSee('طابق:')
-        ->assertSee(SearchField::City->label());
+    $hit = app(CompanySearch::class)->search('حائل')[$company->id];
+
+    expect($hit->topField())->toBe(SearchField::City);
+
+    $card = Blade::render(
+        '<x-public.company-card :company="$company" :hit="$hit" />',
+        ['company' => $company->load('latestApprovedRating'), 'hit' => $hit],
+    );
+
+    expect($card)
+        ->toContain('مؤسسة النخبة')
+        ->not->toContain('طابق:')
+        ->not->toContain(SearchField::City->label())
+        ->not->toContain('رأي متدرب واحد');
 });
 
 test('facet counts describe the searched list, not the whole catalogue', function () {

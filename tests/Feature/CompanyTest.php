@@ -2,6 +2,7 @@
 
 use App\Models\Company;
 use App\Models\Rating;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -597,6 +598,33 @@ test('initial trims whitespace before taking the first character', function () {
     ]);
 
     expect($company->initial)->toBe('A');
+});
+
+test('the avatar hides the initial behind a logo, and keeps it without one', function () {
+    // A logo with a transparent background used to show the initial through it,
+    // because both layers rendered at once. Only one may be visible; the letter
+    // stays in the markup so the img's onerror can reveal it again.
+    $withLogo = Company::create([
+        'name' => 'شركة تجريبية',
+        'status' => 'approved',
+        'website' => 'https://example.com',
+    ]);
+
+    $withoutLogo = Company::create(['name' => 'مؤسسة النخبة', 'status' => 'approved']);
+
+    $render = fn (Company $company): string => Blade::render(
+        '<x-public.company-avatar :company="$company" />',
+        ['company' => $company],
+    );
+
+    expect($render($withLogo))
+        ->toContain('<img')
+        ->toMatch('/<span[^>]*\bhidden\b[^>]*>\s*ش/u');
+
+    expect($render($withoutLogo))
+        ->not->toContain('<img')
+        ->toMatch('/<span[^>]*>\s*م/u')
+        ->not->toMatch('/<span[^>]*\bhidden\b/u');
 });
 
 test('homepage hero displays heading, subline, and live stats', function () {
