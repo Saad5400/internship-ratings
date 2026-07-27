@@ -15,9 +15,11 @@
     @open-dialog.window="if ($event.detail.id === '{{ $id }}') open = true"
     class="inline-flex"
 >
-    <span class="inline-flex" @click="open = true">
-        {{ $trigger }}
-    </span>
+    @isset($trigger)
+        <span class="inline-flex" @click="open = true">
+            {{ $trigger }}
+        </span>
+    @endisset
 
     <template x-teleport="body">
         <div
