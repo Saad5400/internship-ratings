@@ -9,6 +9,7 @@ use App\Support\Search\CompanySearch;
 use App\Support\Search\Embedder;
 use App\Support\Search\SearchIndexer;
 use App\Support\Search\Vector;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 /**
@@ -364,6 +365,22 @@ test('search falls back to name matching when the index is empty', function () {
     Livewire::test('pages::companies.index')
         ->set('search', 'الأفق')
         ->assertSee('شركة الأفق');
+});
+
+test('search survives the index table not existing yet', function () {
+    // Deploys here do not run migrations, so a release can reach users before
+    // the table does. Search should degrade, not take the page down.
+    $company = searchableCompany('شركة الأفق');
+    Schema::drop('search_documents');
+    app()->forgetScopedInstances();
+
+    Livewire::test('pages::companies.index')
+        ->set('search', 'الأفق')
+        ->assertOk()
+        ->assertSee('شركة الأفق');
+
+    expect(Company::approved()->matchingSearch('الأفق')->pluck('id')->all())
+        ->toBe([$company->id]);
 });
 
 test('a search matching nothing returns no companies', function () {

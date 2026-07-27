@@ -57,7 +57,10 @@ class CompanySearch
     {
         $query = Arabic::normalize($term);
 
-        if ($query === '') {
+        // The index guard belongs here rather than only in the calling scope:
+        // pages read hits directly for the "matched on" line, and that path
+        // would otherwise query a table that may not exist yet.
+        if ($query === '' || ! $this->hasIndex()) {
             return collect();
         }
 
@@ -75,19 +78,29 @@ class CompanySearch
     }
 
     /**
-     * Whether there is an index to search at all.
+     * Whether there is a usable index to search at all.
      *
-     * There is a window on every deploy where the table exists and is empty —
-     * migrations run before `search:index` does. Without this check the ranker
-     * would correctly report "nothing matched" for every query, and the site
-     * would look like it had lost all its data. Callers fall back to literal
-     * name matching until the index is built.
+     * Deploys do not run migrations here, so both of these are real states on
+     * a fresh release: the table is missing entirely, or it exists and is
+     * empty because `search:index` has not run yet. Neither should take the
+     * site down or empty the catalogue — callers fall back to literal name
+     * matching, and the missing table is reported so it still gets noticed.
      */
     public function hasIndex(): bool
     {
-        return $this->indexed ??= SearchDocument::query()
-            ->ofType((new Company)->getMorphClass())
-            ->exists();
+        if ($this->indexed !== null) {
+            return $this->indexed;
+        }
+
+        try {
+            return $this->indexed = SearchDocument::query()
+                ->ofType((new Company)->getMorphClass())
+                ->exists();
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $this->indexed = false;
+        }
     }
 
     /** @return Collection<int, SearchHit> */
