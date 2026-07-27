@@ -115,6 +115,8 @@
             {{ $slot }}
         </main>
 
+        <x-admin.toast-host />
+
         {{-- Mobile bottom tab bar: primary nav in the thumb zone --}}
         <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/60 bg-white/95 backdrop-blur-md md:hidden"
             style="padding-bottom: env(safe-area-inset-bottom)"
