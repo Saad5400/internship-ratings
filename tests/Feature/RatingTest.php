@@ -3,6 +3,7 @@
 use App\Enums\SaudiCity;
 use App\Models\Company;
 use App\Models\Rating;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 test('rating form is accessible', function () {
@@ -283,6 +284,41 @@ test('valid rating can be submitted for existing company', function () {
         ->and($rating->modality->value)->toBe('onsite')
         ->and($rating->overall_rating)->toBe(4.4)
         ->and($rating->recommendation->value)->toBe('yes');
+});
+
+test('free-text columns accept the full validated length', function () {
+    $company = Company::create(['name' => 'شركة تجريبية', 'type' => 'private', 'status' => 'approved']);
+    $longText = str_repeat('نص', 250); // 500 chars — the validation ceiling, above varchar(255)
+
+    Livewire::test('pages::ratings.create')
+        ->set('companyId', (string) $company->id)
+        ->set('city', SaudiCity::Riyadh->value)
+        ->set('modality', 'onsite')
+        ->set('rating_learning', 5)
+        ->set('rating_mentorship', 5)
+        ->set('rating_real_work', 4)
+        ->set('rating_team_environment', 4)
+        ->set('rating_organization', 3)
+        ->set('pros', $longText)
+        ->set('cons', $longText)
+        ->set('application_method', $longText)
+        ->set('willing_to_help', true)
+        ->set('contact_method', $longText)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('companies.show', $company));
+
+    $rating = Rating::where('company_id', $company->id)->firstOrFail();
+    expect($rating->pros)->toBe($longText)
+        ->and($rating->cons)->toBe($longText)
+        ->and($rating->application_method)->toBe($longText)
+        ->and($rating->contact_method)->toBe($longText);
+});
+
+test('rating free-text columns are text, not varchar', function () {
+    foreach (['pros', 'cons', 'application_method', 'contact_method'] as $column) {
+        expect(Schema::getColumnType('ratings', $column))->toBe('text');
+    }
 });
 
 test('submitting with create-new creates pending company and rating', function () {
