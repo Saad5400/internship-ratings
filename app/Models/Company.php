@@ -37,6 +37,14 @@ class Company extends Model
     {
         static::saving(function (Company $company) {
             $company->name_normalized = Arabic::normalize($company->name);
+
+            // `has_logo` is an answer about one specific host. Point the company
+            // at a different website and the old answer is not merely stale, it
+            // is about somebody else — so it goes back to "nobody has looked",
+            // and `companies:probe-logos` picks it up on its next run.
+            if ($company->isDirty('website') && ! $company->isDirty('has_logo')) {
+                $company->has_logo = null;
+            }
         });
 
         // Re-indexing is a paid embedding call, so it never runs inline on a

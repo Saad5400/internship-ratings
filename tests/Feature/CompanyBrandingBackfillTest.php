@@ -257,3 +257,38 @@ test('the probe skips companies it has already answered for', function () {
         ->expectsOutputToContain('already has an answer')
         ->assertSuccessful();
 });
+
+test('changing the website forgets the old host\'s logo answer', function () {
+    $company = Company::create([
+        'name' => 'Aramco',
+        'type' => 'private',
+        'status' => 'approved',
+        'website' => 'https://aramco.example',
+    ]);
+    $company->has_logo = true;
+    $company->saveQuietly();
+
+    // A normal save, not saveQuietly: this is the admin edit form's path, and
+    // saveQuietly deliberately skips every model hook including this one.
+    $company->website = 'https://somewhere-else.example';
+    $company->save();
+
+    // Not stale — the stored answer was about a host this company no longer uses.
+    expect($company->refresh()->has_logo)->toBeNull();
+});
+
+test('an unrelated edit keeps the logo answer', function () {
+    $company = Company::create([
+        'name' => 'Aramco',
+        'type' => 'private',
+        'status' => 'approved',
+        'website' => 'https://aramco.example',
+    ]);
+    $company->has_logo = true;
+    $company->saveQuietly();
+
+    $company->description = 'شركة طاقة';
+    $company->save();
+
+    expect($company->refresh()->has_logo)->toBeTrue();
+});
