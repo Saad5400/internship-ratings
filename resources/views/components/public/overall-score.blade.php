@@ -5,9 +5,9 @@
 
 @php
     [$containerClass, $numberClass, $suffixClass] = match (true) {
-        $value >= 4 => ['bg-sky-50 text-sky-700 ring-sky-600/15', 'text-sky-700', 'text-sky-500'],
-        $value >= 3 => ['bg-slate-100 text-slate-700 ring-slate-300', 'text-slate-700', 'text-slate-500'],
-        default => ['bg-slate-50 text-slate-500 ring-slate-200', 'text-slate-500', 'text-slate-400'],
+        $value >= 4 => ['bg-emerald-50 text-emerald-700 ring-emerald-600/15 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-500/20', 'text-emerald-700 dark:text-emerald-300', 'text-emerald-500 dark:text-emerald-400'],
+        $value >= 3 => ['bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-500/20', 'text-amber-700 dark:text-amber-300', 'text-amber-500 dark:text-amber-400'],
+        default => ['bg-rose-50 text-rose-600 ring-rose-600/15 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-500/20', 'text-rose-600 dark:text-rose-300', 'text-rose-400 dark:text-rose-400'],
     };
 
     $sizeClass = $compact

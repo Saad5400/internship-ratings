@@ -426,7 +426,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
 }; ?>
 
 @php
-    $inputClass = 'w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none';
+    $inputClass = 'w-full rounded-lg border border-slate-200 px-4 py-2.5 text-sm text-slate-900 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500';
 @endphp
 
 <div
@@ -435,14 +435,14 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     x-on:rating-wizard-step-changed.window="window.scrollTo(0, 0)"
     x-on:rating-wizard-validation-failed.window="$nextTick(() => { const el = $el.querySelector('.text-red-600'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); })"
 >
-    <a href="{{ route('companies.index') }}" wire:navigate class="group inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900">
+    <a href="{{ route('companies.index') }}" wire:navigate class="group inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100">
         <svg class="size-4 transition-transform group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
         العودة للجهات
     </a>
 
     <div>
-        <h1 class="text-3xl font-bold tracking-tight text-slate-900">أضف تقييم</h1>
-        <p class="mt-2 text-slate-500">شارك تجربتك في التدريب لمساعدة الطلاب الآخرين.</p>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">أضف تقييم</h1>
+        <p class="mt-2 text-slate-500 dark:text-slate-400">شارك تجربتك في التدريب لمساعدة الطلاب الآخرين.</p>
     </div>
 
     {{-- Progress header --}}
@@ -454,7 +454,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         ];
     @endphp
 
-    <nav aria-label="خطوات النموذج" class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
+    <nav aria-label="خطوات النموذج" class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <ol class="flex items-center justify-between gap-2 px-10">
             @foreach($stepLabels as $num => $title)
                 @php
@@ -472,7 +472,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                         <span class="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all
                             {{ $isCompleted ? 'bg-blue-500 text-white' : '' }}
                             {{ $isCurrent ? 'bg-blue-500 text-white ring-4 ring-blue-500/15' : '' }}
-                            {{ ! $isCurrent && ! $isCompleted ? 'bg-slate-100 text-slate-400' : '' }}
+                            {{ ! $isCurrent && ! $isCompleted ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500' : '' }}
                         ">
                             @if($isCompleted)
                                 <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -481,26 +481,26 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                             @endif
                         </span>
                         <span class="hidden sm:block text-xs font-medium transition-colors
-                            {{ $isCurrent ? 'text-slate-900' : '' }}
-                            {{ $isCompleted ? 'text-slate-600' : '' }}
-                            {{ ! $isCurrent && ! $isCompleted ? 'text-slate-400' : '' }}
+                            {{ $isCurrent ? 'text-slate-900 dark:text-slate-100' : '' }}
+                            {{ $isCompleted ? 'text-slate-600 dark:text-slate-400' : '' }}
+                            {{ ! $isCurrent && ! $isCompleted ? 'text-slate-400 dark:text-slate-500' : '' }}
                         ">{{ $title }}</span>
                     </button>
                     @if(! $loop->last)
-                        <span class="flex-1 h-0.5 rounded-full {{ $isCompleted ? 'bg-blue-500' : 'bg-slate-200' }} transition-colors"></span>
+                        <span class="flex-1 h-0.5 rounded-full {{ $isCompleted ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-800' }} transition-colors"></span>
                     @endif
                 </li>
             @endforeach
         </ol>
     </nav>
 
-    <form wire:submit="save" class="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">
+    <form wire:submit="save" class="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
 
         {{-- STEP 1: COMPANY & ROLE --}}
         <div x-show="$wire.currentStep === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5">
             <div class="mb-1">
-                <h2 class="text-lg font-semibold text-slate-900">تفاصيل التدريب</h2>
-                <p class="mt-1 text-sm text-slate-500">معلومات موضوعية عن الجهة، الدور، والتدريب نفسه.</p>
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">تفاصيل التدريب</h2>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">معلومات موضوعية عن الجهة، الدور، والتدريب نفسه.</p>
             </div>
 
             {{-- Company combobox --}}
@@ -519,24 +519,24 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 >
                     @scope('item', $option)
                         @if(data_get($option, 'id') === '__new__')
-                            <div class="flex items-center gap-2 p-3 border-s-4 border-s-blue-500 bg-blue-50/60 text-blue-700">
+                            <div class="flex items-center gap-2 p-3 border-s-4 border-s-blue-500 bg-blue-50/60 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
                                 <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                                 <span class="font-medium">إنشاء جهة جديدة:</span>
                                 <span class="truncate">{{ data_get($option, 'name') }}</span>
                             </div>
                         @else
-                            <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50">
-                                <div class="font-medium text-slate-900">{{ data_get($option, 'name') }}</div>
+                            <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50 dark:hover:bg-slate-800">
+                                <div class="font-medium text-slate-900 dark:text-slate-100">{{ data_get($option, 'name') }}</div>
                             </div>
                         @endif
                     @endscope
                 </x-public.nice-select>
 
                 @if($companyId === '__new__')
-                    <div class="mt-3 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-sm text-blue-800">
+                    <div class="mt-3 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
                         <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span class="flex-1">ستُنشأ جهة جديدة باسم <strong>{{ $newCompanyName }}</strong> وستُعرض بعد الموافقة.</span>
-                        <button type="button" wire:click="clearCompany" class="text-xs font-medium text-blue-600 underline hover:text-blue-700">تغيير</button>
+                        <button type="button" wire:click="clearCompany" class="text-xs font-medium text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">تغيير</button>
                     </div>
 
                     <div class="mt-5">
@@ -545,15 +545,15 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                                 @foreach(\App\Enums\CompanyType::options() as $val => $lbl)
                                     <label class="relative">
                                         <input type="radio" wire:model="newCompanyType" value="{{ $val }}" class="peer sr-only" />
-                                        <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20">{{ $lbl }}</span>
+                                        <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-950/40 dark:peer-checked:text-blue-300">{{ $lbl }}</span>
                                     </label>
                                 @endforeach
                             </div>
                         </x-public.form-field>
                     </div>
                 @endif
-                @error('newCompanyName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                @error('newCompanyType') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                @error('newCompanyName') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                @error('newCompanyType') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
             </div>
 
             {{-- Role --}}
@@ -580,8 +580,8 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                         :required="true"
                     >
                         @scope('item', $option)
-                            <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50">
-                                <div class="font-medium text-slate-900">{{ data_get($option, 'name') }}</div>
+                            <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50 dark:hover:bg-slate-800">
+                                <div class="font-medium text-slate-900 dark:text-slate-100">{{ data_get($option, 'name') }}</div>
                             </div>
                         @endscope
                     </x-public.nice-select>
@@ -599,8 +599,8 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                 offline
             >
                 @scope('item', $option)
-                    <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50">
-                        <div class="font-medium text-slate-900">{{ data_get($option, 'name') }} {{ (int) data_get($option, 'id') === 1 ? 'شهر' : 'أشهر' }}</div>
+                    <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <div class="font-medium text-slate-900 dark:text-slate-100">{{ data_get($option, 'name') }} {{ (int) data_get($option, 'id') === 1 ? 'شهر' : 'أشهر' }}</div>
                     </div>
                 @endscope
             </x-public.nice-select>
@@ -611,7 +611,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     @foreach(\App\Enums\Modality::cases() as $case)
                         <label class="relative">
                             <input type="radio" wire:model="modality" value="{{ $case->value }}" class="peer sr-only" />
-                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20">{{ $case->label() }}</span>
+                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-950/40 dark:peer-checked:text-blue-300">{{ $case->label() }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -621,7 +621,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             <x-public.form-field label="المكافأة الشهرية (ريال سعودي)" name="stipend_sar">
                 <div class="relative">
                     <input type="number" wire:model="stipend_sar" id="stipend_sar" min="0" placeholder="اتركه فارغاً إذا كان التدريب غير مدفوع" class="{{ $inputClass }} pe-14" />
-                    <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-4 text-xs font-medium text-slate-400">ر.س</span>
+                    <span class="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-4 text-xs font-medium text-slate-400 dark:text-slate-500">ر.س</span>
                 </div>
             </x-public.form-field>
 
@@ -635,16 +635,16 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     ];
                 @endphp
                 @foreach($yesNoQuestions as $field => $question)
-                    <div class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50/50 p-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span class="text-sm font-medium text-slate-700">{{ $question }}</span>
+                    <div class="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50/50 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-800/40">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $question }}</span>
                         <div class="flex gap-2">
                             <label class="relative">
                                 <input type="radio" wire:model="{{ $field }}" value="1" class="peer sr-only" />
-                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20">نعم</span>
+                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:peer-checked:border-sky-500 dark:peer-checked:bg-sky-950/40 dark:peer-checked:text-sky-300">نعم</span>
                             </label>
                             <label class="relative">
                                 <input type="radio" wire:model="{{ $field }}" value="0" class="peer sr-only" />
-                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20">لا</span>
+                                <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:peer-checked:border-slate-500 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-200">لا</span>
                             </label>
                         </div>
                     </div>
@@ -655,8 +655,8 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         {{-- STEP 2: RATING & EXPERIENCE --}}
         <div x-show="$wire.currentStep === 2" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-6">
             <div>
-                <h2 class="text-lg font-semibold text-slate-900">تقييمك وتجربتك</h2>
-                <p class="mt-1 text-sm text-slate-500">قيّم تجربتك على المعايير الخمسة، ثم شاركنا توصيتك وتفاصيل تجربتك.</p>
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">تقييمك وتجربتك</h2>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">قيّم تجربتك على المعايير الخمسة، ثم شاركنا توصيتك وتفاصيل تجربتك.</p>
             </div>
 
             {{-- Star pickers — weighted criteria --}}
@@ -678,16 +678,16 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     @endforeach
                 </div>
 
-                <div class="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4">
+                <div class="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40">
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h3 class="text-sm font-semibold text-slate-900">التقييم العام</h3>
+                            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">التقييم العام</h3>
                         </div>
 
                         @if($this->calculatedOverallRating !== null)
                             <x-public.overall-score :value="$this->calculatedOverallRating" wire:key="overall-score-{{ number_format($this->calculatedOverallRating, 2) }}" compact />
                         @else
-                            <div class="shrink-0 rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-400 ring-1 ring-inset ring-slate-200">أكمل التقييمات الخمسة</div>
+                            <div class="shrink-0 rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-400 ring-1 ring-inset ring-slate-200 dark:bg-slate-900 dark:text-slate-500 dark:ring-slate-700">أكمل التقييمات الخمسة</div>
                         @endif
                     </div>
                 </div>
@@ -696,9 +696,9 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             {{-- Recommendation — big pills --}}
             <x-public.form-field label="هل تنصح بهذا التدريب؟" name="recommendation" :required="true">
                 @if($this->suggestedRecommendation)
-                    <p class="mb-3 text-xs text-slate-500">
+                    <p class="mb-3 text-xs text-slate-500 dark:text-slate-400">
                         الاقتراح الافتراضي مبني على التقييم المحسوب:
-                        <span class="font-semibold text-slate-700">{{ Recommendation::from($this->suggestedRecommendation)->label() }}</span>
+                        <span class="font-semibold text-slate-700 dark:text-slate-300">{{ Recommendation::from($this->suggestedRecommendation)->label() }}</span>
                         @if($this->calculatedOverallRating !== null)
                             <span class="tabular-nums">({{ number_format($this->calculatedOverallRating, 1) }}/5)</span>
                         @endif
@@ -708,14 +708,14 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     @foreach(\App\Enums\Recommendation::cases() as $case)
                         @php
                             $recommendationCheckedClasses = match ($case->value) {
-                                'yes' => 'peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20',
-                                'maybe' => 'peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20',
-                                'no' => 'peer-checked:border-slate-300 peer-checked:bg-slate-50 peer-checked:text-slate-600 peer-checked:ring-2 peer-checked:ring-slate-300/30',
+                                'yes' => 'peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20 dark:peer-checked:border-sky-500 dark:peer-checked:bg-sky-950/40 dark:peer-checked:text-sky-300',
+                                'maybe' => 'peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20 dark:peer-checked:border-slate-500 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-200',
+                                'no' => 'peer-checked:border-slate-300 peer-checked:bg-slate-50 peer-checked:text-slate-600 peer-checked:ring-2 peer-checked:ring-slate-300/30 dark:peer-checked:border-slate-600 dark:peer-checked:bg-slate-800 dark:peer-checked:text-slate-300',
                             };
                         @endphp
                         <label class="relative">
                             <input type="radio" wire:model.live="recommendation" value="{{ $case->value }}" class="peer sr-only" />
-                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 {{ $recommendationCheckedClasses }}">{{ $case->label() }}</span>
+                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 {{ $recommendationCheckedClasses }}">{{ $case->label() }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -741,8 +741,8 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         {{-- STEP 3: ABOUT YOU & SUBMIT --}}
         <div x-show="$wire.currentStep === 3" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-2 rtl:-translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-5">
             <div>
-                <h2 class="text-lg font-semibold text-slate-900">عنك</h2>
-                <p class="mt-1 text-sm text-slate-500">معلومات اختيارية تساعد القرّاء على فهم خلفيتك. ثم أرسل تقييمك.</p>
+                <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">عنك</h2>
+                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">معلومات اختيارية تساعد القرّاء على فهم خلفيتك. ثم أرسل تقييمك.</p>
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -770,7 +770,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     @foreach(\App\Enums\ReviewerDegree::cases() as $case)
                         <label class="relative">
                             <input type="radio" wire:model="reviewer_degree" value="{{ $case->value }}" class="peer sr-only" />
-                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20">{{ $case->label() }}</span>
+                            <span class="flex cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-slate-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-checked:ring-2 peer-checked:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:peer-checked:border-blue-500 dark:peer-checked:bg-blue-950/40 dark:peer-checked:text-blue-300">{{ $case->label() }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -782,26 +782,26 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             </x-public.form-field>
 
             {{-- Willing to help others --}}
-            <div class="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4">
+            <div class="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/40">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-sm font-medium text-slate-700">هل أنت مستعد تساعد غيرك في الحصول على قبول؟</p>
-                        <p class="mt-0.5 text-xs text-slate-500">إذا وافقت، سيُعرض معلومات التواصل معك مع تقييمك.</p>
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">هل أنت مستعد لمساعدة غيرك في الحصول على قبول؟</p>
+                        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">إذا وافقت، سيُعرض معلومات التواصل معك مع تقييمك.</p>
                     </div>
                     <div class="flex gap-2">
                         <label class="relative">
                             <input type="radio" wire:model.live="willing_to_help" value="1" class="peer sr-only" />
-                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20">نعم</span>
+                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-sky-500 peer-checked:bg-sky-50 peer-checked:text-sky-700 peer-checked:ring-2 peer-checked:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:peer-checked:border-sky-500 dark:peer-checked:bg-sky-950/40 dark:peer-checked:text-sky-300">نعم</span>
                         </label>
                         <label class="relative">
                             <input type="radio" wire:model.live="willing_to_help" value="0" class="peer sr-only" />
-                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20">لا</span>
+                            <span class="flex cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-500 transition-all hover:border-slate-300 peer-checked:border-slate-400 peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:ring-2 peer-checked:ring-slate-400/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-slate-600 dark:peer-checked:border-slate-500 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-200">لا</span>
                         </label>
                     </div>
                 </div>
 
                 @if($willing_to_help === true)
-                    <div class="border-t border-slate-200 pt-3">
+                    <div class="border-t border-slate-200 pt-3 dark:border-slate-700">
                         <x-public.form-field label="طريقة التواصل" name="contact_method" :required="true">
                             <input type="text" wire:model="contact_method" id="contact_method"
                                 placeholder="مثلاً: تويتر: @username، واتساب: 05xxxxxxxx، بريد: name@example.com"
@@ -835,16 +835,16 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     "
                 >
                     <div x-ref="box"></div>
-                    @error('turnstile') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    @error('turnstile') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                 </div>
             @endif
         </div>
 
         {{-- WIZARD NAVIGATION --}}
-        <div class="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-6">
+        <div class="mt-8 flex items-center justify-between gap-3 border-t border-slate-100 pt-6 dark:border-slate-800">
             @if($currentStep > 1)
                 <button type="button" wire:click="prevStep"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-xs transition-all hover:bg-slate-50 active:scale-[0.98]">
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-xs transition-all hover:bg-slate-50 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
                     <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                     السابق
                 </button>

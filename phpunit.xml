@@ -33,5 +33,10 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="TURNSTILE_ENABLED" value="false"/>
+        <!-- Every company/rating save re-indexes for search, and the queue runs
+             sync here — so without this the suite would make a paid embeddings
+             call per factory row. The fake driver is deterministic and offline. -->
+        <env name="SEARCH_EMBEDDING_DRIVER" value="fake"/>
+        <env name="OPENROUTER_API_KEY" value=""/>
     </php>
 </phpunit>

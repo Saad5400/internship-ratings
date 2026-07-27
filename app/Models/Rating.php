@@ -5,9 +5,11 @@ namespace App\Models;
 use App\Enums\Modality;
 use App\Enums\Recommendation;
 use App\Enums\ReviewerDegree;
+use App\Jobs\IndexSearchDocuments;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Rating extends Model
 {
@@ -82,6 +84,21 @@ class Rating extends Model
                 $rating->recommendation = static::recommendationFromOverall($rating->overall_rating);
             }
         });
+
+        // A company's city, role and comment fields are aggregated from its
+        // approved ratings, so moderating or editing a rating changes what its
+        // company is findable by. Re-index both sides of a reassignment.
+        static::saved(function (Rating $rating): void {
+            foreach (array_filter([$rating->company_id, $rating->getOriginal('company_id')]) as $companyId) {
+                IndexSearchDocuments::dispatch((int) $companyId);
+            }
+        });
+
+        static::deleted(function (Rating $rating): void {
+            if ($rating->company_id !== null) {
+                IndexSearchDocuments::dispatch((int) $rating->company_id);
+            }
+        });
     }
 
     /**
@@ -128,18 +145,29 @@ class Rating extends Model
         return round($weightedScore, 1);
     }
 
+    /** Table-qualified so the scope survives joins against `companies`. */
     public function scopeApproved(Builder $query): Builder
     {
-        return $query->where('status', 'approved');
+        return $query->where('ratings.status', 'approved');
     }
 
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('status', 'pending');
+        return $query->where('ratings.status', 'pending');
     }
 
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function votes(): HasMany
+    {
+        return $this->hasMany(RatingVote::class);
+    }
+
+    public static function voterHash(string $sessionId): string
+    {
+        return hash('sha256', $sessionId);
     }
 }

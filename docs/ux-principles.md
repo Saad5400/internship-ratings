@@ -7,9 +7,9 @@ example rather than inventing a new pattern.
 ## 1. RTL and Arabic are first-class, not a skin
 
 - The public shell declares `<html lang="ar" dir="rtl">`
-  (`resources/views/layouts/public.blade.php`); the Filament panel is Arabic
-  end-to-end (`brandName('تقييم التدريب')`, Arabic navigation groups, model
-  labels, tabs).
+  (`resources/views/layouts/public.blade.php`); the admin panel
+  (`resources/views/layouts/admin.blade.php`) is Arabic RTL end-to-end —
+  navigation, tabs, dialogs, toasts, validation messages.
 - Use **logical CSS properties**, never physical ones: `ps-*/pe-*`, `ms-*/me-*`,
   `start-0/end-0`, `border-s-*`. The companies index search box
   (`ps-11 pe-11`, `inset-y-0 start-0`, clear button at `end-0`) is the reference.
@@ -17,25 +17,24 @@ example rather than inventing a new pattern.
   validation messages (`turnstile.required => 'يرجى إكمال التحقق الأمني.'`),
   and `aria-label`s are all authored in Arabic.
 - Checklist: no `pl-/pr-/ml-/mr-/left-/right-` in new markup; no English strings
-  leaking into the UI; new admin resources set `navigationLabel`, `modelLabel`,
-  `pluralModelLabel`.
+  leaking into the UI; IDs/emails/URLs are isolated LTR islands (`dir="ltr"`).
 
 ## 2. Frequency drives prominence
 
 The daily job is clearing the moderation queue, so that action is the most
 prominent thing in the panel; rare configuration is buried in edit pages.
 
-- Pending counts are surfaced as **navigation badges** with tooltips
-  (`CompanyResource::getNavigationBadge()` /
-  `RatingResource::getNavigationBadge()`, colored `warning`).
-- The ratings list opens onto **status tabs** (`ListRatings::getTabs()`):
-  الكل / قيد المراجعة / موافق عليها / مرفوضة plus quick views (موصى بها, تقييم
-  عالي), each with its own count badge.
-- Approve / reject are **one-click row actions** (and bulk actions) in
-  `RatingsTable` and the companies `RatingsRelationManager` — no drilling into an
-  edit page to change a status.
+- The admin **front door is the review inbox** (`pages/admin/dashboard`):
+  everything pending is reviewable and actionable right there — full rating
+  cards with one-click approve/reject — with stats demoted below the queue.
+- The pending count rides the **المراجعة nav badge**
+  (`layouts/admin.blade.php`), on desktop and the mobile tab bar alike.
+- List pages open onto **status tabs with live counts**
+  (`<x-admin.status-tabs>` on the ratings and companies indexes).
+- Approve / reject are **one-click actions everywhere a record appears**
+  (`<x-admin.moderation-actions>`), never buried in an edit page.
 - Checklist: the common action is reachable in one click from a list; rare
-  settings live behind View/Edit.
+  settings live behind the workspace/edit surfaces.
 
 ## 3. One status vocabulary, presented consistently
 
@@ -44,16 +43,13 @@ appears: same Arabic labels (قيد المراجعة / موافق عليه / م�
 colors (`warning` / `success` / `danger`).
 
 - The vocabulary lives in one place: `App\Support\ModerationStatus`
-  (`::label()`, `::color()`, `::options()`). Panel surfaces call it —
-  e.g. `RatingsTable` and `CompanyResource`'s status column use
-  `ModerationStatus::color($state)` / `::label($state)`, and the ratings status
-  filter uses `ModerationStatus::options()`.
-- Always render status through `ModerationStatus`; never re-hardcode the Arabic
-  labels or the warning/success/danger colors. A few older call sites
-  (`RatingForm`, `CompanyForm`, `RatingsRelationManager`, the public
-  `status-badge` component, and the `RatingResource` infolist) still inline the
-  same `match()` arms — when you touch one, migrate it to `ModerationStatus`
-  rather than copying the literal strings again.
+  (`::label()`, `::color()`, `::options()`), rendered through the shared
+  `<x-badge>` (the one semantic-color → pill-class map) and
+  `<x-public.status-badge>`. Score thresholds live in
+  `<x-admin.score-badge>`.
+- Always render status through `ModerationStatus` and badges through
+  `<x-badge>`; never re-hardcode the Arabic labels or the
+  warning/success/danger palette.
 - Enum-backed values (`Recommendation`, `Modality`, `CompanyType`) already
   centralize their label + color; always call `->label()` / `->color()` /
   `::options()` instead of re-mapping cases.
@@ -79,8 +75,9 @@ colors (`warning` / `success` / `danger`).
   gated on `@if($willing_to_help === true)`; a new company's detail fields show
   only when `companyId === '__new__'`; the "أرسل تقييمك" copy frames step 3's
   extras as optional (`معلومات اختيارية تساعد القرّاء...`).
-- Filament forms group fields into titled, icon-bearing `Section`s rather than
-  one flat form.
+- Admin edit pages group fields into titled cards with the rarely-edited
+  sections (e.g. المقيّم) collapsed by default; admin list filters hide behind
+  a "تصفية" toggle with an active-count chip.
 - Checklist: don't dump every field at once; step or gate what isn't always
   needed.
 
@@ -109,11 +106,14 @@ colors (`warning` / `success` / `danger`).
 
 ## 8. Destructive-action ladder — guard by severity
 
-- Reversible status changes (approve / reject) use `->requiresConfirmation()`
-  and are hidden when they'd be a no-op
-  (`->visible(fn ($record) => $record->status !== 'approved')`).
-- Deletes are the top rung: explicit `DeleteAction` / `DeleteBulkAction`, clearly
-  labeled `حذف`, separated from the everyday approve/reject buttons.
+- Reversible status changes (approve / reject / reassign) are **one-click with
+  an undo toast** (`ModeratesRecords` + `<x-admin.toast-host>`), and hidden
+  when they'd be a no-op.
+- Cascading actions climb a rung: rejecting a company that has ratings, or any
+  delete, goes through `<x-admin.confirm-dialog>` whose message states the
+  consequences **with counts** — never a generic "are you sure".
+- Blocked actions follow disabled-with-reason: a disabled delete says why
+  ("لا يمكن حذف آخر مدير"), it is never silently dead.
 - Public writes sit behind their own guards: **Cloudflare Turnstile** plus route
   **throttling** (`throttle:10,60` on `ratings.create` in production).
 - Checklist: match friction to consequence — silent for trivial, confirm for

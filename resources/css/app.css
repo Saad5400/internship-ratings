@@ -97,6 +97,21 @@
     }
 }
 
+/*
+ * Dark-mode override for the daisyui "calm" theme's CSS custom properties.
+ * daisyui sets these on `:root`/`[data-theme=calm]` inside `@layer base`;
+ * this block is intentionally unlayered so it always wins the cascade,
+ * regardless of selector specificity. It re-tints the vendor mary-choices
+ * combobox (select/fieldset/badge) to the same slate palette as the rest
+ * of the dark public UI, without touching vendor markup.
+ */
+:root.dark {
+    --color-base-100: #0f172a;
+    --color-base-200: #1e293b;
+    --color-base-300: #334155;
+    --color-base-content: #f1f5f9;
+}
+
 [x-cloak] { display: none !important; }
 
 /*
@@ -145,6 +160,10 @@
 .compact-select-trigger [x-ref="container"] {
     padding: 0 !important;
     justify-content: center;
+    /* daisyUI's `.select` paints its own caret with two linear-gradients, which
+       leaves a stray arrow next to the compact icon. Hiding child SVGs isn't
+       enough — the caret is a background on the trigger itself. */
+    background-image: none !important;
 }
 
 .compact-select-trigger [x-ref="container"] > div {

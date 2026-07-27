@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Support\Search\CompanySearch;
+use App\Support\Search\Embedder;
+use App\Support\Search\FakeEmbedder;
+use App\Support\Search\OpenRouterEmbedder;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +21,38 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->registerSearch();
+    }
+
+    /**
+     * The search stack's two bindings.
+     *
+     * The embedder is resolved from config so no caller names a provider; it
+     * falls back to the deterministic fake whenever the driver says so or no
+     * key is configured, which keeps local work and tests running offline.
+     *
+     * CompanySearch is `scoped`, not `singleton`: it memoizes per query, and a
+     * singleton would carry one request's results into the next under Octane.
+     */
+    protected function registerSearch(): void
+    {
+        $this->app->bind(Embedder::class, function (): Embedder {
+            $config = config('search.embeddings');
+
+            if ($config['driver'] !== 'openrouter' || blank($config['key'])) {
+                return new FakeEmbedder((int) $config['dimensions']);
+            }
+
+            return new OpenRouterEmbedder(
+                model: $config['model'],
+                dimensions: (int) $config['dimensions'],
+                apiKey: $config['key'],
+                baseUrl: $config['url'],
+                timeout: (int) $config['timeout'],
+            );
+        });
+
+        $this->app->scoped(CompanySearch::class);
     }
 
     /**

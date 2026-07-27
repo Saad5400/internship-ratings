@@ -1,21 +1,8 @@
 <?php
 
 use App\Models\User;
-use Filament\Facades\Filament;
 
-test('admin users can access the filament panel', function () {
-    $admin = User::factory()->admin()->create();
-
-    expect($admin->canAccessPanel(Filament::getPanel('admin')))->toBeTrue();
-});
-
-test('non-admin users cannot access the filament panel', function () {
-    $user = User::factory()->create();
-
-    expect($user->canAccessPanel(Filament::getPanel('admin')))->toBeFalse();
-});
-
-test('the admin panel login page is reachable', function () {
+test('the admin login page is reachable', function () {
     $this->get('/admin/login')->assertOk();
 });
 
