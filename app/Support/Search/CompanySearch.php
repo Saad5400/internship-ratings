@@ -46,6 +46,8 @@ class CompanySearch
 
     protected ?bool $indexed = null;
 
+    protected ?int $corpus = null;
+
     public function __construct(private readonly Embedder $embedder) {}
 
     /**
@@ -106,7 +108,9 @@ class CompanySearch
     /** @return Collection<int, SearchHit> */
     protected function rank(string $query): Collection
     {
-        $tokens = preg_split('/\s+/u', $query, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        // Deduplicated because a repeated token would be counted once in the
+        // token-weight denominator but twice in the numerator.
+        $tokens = array_values(array_unique(preg_split('/\s+/u', $query, -1, PREG_SPLIT_NO_EMPTY) ?: []));
 
         if ($tokens === []) {
             return collect();
@@ -166,9 +170,9 @@ class CompanySearch
     /**
      * Literal matching, scored per field.
      *
-     * A field scores the better of its whole-phrase match and its average
-     * per-token match, so "ارامكو الرياض" rewards a field carrying both words
-     * without punishing one that carries the exact phrase.
+     * A field scores the better of its whole-phrase match and its weighted
+     * average per-token match, so "ارامكو الرياض" rewards a field carrying both
+     * words without punishing one that carries the exact phrase.
      *
      * @param  list<string>  $tokens
      * @return array<int, array<string, float>>
@@ -184,6 +188,9 @@ class CompanySearch
             })
             ->get(['searchable_id', 'field', 'content']);
 
+        $weights = $this->tokenWeights($tokens, $rows);
+        $total = array_sum($weights);
+
         $scores = [];
 
         foreach ($rows as $row) {
@@ -193,9 +200,9 @@ class CompanySearch
 
             $perToken = 0.0;
             foreach ($tokens as $token) {
-                $perToken += $this->strength($content, $token);
+                $perToken += $this->strength($content, $token) * $weights[$token];
             }
-            $perToken /= count($tokens);
+            $perToken = $total > 0.0 ? $perToken / $total : 0.0;
 
             $score = max($phrase, $perToken);
 
@@ -205,6 +212,63 @@ class CompanySearch
         }
 
         return $scores;
+    }
+
+    /**
+     * What each query token is worth, by how rare it is in the corpus.
+     *
+     * Without this every token counts the same, and on a real catalogue that
+     * ranks badly: a third of the companies here are named "شركة ...", so
+     * searching "شركة بترول" scored all of them off the generic word alone and
+     * buried the one that actually refines petroleum. This is inverse document
+     * frequency — a token carried by most of the corpus says almost nothing
+     * about which company you meant, a token carried by two says almost
+     * everything — and it is what stops "شركة", "مؤسسة" or "company" from
+     * behaving like a real query term without maintaining a stopword list that
+     * would need a new entry every time the catalogue grows a habit.
+     *
+     * Document frequency is read off the rows already fetched instead of
+     * re-queried: that set is every row matching any token, so it necessarily
+     * contains every occurrence of each one.
+     *
+     * @param  list<string>  $tokens
+     * @param  Collection<int, SearchDocument>  $rows
+     * @return array<string, float> keyed by token, each in (0, 1]
+     */
+    protected function tokenWeights(array $tokens, Collection $rows): array
+    {
+        $corpus = $this->corpusSize();
+
+        if ($corpus < 1) {
+            return array_fill_keys($tokens, 1.0);
+        }
+
+        $scale = log(1 + $corpus);
+        $weights = [];
+
+        foreach ($tokens as $token) {
+            $carrying = $rows
+                ->filter(fn (SearchDocument $row): bool => str_contains((string) $row->content, $token))
+                ->unique('searchable_id')
+                ->count();
+
+            $weights[$token] = log(1 + $corpus / max($carrying, 1)) / $scale;
+        }
+
+        return $weights;
+    }
+
+    /**
+     * How many companies the index holds — the corpus size token weighting is
+     * measured against. Memoised per request rather than cached, because the
+     * count is one cheap aggregate and a stale N would quietly skew ranking.
+     */
+    protected function corpusSize(): int
+    {
+        return $this->corpus ??= SearchDocument::query()
+            ->ofType((new Company)->getMorphClass())
+            ->distinct()
+            ->count('searchable_id');
     }
 
     /**

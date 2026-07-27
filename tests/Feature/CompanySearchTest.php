@@ -427,3 +427,39 @@ test('editing a company re-embeds only the field that changed', function () {
     expect($documents[SearchField::Name->value]->indexed_at->timestamp)->toBe($nameIndexedAt->timestamp);
     expect($documents[SearchField::Profile->value]->content)->toContain('وصف جديد');
 });
+
+test('a word most of the catalogue shares does not outrank the word that narrows it', function () {
+    // Literal leg only: this is about token weighting, not about meaning.
+    app()->bind(Embedder::class, fn () => orthogonalEmbedder());
+
+    // "شركة" is the catalogue's background noise — every one of these carries
+    // it, so on its own it says nothing about which company was meant.
+    foreach (['شركة الأفق', 'شركة النخبة', 'شركة الواحة', 'شركة المستقبل', 'شركة الرؤية'] as $name) {
+        searchableCompany($name);
+    }
+
+    $refinery = searchableCompany('شركة بترول الجزيرة');
+    app()->forgetScopedInstances();
+
+    $hits = app(CompanySearch::class)->search('شركة بترول');
+
+    expect($hits->keys()->first())->toBe($refinery->id);
+    expect($hits[$refinery->id]->score)->toBeGreaterThan(2 * $hits->values()[1]->score);
+});
+
+test('a shared word still searches on its own, it is only worth less alongside a rarer one', function () {
+    app()->bind(Embedder::class, fn () => orthogonalEmbedder());
+
+    foreach (['شركة الأفق', 'شركة النخبة', 'شركة الواحة'] as $name) {
+        searchableCompany($name);
+    }
+    app()->forgetScopedInstances();
+
+    // Weighting tokens against each other must not turn a common word into a
+    // dead one: typing only "شركة" is still a legitimate search, and with
+    // nothing rarer to compare against every company remains a valid answer.
+    $hits = app(CompanySearch::class)->search('شركة');
+
+    expect($hits)->toHaveCount(3);
+    expect($hits->pluck('score')->unique())->toHaveCount(1);
+});
