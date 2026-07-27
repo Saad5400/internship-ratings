@@ -29,6 +29,7 @@ class Company extends Model
     {
         return [
             'type' => CompanyType::class,
+            'has_logo' => 'boolean',
         ];
     }
 
@@ -223,15 +224,23 @@ class Company extends Model
     }
 
     /**
-     * Public favicon CDN URL for the company's website, or null when no
-     * website is set. No asset is ever stored server-side.
+     * Public favicon CDN URL for the company's website, or null when there is
+     * no website — or when the website is known to have no icon. No asset is
+     * ever stored server-side.
      *
-     * There is no logo column: the mark is derived from the website, and
-     * {@see CompanyBranding} owns that derivation so the backfill command
-     * previews exactly what the avatar will render.
+     * The mark is derived from the website and {@see CompanyBranding} owns that
+     * derivation, so the backfill command previews exactly what the avatar will
+     * render. `has_logo === false` is the one stored fact in the chain: the CDN
+     * serves a generic globe rather than a 404 for a host it has no icon for,
+     * and a globe tells a visitor less than the company's own initial does.
+     * Null means nobody has looked yet, and stays optimistic.
      */
     public function getFaviconUrlAttribute(): ?string
     {
+        if ($this->has_logo === false) {
+            return null;
+        }
+
         return CompanyBranding::logoUrl($this->website);
     }
 

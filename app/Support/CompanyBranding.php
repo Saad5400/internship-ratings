@@ -3,15 +3,20 @@
 namespace App\Support;
 
 use App\Models\Company;
+use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * Single source of truth for a company's visual identity.
  *
- * The platform stores no logo asset and has no logo column: {@see Company::getFaviconUrlAttribute()}
- * resolves the mark from the website's host through a public favicon CDN. A
- * company's logo is therefore a pure function of its website, which makes
- * backfilling `companies.website` the only lever there is — fill it and the
- * avatar stops being a bare initial glyph.
+ * The platform stores no logo asset: {@see Company::getFaviconUrlAttribute()}
+ * resolves the mark from the website's host through a public favicon CDN, so
+ * backfilling `companies.website` is what puts a logo on the card.
+ *
+ * One thing about that mark cannot be derived, only measured: whether the CDN
+ * has an icon for the host at all. It answers 200 either way, handing back a
+ * generic grey globe when it has nothing, which is why `companies.has_logo`
+ * exists and why {@see probeLogo()} is a network call rather than a rule.
  */
 final class CompanyBranding
 {
@@ -74,6 +79,20 @@ final class CompanyBranding
     }
 
     /**
+     * A host that cannot exist, used to learn what "no icon" looks like.
+     *
+     * The CDN answers every request with 200 — a host with no favicon gets a
+     * generic grey globe rather than a 404 — so the placeholder can only be
+     * recognised by fetching a known-missing host and comparing bytes. Asking
+     * each time rather than hard-coding a checksum means the check keeps
+     * working when the CDN changes its placeholder artwork.
+     */
+    private const UNKNOWN_HOST = 'domain.invalid';
+
+    /** Seconds to wait on a single icon fetch before giving up. */
+    private const PROBE_TIMEOUT = 10;
+
+    /**
      * The public logo URL for a website, or null when there is no website.
      *
      * No asset is ever stored server-side; the CDN resolves the host's favicon
@@ -85,9 +104,49 @@ final class CompanyBranding
             return null;
         }
 
-        $host = parse_url($website, PHP_URL_HOST) ?: $website;
+        return 'https://www.google.com/s2/favicons?domain='.self::host($website).'&sz=128';
+    }
 
-        return "https://www.google.com/s2/favicons?domain={$host}&sz=128";
+    /**
+     * Whether the CDN serves a real favicon for this website, or null when the
+     * question could not be answered.
+     *
+     * Null is not "no": a timeout must leave {@see Company::$has_logo} alone
+     * rather than demote a company that does have a logo. Callers persist only
+     * a definite answer.
+     */
+    public static function probeLogo(?string $website): ?bool
+    {
+        if (blank($website)) {
+            return false;
+        }
+
+        $placeholder = self::fetchIcon(self::UNKNOWN_HOST);
+        $icon = self::fetchIcon(self::host($website));
+
+        if ($placeholder === null || $icon === null) {
+            return null;
+        }
+
+        return $icon !== $placeholder;
+    }
+
+    /** The icon bytes for a host, or null if the fetch failed. */
+    private static function fetchIcon(string $host): ?string
+    {
+        try {
+            $response = Http::timeout(self::PROBE_TIMEOUT)
+                ->get('https://www.google.com/s2/favicons', ['domain' => $host, 'sz' => 128]);
+
+            return $response->successful() ? $response->body() : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private static function host(string $website): string
+    {
+        return parse_url($website, PHP_URL_HOST) ?: $website;
     }
 
     /**

@@ -139,3 +139,102 @@ test('deriveWebsite refuses an Arabic-only name', function () {
     expect(CompanyBranding::deriveWebsite('مؤسسة وقف دعوتها'))
         ->toBe(['website' => null, 'reason' => CompanyBranding::NO_LATIN_NAME]);
 });
+
+/**
+ * The favicon CDN never 404s. Asked about a host it has no icon for it answers
+ * 200 with a generic grey globe, so "no logo" is indistinguishable from "logo"
+ * unless the bytes are compared against a known-missing host. These tests fake
+ * that CDN: the placeholder body is what `domain.invalid` returns.
+ */
+function fakeIconCdn(array $bodyByHost, string $placeholder = 'GENERIC-GLOBE'): void
+{
+    Http::fake([
+        'www.google.com/s2/favicons*' => function ($request) use ($bodyByHost, $placeholder) {
+            $host = $request->data()['domain'] ?? '';
+
+            return Http::response($bodyByHost[$host] ?? $placeholder);
+        },
+    ]);
+}
+
+test('probeLogo tells a real favicon from the placeholder the CDN serves instead of a 404', function () {
+    fakeIconCdn(['real.example' => 'PNG-REAL-LOGO']);
+
+    expect(CompanyBranding::probeLogo('https://real.example'))->toBeTrue()
+        ->and(CompanyBranding::probeLogo('https://iconless.example'))->toBeFalse();
+});
+
+test('probeLogo answers null when the CDN cannot be reached, so a timeout never demotes a company', function () {
+    Http::fake(['www.google.com/s2/favicons*' => Http::response('', 503)]);
+
+    expect(CompanyBranding::probeLogo('https://real.example'))->toBeNull();
+});
+
+test('a website whose host has no favicon falls back to the initial instead of a grey globe', function () {
+    $company = Company::create([
+        'name' => 'Master Works',
+        'type' => 'private',
+        'status' => 'approved',
+        'website' => 'https://master-works.example',
+    ]);
+
+    // Unprobed, nothing changes: null stays optimistic.
+    expect($company->favicon_url)->toBe('https://www.google.com/s2/favicons?domain=master-works.example&sz=128');
+
+    fakeIconCdn([]);
+
+    $this->artisan('companies:probe-logos --apply')->assertSuccessful();
+
+    expect($company->refresh()->has_logo)->toBeFalse()
+        ->and($company->favicon_url)->toBeNull();
+});
+
+test('a website that does serve a favicon keeps it', function () {
+    $company = Company::create([
+        'name' => 'Aramco',
+        'type' => 'private',
+        'status' => 'approved',
+        'website' => 'https://aramco.example',
+    ]);
+
+    fakeIconCdn(['aramco.example' => 'PNG-REAL-LOGO']);
+
+    $this->artisan('companies:probe-logos --apply')->assertSuccessful();
+
+    expect($company->refresh()->has_logo)->toBeTrue()
+        ->and($company->favicon_url)->toBe('https://www.google.com/s2/favicons?domain=aramco.example&sz=128');
+});
+
+test('the probe writes nothing without --apply', function () {
+    $company = Company::create([
+        'name' => 'Master Works',
+        'type' => 'private',
+        'status' => 'approved',
+        'website' => 'https://master-works.example',
+    ]);
+
+    fakeIconCdn([]);
+
+    $this->artisan('companies:probe-logos')
+        ->expectsOutputToContain('Dry run')
+        ->assertSuccessful();
+
+    expect($company->refresh()->has_logo)->toBeNull();
+});
+
+test('the probe skips companies it has already answered for', function () {
+    $company = Company::create([
+        'name' => 'Aramco',
+        'type' => 'private',
+        'status' => 'approved',
+        'website' => 'https://aramco.example',
+    ]);
+    $company->has_logo = true;
+    $company->saveQuietly();
+
+    Http::preventStrayRequests();
+
+    $this->artisan('companies:probe-logos --apply')
+        ->expectsOutputToContain('already has an answer')
+        ->assertSuccessful();
+});
