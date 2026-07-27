@@ -82,11 +82,12 @@ class CompanySearch
     /**
      * Whether there is a usable index to search at all.
      *
-     * Deploys do not run migrations here, so both of these are real states on
-     * a fresh release: the table is missing entirely, or it exists and is
-     * empty because `search:index` has not run yet. Neither should take the
-     * site down or empty the catalogue — callers fall back to literal name
-     * matching, and the missing table is reported so it still gets noticed.
+     * Both of these are real states on a fresh release: the table is empty
+     * because `search:index` has not run yet, or it is missing because a
+     * release reached traffic in the window before its migration finished.
+     * Neither should take the site down or empty the catalogue — callers fall
+     * back to literal name matching, and the missing table is reported so it
+     * still gets noticed.
      */
     public function hasIndex(): bool
     {
@@ -298,9 +299,22 @@ class CompanySearch
     /**
      * Embedding similarity, scored per field.
      *
-     * Cosine values are mapped through a fixed window rather than min-maxed
-     * across the result set: min-maxing would hand the top neighbour a perfect
-     * score even when nothing in the corpus is actually related.
+     * A document is scored by how far its similarity stands out from the rest
+     * of *its own field*, not by the raw cosine — because raw cosine is not
+     * comparable across fields. Short company names all cluster near each other
+     * in vector space (they share "شركة", "مؤسسة", and little else), so an
+     * unrelated name reaches a cosine that would be a decisive match among long
+     * profile text. Judged on raw value, the name field saturates and every
+     * company looks like a perfect semantic hit; judged against its own
+     * distribution, the same value is unremarkable.
+     *
+     * The centre and spread are the median and scaled median absolute
+     * deviation rather than mean and standard deviation, so a handful of real
+     * matches cannot inflate the baseline they are being measured against.
+     *
+     * This is deliberately not a min-max over the result set: min-maxing hands
+     * the top neighbour a perfect score even when nothing is related, whereas
+     * standardising leaves everything near the middle scoring near zero.
      *
      * @return array<int, array<string, float>>
      */
@@ -318,23 +332,79 @@ class CompanySearch
             return [];
         }
 
-        $floor = (float) $config['floor'];
-        $ceiling = (float) $config['ceiling'];
-        $span = max($ceiling - $floor, 0.0001);
-
-        $scores = [];
+        /** @var array<string, list<array{id: int, similarity: float}>> $fields */
+        $fields = [];
 
         foreach ($this->matrix() as $row) {
-            $similarity = Vector::similarity($vector, $row['embedding']);
+            $fields[$row['field']][] = [
+                'id' => $row['id'],
+                'similarity' => Vector::similarity($vector, $row['embedding']),
+            ];
+        }
 
-            if ($similarity <= $floor) {
-                continue;
+        $sample = (int) $config['min_sample'];
+        $scores = [];
+
+        foreach ($fields as $field => $rows) {
+            [$floor, $ceiling, $values] = count($rows) >= $sample
+                ? [(float) $config['deviation_floor'], (float) $config['deviation_ceiling'], $this->deviations($rows)]
+                : [(float) $config['floor'], (float) $config['ceiling'], array_column($rows, 'similarity')];
+
+            $span = max($ceiling - $floor, 0.0001);
+
+            foreach ($rows as $index => $row) {
+                if ($values[$index] <= $floor) {
+                    continue;
+                }
+
+                $scores[$row['id']][$field] = min(($values[$index] - $floor) / $span, 1.0);
             }
-
-            $scores[$row['id']][$row['field']] = min(($similarity - $floor) / $span, 1.0);
         }
 
         return $scores;
+    }
+
+    /**
+     * Each row's similarity restated as deviations from its field's centre.
+     *
+     * @param  list<array{id: int, similarity: float}>  $rows
+     * @return list<float>
+     */
+    protected function deviations(array $rows): array
+    {
+        $similarities = array_column($rows, 'similarity');
+        $centre = $this->median($similarities);
+        $spread = 1.4826 * $this->median(
+            array_map(fn (float $similarity): float => abs($similarity - $centre), $similarities)
+        );
+
+        return array_map(
+            // A spread of zero means the field cannot discriminate at all:
+            // every document sits on the centre. Anything strictly above it is
+            // then the only signal there is, and anything at or below it says
+            // nothing.
+            fn (float $similarity): float => $spread > 1e-9
+                ? ($similarity - $centre) / $spread
+                : ($similarity > $centre ? INF : 0.0),
+            $similarities
+        );
+    }
+
+    /**
+     * @param  list<float>  $values
+     */
+    protected function median(array $values): float
+    {
+        if ($values === []) {
+            return 0.0;
+        }
+
+        sort($values);
+        $middle = intdiv(count($values), 2);
+
+        return count($values) % 2 === 1
+            ? $values[$middle]
+            : ($values[$middle - 1] + $values[$middle]) / 2;
     }
 
     /**

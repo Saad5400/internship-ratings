@@ -67,17 +67,49 @@ return [
 
     'semantic' => [
         /**
-         * Cosine similarity is mapped affinely onto 0..1 through this window,
-         * so scores stay comparable with the lexical leg run to run. Below
-         * `floor` a document contributes nothing — that is what stops semantic
-         * search from dragging in loosely-related noise.
+         * How far above a field's own typical similarity a document must sit
+         * before it counts, measured in robust standard deviations (median
+         * absolute deviation, scaled). Below `deviation_floor` a document
+         * contributes nothing; at `deviation_ceiling` it scores a full 1.0.
          *
-         * These are measured, not guessed. Against this corpus, this model
-         * scores a genuinely relevant Arabic field at roughly 0.38–0.55 and an
-         * unrelated one at around 0.22 — cosine never approaches 1.0 outside a
-         * near-verbatim match. A window anchored near 1.0 would flatten every
-         * real match to nearly nothing, which is exactly how a semantic leg
-         * ends up silently contributing zero. Re-measure before changing.
+         * These are deviations rather than raw cosine because raw cosine is not
+         * comparable across fields, and a single window over all of them ranks
+         * nonsense. Measured against this corpus: querying "شركة بترول" scores
+         * the *name* of شركة المياه الوطنية — a water utility — at cosine 0.559,
+         * while querying "مصرف وبنك" scores the name of بنك الجزيرة at 0.555.
+         * Identical similarity, one pure noise and one exactly right, so no
+         * fixed cutoff can separate them. The difference only appears against
+         * each field's own distribution: short names cluster high and long
+         * profile text clusters low, so the same 0.55 is unremarkable among
+         * names and a strong outlier among profiles.
+         *
+         * Standardised, they separate: on that same corpus the بترول name-field
+         * noise peaks at 3.3 deviations while أرامكو's profile reaches 5.1, and
+         * every genuine bank match lands between 3.3 and 5.9. Hence a floor just
+         * above the noise and a ceiling at the top of the observed signal.
+         *
+         * Re-measure before changing — but note these are scale-free, so unlike
+         * raw cosine they should survive a change of embedding model.
+         */
+        'deviation_floor' => (float) env('SEARCH_SEMANTIC_DEVIATION_FLOOR', 3.0),
+        'deviation_ceiling' => (float) env('SEARCH_SEMANTIC_DEVIATION_CEILING', 6.0),
+
+        /**
+         * Documents a field needs before its distribution is worth measuring.
+         * A median and deviation taken over three companies describe those
+         * three companies, not the corpus — standardising against them would
+         * put a genuine match half a deviation from the centre and score it
+         * zero. Below this count the absolute window is used instead, which is
+         * the right tool when there is not yet a distribution to compare to:
+         * a small catalogue (a fresh install, a seeded test) is exactly where
+         * "is this similar at all" beats "is this unusually similar".
+         */
+        'min_sample' => (int) env('SEARCH_SEMANTIC_MIN_SAMPLE', 20),
+
+        /**
+         * The absolute cosine window, used only below `min_sample`. Measured
+         * against long-form Arabic field text: a genuinely relevant field
+         * scores roughly 0.38–0.55 and an unrelated one around 0.22.
          */
         'floor' => (float) env('SEARCH_SEMANTIC_FLOOR', 0.26),
         'ceiling' => (float) env('SEARCH_SEMANTIC_CEILING', 0.58),

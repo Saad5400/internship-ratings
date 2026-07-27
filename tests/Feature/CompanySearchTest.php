@@ -4,6 +4,7 @@ use App\Enums\SearchField;
 use App\Models\Company;
 use App\Models\Rating;
 use App\Models\SearchDocument;
+use App\Support\Arabic;
 use App\Support\CompanyFacets;
 use App\Support\Search\CompanySearch;
 use App\Support\Search\Embedder;
@@ -95,6 +96,46 @@ function conceptEmbedder(array $concepts): Embedder
         public function model(): string
         {
             return 'concept-stub';
+        }
+    };
+}
+
+/**
+ * An embedder whose similarity to the query is dictated per text.
+ *
+ * Vectors are placed on the unit circle at the angle that makes a text's cosine
+ * against the query exactly its listed affinity, so a test can state the
+ * distribution it wants to rank rather than hope a stub happens to produce one.
+ * Texts that are not listed sit orthogonal to the query at 0.
+ *
+ * Keys are matched exactly against the indexed content, which for a name is its
+ * normalised form — see {@see Arabic::normalize()}.
+ *
+ * @param  array<string, float>  $affinities  exact content => cosine against the query
+ */
+function gradedEmbedder(array $affinities): Embedder
+{
+    return new class($affinities) implements Embedder
+    {
+        public function __construct(private array $affinities) {}
+
+        public function embed(array $texts): array
+        {
+            return array_map(function (string $text): array {
+                $affinity = $this->affinities[$text] ?? 0.0;
+
+                return [$affinity, sqrt(max(1.0 - $affinity ** 2, 0.0))];
+            }, array_values($texts));
+        }
+
+        public function dimensions(): int
+        {
+            return 2;
+        }
+
+        public function model(): string
+        {
+            return 'graded-stub';
         }
     };
 }
@@ -462,4 +503,67 @@ test('a shared word still searches on its own, it is only worth less alongside a
 
     expect($hits)->toHaveCount(3);
     expect($hits->pluck('score')->unique())->toHaveCount(1);
+});
+
+/**
+ * Builds a corpus large enough to trip `semantic.min_sample`, with every name's
+ * cosine against the query stated outright.
+ *
+ * @param  list<float>  $band  cosine for each of the ordinary companies
+ * @return array{0: string, 1: list<Company>}
+ */
+function gradedCorpus(array $band, float $standout): array
+{
+    $query = 'استعلام دلالي';
+    // Keyed on the normalised form, which is what actually reaches the embedder
+    // — Arabic::normalize strips the trailing hamza, and keying on the raw name
+    // silently embeds the standout at zero.
+    $affinities = [Arabic::normalize($query) => 1.0];
+    $names = [];
+
+    foreach ($band as $index => $cosine) {
+        $name = 'جهة رقم '.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT);
+        $names[] = $name;
+        $affinities[Arabic::normalize($name)] = $cosine;
+    }
+
+    $standoutName = 'جهة الاستثناء';
+    $affinities[Arabic::normalize($standoutName)] = $standout;
+
+    app()->bind(Embedder::class, fn () => gradedEmbedder($affinities));
+
+    $companies = array_map(fn (string $name): Company => searchableCompany($name), $names);
+    $companies[] = searchableCompany($standoutName);
+    app()->forgetScopedInstances();
+
+    return [$query, $companies];
+}
+
+test('a similarity is judged against its own field rather than a fixed cutoff', function () {
+    // Ordinary names sit in a tight band; one stands well clear of it.
+    [$query, $companies] = gradedCorpus(
+        array_map(fn (int $i): float => 0.20 + ($i % 5) * 0.02, range(0, 23)),
+        0.55,
+    );
+
+    $hits = app(CompanySearch::class)->search($query);
+
+    expect($hits->keys()->all())->toBe([end($companies)->id]);
+});
+
+test('a similarity the whole field shares does not rank, however high it reads', function () {
+    // The bug this replaced. Querying "شركة بترول" scored the name of شركة
+    // المياه الوطنية — a water utility — at cosine 0.559, because short company
+    // names all embed near one another. Read against a fixed cutoff that is a
+    // decisive match; read against the field it sits in, it is the middle of the
+    // pack. The same 0.55 that wins the test above must lose here.
+    [$query, $companies] = gradedCorpus(
+        array_map(fn (int $i): float => 0.54 + ($i % 5) * 0.005, range(0, 23)),
+        0.55,
+    );
+
+    $hits = app(CompanySearch::class)->search($query);
+
+    // Nothing stands out, so nothing is returned — not even the band itself.
+    expect($hits)->toBeEmpty();
 });
