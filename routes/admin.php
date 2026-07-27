@@ -16,8 +16,21 @@ Route::prefix('admin')->middleware(SetAdminLocale::class)->group(function () {
         Route::livewire('/login', 'pages::admin.login')->name('login');
     });
 
+    // Invited admins set their own password via a temporary signed link.
+    Route::livewire('/setup/{user}', 'pages::admin.setup')
+        ->middleware('signed')
+        ->name('admin.setup');
+
     Route::middleware(['auth', 'auth.session', EnsureUserIsAdmin::class])->name('admin.')->group(function () {
         Route::livewire('/', 'pages::admin.dashboard')->name('dashboard');
+
+        Route::livewire('/ratings', 'pages::admin.ratings.index')->name('ratings.index');
+        Route::livewire('/ratings/{rating}/edit', 'pages::admin.ratings.edit')->name('ratings.edit');
+
+        Route::livewire('/companies', 'pages::admin.companies.index')->name('companies.index');
+        Route::livewire('/companies/{company}', 'pages::admin.companies.show')->name('companies.show');
+
+        Route::livewire('/users', 'pages::admin.users.index')->name('users.index');
 
         Route::post('/logout', function (Request $request) {
             Auth::logout();
