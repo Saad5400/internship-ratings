@@ -71,6 +71,8 @@
                     </div>
 
                     <div class="flex items-center gap-1 sm:gap-2">
+                        <x-admin.command-palette />
+
                         <a href="{{ route('home') }}" target="_blank" rel="noopener"
                             class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
                             title="عرض الموقع" aria-label="عرض الموقع">

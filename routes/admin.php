@@ -2,6 +2,10 @@
 
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\SetAdminLocale;
+use App\Models\Company;
+use App\Models\Rating;
+use App\Models\User;
+use App\Support\ModerationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +35,62 @@ Route::prefix('admin')->middleware(SetAdminLocale::class)->group(function () {
         Route::livewire('/companies/{company}', 'pages::admin.companies.show')->name('companies.show');
 
         Route::livewire('/users', 'pages::admin.users.index')->name('users.index');
+
+        // JSON backend for the Ctrl/Cmd-K command palette.
+        Route::get('/search', function (Request $request) {
+            $term = trim((string) $request->query('q', ''));
+
+            if (mb_strlen($term) < 2) {
+                return response()->json(['groups' => []]);
+            }
+
+            $like = '%'.$term.'%';
+
+            $companies = Company::searchByName($term)
+                ->orderByDesc('created_at')
+                ->take(5)
+                ->get(['id', 'name', 'status'])
+                ->map(fn ($company) => [
+                    'label' => $company->name,
+                    'hint' => ModerationStatus::label($company->status),
+                    'url' => route('admin.companies.show', $company),
+                ]);
+
+            $ratings = Rating::with('company:id,name')
+                ->where(function ($query) use ($like, $term) {
+                    $query->where('role_title', 'like', $like)
+                        ->orWhere('reviewer_name', 'like', $like)
+                        ->orWhere('city', 'like', $like)
+                        ->orWhere('department', 'like', $like)
+                        ->orWhereHas('company', fn ($sub) => $sub->searchByName($term));
+                })
+                ->orderByDesc('created_at')
+                ->take(5)
+                ->get()
+                ->map(fn ($rating) => [
+                    'label' => ($rating->role_title ?: 'تقييم').' — '.($rating->company?->name ?? ''),
+                    'hint' => ModerationStatus::label($rating->status),
+                    'url' => route('admin.ratings.edit', $rating),
+                ]);
+
+            $users = User::query()
+                ->where(fn ($query) => $query->where('name', 'like', $like)->orWhere('email', 'like', $like))
+                ->take(5)
+                ->get(['id', 'name', 'email'])
+                ->map(fn ($user) => [
+                    'label' => $user->name,
+                    'hint' => $user->email,
+                    'url' => route('admin.users.index', ['q' => $user->email]),
+                ]);
+
+            return response()->json([
+                'groups' => collect([
+                    ['title' => 'الجهات', 'items' => $companies],
+                    ['title' => 'التقييمات', 'items' => $ratings],
+                    ['title' => 'المستخدمون', 'items' => $users],
+                ])->filter(fn ($group) => $group['items']->isNotEmpty())->values(),
+            ]);
+        })->name('search');
 
         Route::post('/logout', function (Request $request) {
             Auth::logout();
