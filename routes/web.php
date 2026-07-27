@@ -23,3 +23,6 @@ Route::get('/sitemap.xml', function () {
 Route::livewire('/ratings/create', 'pages::ratings.create')
     ->middleware(app()->isLocal() ? 'web' : 'throttle:10,60')
     ->name('ratings.create');
+
+// Admin panel routes (share the `web` middleware group applied to this file).
+require __DIR__.'/admin.php';

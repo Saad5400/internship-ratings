@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Support\Search\CompanySearch;
+use App\Support\Search\Embedder;
+use App\Support\Search\FakeEmbedder;
+use App\Support\Search\OpenRouterEmbedder;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +21,47 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->registerSearch();
+    }
+
+    /**
+     * The search stack's two bindings.
+     *
+     * The embedder is resolved from config so no caller names a provider; it
+     * falls back to the deterministic fake whenever the driver says so or no
+     * key is configured, which keeps local work and tests running offline.
+     *
+     * CompanySearch is `scoped`, not `singleton`: it memoizes per query, and a
+     * singleton would carry one request's results into the next under Octane.
+     */
+    protected function registerSearch(): void
+    {
+        $this->app->bind(Embedder::class, function (): Embedder {
+            $config = config('search.embeddings');
+
+            // The fake driver is a local convenience, never a deployed fallback:
+            // filling the index with meaningless vectors would look exactly like
+            // working semantic search while ranking nonsense. Anywhere else, a
+            // missing key lets OpenRouterEmbedder throw — the indexer and the
+            // ranker both catch it, so search degrades to literal matching and
+            // the failure shows up in the log instead of in the results.
+            $fake = $config['driver'] === 'fake'
+                || (blank($config['key']) && $this->app->environment('local', 'testing'));
+
+            if ($fake) {
+                return new FakeEmbedder((int) $config['dimensions']);
+            }
+
+            return new OpenRouterEmbedder(
+                model: $config['model'],
+                dimensions: (int) $config['dimensions'],
+                apiKey: $config['key'],
+                baseUrl: $config['url'],
+                timeout: (int) $config['timeout'],
+            );
+        });
+
+        $this->app->scoped(CompanySearch::class);
     }
 
     /**

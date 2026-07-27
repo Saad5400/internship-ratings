@@ -97,7 +97,43 @@
     }
 }
 
+/*
+ * Dark-mode override for the daisyui "calm" theme's CSS custom properties.
+ * daisyui sets these on `:root`/`[data-theme=calm]` inside `@layer base`;
+ * this block is intentionally unlayered so it always wins the cascade,
+ * regardless of selector specificity. It re-tints the vendor mary-choices
+ * combobox (select/fieldset/badge) to the same slate palette as the rest
+ * of the dark public UI, without touching vendor markup.
+ */
+:root.dark {
+    --color-base-100: #0f172a;
+    --color-base-200: #1e293b;
+    --color-base-300: #334155;
+    --color-base-content: #f1f5f9;
+}
+
 [x-cloak] { display: none !important; }
+
+/*
+ * Dialog entrance animations. CSS animations (not Alpine x-transition) on
+ * purpose: class-based x-transition breaks x-show inside x-teleport'ed
+ * content, while CSS animations replay whenever display toggles.
+ */
+@utility animate-overlay-in {
+    animation: overlay-in 0.15s ease-out;
+}
+
+@utility animate-dialog-in {
+    animation: dialog-in 0.2s ease-out;
+}
+
+@keyframes overlay-in {
+    from { opacity: 0; }
+}
+
+@keyframes dialog-in {
+    from { opacity: 0; transform: translateY(0.5rem); }
+}
 
 .mary-choices-element {
     display: inline-flex !important;
@@ -119,11 +155,36 @@
     flex-shrink: 0;
 }
 
+/*
+ * The vendor combobox toggles its options list with a bare `x-show`, so it
+ * snapped open while the filter chips faded in. Same reasoning as the dialog
+ * animations above: a CSS animation replays whenever `display` flips, which
+ * matches the chips' 150ms fade without patching vendor markup.
+ *
+ * Open only. The close can't be animated from here — `x-show` writes
+ * `display: none` synchronously, so the element is already unrendered before
+ * any animation could play, and a `display ... allow-discrete` transition never
+ * fires on this element (it latches `display: block` and leaves the list
+ * invisible). Animating the close needs `x-transition` on the vendor markup, or
+ * swapping this control for a first-party popover.
+ */
+[wire\:key^="options-list-main-"] {
+    animation: dropdown-in 0.15s ease-out;
+}
+
+@keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-0.25rem); }
+}
+
 /* Icon-only compact trigger for a single-select that should only show an icon.
    The dropdown options remain unaffected; only the button/label collapses. */
 .compact-select-trigger [x-ref="container"] {
     padding: 0 !important;
     justify-content: center;
+    /* daisyUI's `.select` paints its own caret with two linear-gradients, which
+       leaves a stray arrow next to the compact icon. Hiding child SVGs isn't
+       enough — the caret is a background on the trigger itself. */
+    background-image: none !important;
 }
 
 .compact-select-trigger [x-ref="container"] > div {

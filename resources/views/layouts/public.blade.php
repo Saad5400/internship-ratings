@@ -1,80 +1,92 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
     <head>
+        <meta name="theme-color" content="#f8fafc">
+        <script data-navigate-once>
+            (function () {
+                {{-- wire:navigate swaps in a server-rendered <html> without the dark class, so re-apply on every navigation --}}
+                var applyTheme = function () {
+                    var isDark = localStorage.getItem('theme') === 'dark';
+                    document.documentElement.classList.toggle('dark', isDark);
+                    var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+                    if (themeColorMeta) {
+                        themeColorMeta.setAttribute('content', isDark ? '#020617' : '#f8fafc');
+                    }
+                };
+                applyTheme();
+                document.addEventListener('livewire:navigated', applyTheme);
+            })();
+        </script>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-slate-50/50 font-sans antialiased text-slate-900">
-        <nav class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-md">
+    <body class="min-h-screen bg-slate-50/50 font-sans antialiased text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        <nav class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
             <div class="max-w-5xl mx-auto px-4 sm:px-6">
                 <div class="flex items-center justify-between h-16">
-                    <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2 text-lg font-bold text-slate-900 transition-opacity hover:opacity-80">
+                    <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2 text-lg font-bold text-slate-900 transition-opacity hover:opacity-80 dark:text-slate-100">
                         <x-app-logo-icon class="size-8 rounded-lg" />
                         تقييم التدريب
                     </a>
-                    <div class="flex items-center gap-2 sm:gap-3">
-{{--                        <a href="{{ route('companies.index') }}" wire:navigate--}}
-{{--                            class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 {{ request()->routeIs('companies.*') ? 'bg-slate-100 text-slate-900' : '' }}">--}}
-{{--                            الجهات--}}
-{{--                        </a>--}}
+                    <div class="flex items-center gap-1 sm:gap-2">
                         <a href="{{ route('ratings.create') }}" wire:navigate
                             class="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-xs transition-all hover:bg-blue-600 hover:shadow-sm active:scale-[0.98]">
                             <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                             أضف تقييم
                         </a>
+                        <button
+                            type="button"
+                            x-data="{ dark: localStorage.getItem('theme') === 'dark' }"
+                            x-on:click="
+                                dark = !dark;
+                                document.documentElement.classList.toggle('dark', dark);
+                                localStorage.setItem('theme', dark ? 'dark' : 'light');
+                                let themeColorMeta = document.querySelector('meta[name=theme-color]');
+                                if (themeColorMeta) {
+                                    themeColorMeta.setAttribute('content', dark ? '#020617' : '#f8fafc');
+                                }
+                            "
+                            class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                            aria-label="تبديل المظهر"
+                        >
+                            <svg x-show="!dark" x-cloak class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
+                            <svg x-show="dark" x-cloak class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
+                        </button>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-            @if(session('success'))
-                <div role="status"
-                    x-data="{ show: true }"
-                    x-init="setTimeout(() => show = false, 6000)"
-                    x-show="show"
-                    x-transition:enter="motion-safe:transition motion-safe:ease-out motion-safe:duration-300"
-                    x-transition:enter-start="motion-safe:opacity-0 motion-safe:-translate-y-2"
-                    x-transition:enter-end="motion-safe:opacity-100 motion-safe:translate-y-0"
-                    x-transition:leave="motion-safe:transition motion-safe:ease-in motion-safe:duration-200"
-                    x-transition:leave-start="motion-safe:opacity-100"
-                    x-transition:leave-end="motion-safe:opacity-0"
-                    class="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-                    <svg class="size-5 shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span class="flex-1">{{ session('success') }}</span>
-                    <button type="button" @click="show = false" class="shrink-0 rounded text-green-600/70 transition-colors hover:text-green-800" aria-label="إغلاق">
-                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div role="alert"
-                    x-data="{ show: true }"
-                    x-init="setTimeout(() => show = false, 8000)"
-                    x-show="show"
-                    x-transition:enter="motion-safe:transition motion-safe:ease-out motion-safe:duration-300"
-                    x-transition:enter-start="motion-safe:opacity-0 motion-safe:-translate-y-2"
-                    x-transition:enter-end="motion-safe:opacity-100 motion-safe:translate-y-0"
-                    x-transition:leave="motion-safe:transition motion-safe:ease-in motion-safe:duration-200"
-                    x-transition:leave-start="motion-safe:opacity-100"
-                    x-transition:leave-end="motion-safe:opacity-0"
-                    class="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-                    <svg class="size-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <span class="flex-1">{{ session('error') }}</span>
-                    <button type="button" @click="show = false" class="shrink-0 rounded text-red-600/70 transition-colors hover:text-red-800" aria-label="إغلاق">
-                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-            @endif
+        <main class="min-h-[calc(100vh-16rem)] max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+            <x-flash-messages />
 
             {{ $slot }}
         </main>
 
-        <footer class="border-t border-slate-200/60 bg-white mt-12">
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-                <p class="text-sm text-slate-400 text-center">
-                    تقييم التدريب &copy; {{ date('Y') }}
-                </p>
+        <footer class="border-t border-slate-200/60 bg-white mt-12 dark:border-slate-800 dark:bg-slate-900">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="max-w-md">
+                        <div class="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
+                            <x-app-logo-icon class="size-7 rounded-lg" />
+                            تقييم التدريب
+                        </div>
+                        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            منصّة مستقلة لتقييم جهات التدريب التعاوني والصيفي، بتجارب حقيقية من المتدربين أنفسهم.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400">
+                        <a href="{{ route('companies.index') }}" wire:navigate class="transition-colors hover:text-slate-900 dark:hover:text-slate-100">
+                            الجهات
+                        </a>
+                        <a href="{{ route('ratings.create') }}" wire:navigate class="transition-colors hover:text-slate-900 dark:hover:text-slate-100">
+                            أضف تقييم
+                        </a>
+                    </div>
+                </div>
+                <div class="border-t border-slate-100 pt-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
+                    <p>تقييم التدريب &copy; {{ date('Y') }}</p>
+                    <p>صُنع بحب لمجتمع المتدربين</p>
+                </div>
             </div>
         </footer>
         @if(config('turnstile.enabled'))

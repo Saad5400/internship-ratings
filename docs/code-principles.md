@@ -33,24 +33,37 @@ fork a pattern**. Every rule points at real files — imitate them.
   strips tashkeel/tatweel and unifies letter variants. `Company` persists the
   result to `name_normalized` in its `saving()` hook and matches against it in
   `scopeSearchByName()`. Never normalize Arabic ad hoc — call `Arabic::normalize`.
+- **Search has one owner.** Hybrid search — literal matching and embedding
+  similarity, fused — lives in `app/Support/Search/*`: `CompanySearch` ranks,
+  `SearchIndexer` maintains the `search_documents` rows, and `Embedder` is the
+  only place a provider is named (settings in `config/search.php`, driver bound
+  in `AppServiceProvider`). **Field weights live on the `SearchField` enum**, so
+  changing what outranks what is an edit to `SearchField::weight()` — never a
+  hand-tuned query. Public browsing goes through `Company::scopeMatchingSearch()`
+  and `scopeOrderByRelevance()`; results and facet counts call the same scope, so
+  a chip's count always matches the list. Re-indexing is queued
+  (`IndexSearchDocuments`, dispatched from the `Company`/`Rating` `saved` hooks)
+  because embedding is a paid network call; `php artisan search:index` backfills
+  and repairs. The semantic thresholds in `config/search.php` are **measured
+  against the corpus, not guessed** — re-measure before changing them.
 
-## 2. Thin Filament resources delegate to Schemas / Tables
+## 2. Admin pages compose the shared admin component layer
 
-Resource classes stay small and declarative. `CompanyResource` and
-`RatingResource` hold only navigation metadata, badges, global-search config,
-and `getPages()` — the actual form and table are delegated:
+The admin panel is Livewire 4 single-file pages under
+`resources/views/pages/admin/*`, routed in `routes/admin.php` behind
+`EnsureUserIsAdmin`. Pages stay thin by composing
+`resources/views/components/admin/*`:
 
-```php
-public static function form(Schema $schema): Schema  { return CompanyForm::configure($schema); }
-public static function table(Table $table): Table    { return CompaniesTable::configure($table); }
-```
-
-- Form definitions live in `Resources/*/Schemas/*Form.php`, tables in
-  `Resources/*/Tables/*Table.php`, list-page tabs in `Resources/*/Pages/*`.
-- When adding fields/columns, edit the Schema/Table class — do not inline a form
-  or table back into the resource.
-- Infolists currently live inline on the resource (`CompanyResource::infolist`,
-  `RatingResource::infolist`); follow that placement for consistency.
+- `page-header`, `stat-card`, `empty-state` for page scaffolding;
+  `table`/`th`/`status-tabs`/`pagination` for lists; `dialog` /
+  `confirm-dialog` for light-object forms and destructive confirms;
+  `moderation-actions`, `rating-review-card`, `company-review-card` for
+  moderation surfaces; `command-palette` for Ctrl/Cmd-K.
+- Shared moderation behavior (approve/reject/undo, rating reassignment)
+  lives once in `App\Livewire\Concerns\ModeratesRecords` — pages `use` the
+  trait instead of re-implementing status writes.
+- When two admin screens need the same block, extract it into
+  `components/admin/*` — never fork a second copy.
 
 ## 3. The public component layer
 
@@ -70,19 +83,23 @@ single-file components in `resources/views/pages/`.
 - **Public input** is validated in the Volt component that owns the form — the
   rating wizard validates per step (`rulesForStep()`), with Arabic messages and
   a Turnstile rule gated on config (`config('turnstile.enabled')`).
-- **Admin input** is validated by the Filament Schema field definitions.
-- **Panel authorization** is a single gate: `User::canAccessPanel()` returns
-  `$this->is_admin === true`. Don't scatter role checks — rely on the flag and
-  the panel's `authMiddleware`.
+- **Admin input** is validated in the admin Livewire page that owns the form,
+  with Arabic messages (see `pages/admin/ratings/edit.blade.php`).
+- **Panel authorization** is a single gate: the `EnsureUserIsAdmin`
+  middleware checks `is_admin === true` on every `/admin` route. Don't
+  scatter role checks — the flag plus that middleware is the whole model.
 
 ## 5. Admin access via the `is_admin` gate + provisioning command
 
-- Access is the boolean `users.is_admin` (cast in `User::casts()`), checked once
-  in `canAccessPanel()`. There is **no public registration** — Fortify was
-  removed and Filament owns admin auth.
-- Grant/revoke only through `php artisan app:make-admin {email} {--revoke}`
-  (`App\Console\Commands\MakeAdminCommand`). Don't invent parallel admin checks
-  or ad-hoc flags.
+- Access is the boolean `users.is_admin` (cast in `User::casts()`), checked
+  once in `EnsureUserIsAdmin`. There is **no public registration** — the only
+  login is the admin-only page at `/admin/login`
+  (`pages/admin/login.blade.php`, rate-limited, admins-only `Auth::attempt`).
+- Grant/revoke via `php artisan app:make-admin {email} {--revoke}`
+  (`App\Console\Commands\MakeAdminCommand`), or invite through the users page:
+  it mints a 7-day signed link to `/admin/setup/{user}` where the invitee sets
+  their own password (`pages/admin/setup.blade.php`) — no mailer involved.
+  Don't invent parallel admin checks or ad-hoc flags.
 
 ## 6. Frozen public contracts stay stable
 
@@ -119,7 +136,7 @@ indexing, and structured data. Treat them as frozen unless a change is the point
   explicit return types and parameter type hints, curly braces on all control
   structures, `TitleCase` enum keys, PHPDoc (with array-shape types) over inline
   comments.
-- Create files the Laravel/Filament way (`php artisan make:*`,
+- Create files the Laravel way (`php artisan make:*`,
   `--no-interaction`); stick to the existing directory structure and don't add
   base folders or dependencies without approval.
 
