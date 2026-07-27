@@ -472,8 +472,12 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
 
     {{-- The search box and the facet chips are one control group — grouped so
          they sit close together, rather than inheriting the page rhythm that
-         separates unrelated sections. --}}
-    <div class="space-y-3">
+         separates unrelated sections.
+
+         `mb-5` trims the page's own `space-y-8` below this group: what follows
+         is the result of these controls, not the next section. It wins on
+         specificity because Tailwind emits `space-y-*` inside `:where()`. --}}
+    <div class="mb-5 space-y-3">
         {{-- Debounced live search + sort, single row on all viewports.
 
              The search understands meaning, not just letters — but nothing about a
@@ -524,31 +528,36 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                     enterkeyhint="search"
                 />
 
-                {{-- Clear button --}}
-                @if($search !== '')
-                    <button
-                        type="button"
-                        wire:click="$set('search', '')"
-                        @click="empty = true"
-                        {{-- Shares its corner with the spinner, so exactly one of
-                             the two is ever mounted. Same targets as the
-                             spinner, or they overlap. --}}
-                        wire:loading.remove
-                        wire:target="search, useExample"
-                        class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
-                        aria-label="مسح البحث"
-                    >
-                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                @endif
+                {{-- One slot at the input's inline end, holding the clear button
+                     and the in-flight spinner. They are *inside* the same
+                     positioned box rather than each absolutely positioned at
+                     `end-0`: two absolute siblings sharing a corner render on
+                     top of each other the moment either `wire:loading` binding
+                     fails to initialise, and a binding that silently fails to
+                     bind is exactly what shipped the permanent skeleton. Here
+                     the worst case is the two sitting side by side.
 
-                {{-- Inline spinner while the search request is in flight.
-                     Scoped to the search box's own actions: a spinner here for a
-                     city filter claims the wrong control is working, and with an
-                     empty box it just floats in a corner with nothing to explain
-                     it. Filters and sort are answered by the grid skeleton. --}}
-                <div wire:loading wire:target="search, useExample" class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 dark:text-slate-500">
-                    <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                     The spinner is scoped to the search box's own actions — a
+                     spinner here for a city filter claims the wrong control is
+                     working. Filters and sort are answered by the grid skeleton. --}}
+                <div class="absolute inset-y-0 end-0 flex items-center pe-4">
+                    @if($search !== '')
+                        <button
+                            type="button"
+                            wire:click="$set('search', '')"
+                            @click="empty = true"
+                            wire:loading.remove
+                            wire:target="search, useExample"
+                            class="flex items-center text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+                            aria-label="مسح البحث"
+                        >
+                            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    @endif
+
+                    <span wire:loading wire:target="search, useExample" class="flex items-center text-slate-400 dark:text-slate-500">
+                        <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                    </span>
                 </div>
 
                 {{-- Revealed on focus while empty, so it teaches at the moment of
@@ -619,7 +628,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         {{-- Faceted filters: values OR inside a chip, chips AND together. Options
              that would return nothing are never offered, so every click lands. --}}
         @if($this->facets !== [])
-            <div class="flex flex-wrap items-center gap-2" x-data="{ showAll: false }">
+            <div class="flex flex-wrap items-center gap-1.5" x-data="{ showAll: false }">
                 @foreach($this->facets as $facet)
                     <div
                         wire:key="facet-{{ $facet['key'] }}"
@@ -635,14 +644,23 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                     </div>
                 @endforeach
 
+                {{-- Icon only, and the same height as a chip, so it rides the
+                     chip row instead of wrapping it onto a second line. The
+                     label survives as aria-label/title for anyone who needs it. --}}
                 @if($this->hasHiddenFacets)
                     <button
                         type="button"
                         @click="showAll = ! showAll"
-                        class="rounded-full px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                        :aria-expanded="showAll ? 'true' : 'false'"
+                        :aria-label="showAll ? 'فلاتر أقل' : 'مزيد من الفلاتر'"
+                        :title="showAll ? 'فلاتر أقل' : 'مزيد من الفلاتر'"
+                        aria-label="مزيد من الفلاتر"
+                        title="مزيد من الفلاتر"
+                        class="inline-flex shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 p-1.5 text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-100"
                     >
-                        <span x-show="! showAll">مزيد من الفلاتر</span>
-                        <span x-show="showAll" x-cloak>فلاتر أقل</span>
+                        <svg class="size-4 transition-transform" :class="showAll && 'rotate-45'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+                        </svg>
                     </button>
                 @endif
 
@@ -675,9 +693,13 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                         wire:navigate
                         class="group w-[78%] shrink-0 snap-start rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:border-blue-200 hover:shadow-md motion-safe:hover:-translate-y-0.5 sm:w-auto dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-900"
                     >
-                        <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                        {{-- Clamped by lines, not characters: a 110-character cut
+                             lands mid-word and leaves short reviews with a ragged
+                             hole, while every card in the row has to be the same
+                             height anyway. --}}
+                        <p class="line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                             <span class="text-lg font-bold leading-none text-blue-300 dark:text-blue-500" aria-hidden="true">&rdquo;</span>
-                            {{ Str::limit($review->review_text, 110) }}
+                            {{ $review->review_text }}
                         </p>
                         <div class="mt-3 flex items-center justify-between gap-2 text-xs text-slate-400 dark:text-slate-500">
                             <span class="min-w-0 truncate">

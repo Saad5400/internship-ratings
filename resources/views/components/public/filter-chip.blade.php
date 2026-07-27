@@ -85,7 +85,10 @@
         type="button"
         @click="toggle()"
         :aria-expanded="open ? 'true' : 'false'"
-        class="inline-flex max-w-full items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors
+        {{-- px-3, not px-3.5: those four pixels a side are what let the three
+             primary chips and the "more filters" toggle share one row on a
+             375px phone instead of spilling onto a second. --}}
+        class="inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition-colors
             @if($selectedCount > 0)
                 border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-950/50 dark:text-blue-300
             @else
