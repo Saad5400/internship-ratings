@@ -103,7 +103,7 @@ test('voting helpful on the company show page records a vote and updates the cou
     expect(RatingVote::where('rating_id', $rating->id)->count())->toBe(1);
 });
 
-test('voting helpful twice from the same session does not duplicate the vote', function () {
+test('voting helpful twice from the same session removes the vote', function () {
     $company = Company::create(['name' => 'شركة', 'type' => 'private', 'status' => 'approved']);
     $rating = createTestRating($company);
     $rating->update(['status' => 'approved']);
@@ -112,7 +112,40 @@ test('voting helpful twice from the same session does not duplicate the vote', f
         ->call('voteHelpful', $rating->id)
         ->call('voteHelpful', $rating->id);
 
+    $component->assertSet('votedRatingIds', []);
+
+    expect(RatingVote::where('rating_id', $rating->id)->count())->toBe(0);
+});
+
+test('voting helpful again after removal restores the vote', function () {
+    $company = Company::create(['name' => 'شركة', 'type' => 'private', 'status' => 'approved']);
+    $rating = createTestRating($company);
+    $rating->update(['status' => 'approved']);
+
+    $component = Livewire::test('pages::companies.show', ['company' => $company])
+        ->call('voteHelpful', $rating->id)
+        ->call('voteHelpful', $rating->id)
+        ->call('voteHelpful', $rating->id);
+
     $component->assertSet('votedRatingIds', [$rating->id]);
+
+    expect(RatingVote::where('rating_id', $rating->id)->count())->toBe(1);
+});
+
+test('removing a vote only deletes the current session vote', function () {
+    $company = Company::create(['name' => 'شركة', 'type' => 'private', 'status' => 'approved']);
+    $rating = createTestRating($company);
+    $rating->update(['status' => 'approved']);
+
+    RatingVote::create([
+        'rating_id' => $rating->id,
+        'voter_hash' => Rating::voterHash('another-visitor'),
+    ]);
+
+    Livewire::test('pages::companies.show', ['company' => $company])
+        ->call('voteHelpful', $rating->id)
+        ->call('voteHelpful', $rating->id)
+        ->assertSet('votedRatingIds', []);
 
     expect(RatingVote::where('rating_id', $rating->id)->count())->toBe(1);
 });

@@ -198,9 +198,9 @@
                 wire:click="voteHelpful({{ $rating->id }})"
                 wire:loading.attr="disabled"
                 wire:target="voteHelpful({{ $rating->id }})"
-                @if($voted) disabled aria-pressed="true" @else aria-pressed="false" @endif
-                aria-label="ضع علامة أن هذا التقييم مفيد"
-                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ring-1 ring-inset transition-all active:scale-[0.98] disabled:cursor-default {{ $voted ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-500/20' : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700 dark:hover:bg-slate-700' }}">
+                aria-pressed="{{ $voted ? 'true' : 'false' }}"
+                aria-label="{{ $voted ? 'إزالة علامة أن هذا التقييم مفيد' : 'ضع علامة أن هذا التقييم مفيد' }}"
+                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ring-1 ring-inset transition-all active:scale-[0.98] disabled:cursor-wait {{ $voted ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-500/20 dark:hover:bg-emerald-950/60' : 'bg-slate-50 text-slate-500 ring-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700 dark:hover:bg-slate-700' }}">
                 @if($voted)
                     <svg class="size-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path d="M1 8.25a1.25 1.25 0 1 1 2.5 0v7.5a1.25 1.25 0 1 1-2.5 0v-7.5ZM11 3V1.7c0-.268.14-.526.395-.607A2 2 0 0 1 14 3c0 .995-.182 1.948-.514 2.826-.204.54.166 1.174.744 1.174h2.52c1.243 0 2.261.988 2.146 2.161a45.435 45.435 0 0 1-.372 3.045c-.164 1.166-1.188 2.1-2.365 2.1h-4.85c-1.056 0-2.132-.16-3.129-.492a10 10 0 0 0-1.65-.412c-.42-.08-.83-.13-1.23-.13h-.5a.75.75 0 0 1-.75-.75V7.9c0-.34.135-.667.377-.909A6.964 6.964 0 0 0 8.5 3c0-.42.16-.826.446-1.113L11 3Z" />

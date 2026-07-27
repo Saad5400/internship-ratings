@@ -83,13 +83,24 @@ new #[Layout('layouts.public')] class extends Component {
             return;
         }
 
-        RatingVote::firstOrCreate([
-            'rating_id' => $ratingId,
-            'voter_hash' => Rating::voterHash(session()->getId()),
-        ]);
+        $voterHash = Rating::voterHash(session()->getId());
 
-        if (! in_array($ratingId, $this->votedRatingIds, true)) {
-            $this->votedRatingIds[] = $ratingId;
+        $removed = RatingVote::query()
+            ->where('rating_id', $ratingId)
+            ->where('voter_hash', $voterHash)
+            ->delete();
+
+        if ($removed > 0) {
+            $this->votedRatingIds = array_values(array_diff($this->votedRatingIds, [$ratingId]));
+        } else {
+            RatingVote::firstOrCreate([
+                'rating_id' => $ratingId,
+                'voter_hash' => $voterHash,
+            ]);
+
+            if (! in_array($ratingId, $this->votedRatingIds, true)) {
+                $this->votedRatingIds[] = $ratingId;
+            }
         }
 
         unset($this->ratingResults, $this->ratings);
