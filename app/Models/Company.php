@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CompanyType;
 use App\Jobs\IndexSearchDocuments;
 use App\Support\Arabic;
+use App\Support\CompanyBranding;
 use App\Support\CompanyFacets;
 use App\Support\Search\CompanySearch;
 use App\Support\Search\SearchIndexer;
@@ -224,16 +225,14 @@ class Company extends Model
     /**
      * Public favicon CDN URL for the company's website, or null when no
      * website is set. No asset is ever stored server-side.
+     *
+     * There is no logo column: the mark is derived from the website, and
+     * {@see CompanyBranding} owns that derivation so the backfill command
+     * previews exactly what the avatar will render.
      */
     public function getFaviconUrlAttribute(): ?string
     {
-        if (blank($this->website)) {
-            return null;
-        }
-
-        $host = parse_url($this->website, PHP_URL_HOST) ?: $this->website;
-
-        return "https://www.google.com/s2/favicons?domain={$host}&sz=128";
+        return CompanyBranding::logoUrl($this->website);
     }
 
     /**

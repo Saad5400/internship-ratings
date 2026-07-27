@@ -1,8 +1,10 @@
 <?php
 
 use App\Models\Company;
+use App\Models\PopularSearch;
 use App\Models\Rating;
 use App\Support\CompanyFacets;
+use App\Support\PopularSearches;
 use Livewire\Livewire;
 
 /**
@@ -276,4 +278,73 @@ test('filters survive a round trip through the query string', function () {
     $response->assertOk();
     $response->assertSee('شركة جدة');
     $response->assertDontSee('شركة الرياض');
+});
+
+test('the latest-reviews strip narrows to the filtered results', function () {
+    ratedCompany('شركة الأفق', [
+        'status' => 'approved',
+        'review_text' => 'تجربة الأفق كانت منظّمة ومفيدة جداً.',
+    ]);
+    ratedCompany('مؤسسة النخبة', [
+        'status' => 'approved',
+        'review_text' => 'النخبة وفّرت لي مشاريع حقيقية.',
+    ]);
+
+    $component = Livewire::test('pages::companies.index');
+
+    // Unfiltered, the strip is the site-wide activity feed.
+    expect($component->instance()->latestReviews->pluck('company.name')->all())
+        ->toContain('شركة الأفق', 'مؤسسة النخبة');
+
+    // Filtered, it may only show reviews of companies still in the results —
+    // otherwise it advertises exactly what the user just filtered away.
+    $narrowed = $component->set('search', 'الأفق')->instance()->latestReviews;
+
+    expect($narrowed->pluck('company.name')->all())->toBe(['شركة الأفق']);
+});
+
+test('the latest-reviews strip is empty when the filters match nothing', function () {
+    ratedCompany('شركة الأفق', [
+        'status' => 'approved',
+        'review_text' => 'تجربة الأفق كانت منظّمة ومفيدة جداً.',
+    ], 'private');
+
+    // A facet rather than a search term: the test embedder scores every query
+    // against every document, so an unmatched *search* is a statement about the
+    // stub, not about the strip.
+    expect(
+        Livewire::test('pages::companies.index')
+            ->set('filters', ['city' => ['جدة']])
+            ->instance()->latestReviews
+    )->toBeEmpty();
+});
+
+test('what other people searched for joins the suggestion chips', function () {
+    ratedCompany('شركة الأفق', ['status' => 'approved']);
+
+    for ($i = 0; $i < PopularSearches::MIN_COUNT; $i++) {
+        PopularSearches::record('الأفق');
+    }
+    PopularSearches::flush();
+
+    expect(Livewire::test('pages::companies.index')->instance()->searchSuggestions)
+        ->toContain('الأفق');
+});
+
+test('a typed search is counted once it settles', function () {
+    ratedCompany('شركة الأفق', ['status' => 'approved']);
+
+    Livewire::test('pages::companies.index')->set('search', 'الأفق');
+
+    expect(PopularSearch::where('display_term', 'الأفق')->exists())->toBeTrue();
+});
+
+test('clicking a suggestion chip does not count as a search for it', function () {
+    ratedCompany('شركة الأفق', ['status' => 'approved']);
+
+    // Otherwise a suggested term becomes more popular purely by being
+    // suggested, and the chips converge on themselves.
+    Livewire::test('pages::companies.index')->call('useExample', 0);
+
+    expect(PopularSearch::count())->toBe(0);
 });

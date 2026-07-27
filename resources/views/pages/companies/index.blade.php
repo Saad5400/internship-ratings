@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\Company;
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\Rating;
+use App\Support\Arabic;
 use App\Support\CompanyFacets;
+use App\Support\PopularSearches;
 use App\Support\Search\CompanySearch;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
@@ -88,17 +91,51 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         });
     }
 
+    /**
+     * The chips offered under an empty search box: the curated examples, then
+     * what other people actually searched for.
+     *
+     * They render as one undifferentiated row on purpose. Which suggestions we
+     * wrote and which the crowd supplied is our concern, not the visitor's, and
+     * labelling the split would turn a hint into an advertisement for itself.
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function searchSuggestions(): array
+    {
+        $suggestions = [];
+
+        foreach ([...$this->searchExamples, ...PopularSearches::top(4)] as $term) {
+            // Keyed by the normalizer so a popular term never repeats a curated
+            // one under a different spelling of the same word.
+            $key = Arabic::normalize($term);
+
+            if ($key === '' || isset($suggestions[$key])) {
+                continue;
+            }
+
+            $suggestions[$key] = $term;
+        }
+
+        return array_slice(array_values($suggestions), 0, 6);
+    }
+
     /** Run a suggested query. Taken by index so no Arabic string is ever quoted into markup. */
     public function useExample(int $index): void
     {
-        $example = $this->searchExamples[$index] ?? null;
+        $example = $this->searchSuggestions[$index] ?? null;
 
         if ($example === null) {
             return;
         }
 
         $this->search = $example;
-        $this->updatedSearch();
+
+        // Deliberately not `updatedSearch()`: that records the term, and a chip
+        // recording itself would make popular suggestions popular by being
+        // suggested. Only a query the visitor actually typed counts.
+        $this->syncSortToSearch();
 
         $this->perPage = $this->pageSize;
         $this->resetPage();
@@ -139,6 +176,16 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
      * chose "الأكثر تقييماً" keeps it while they search.
      */
     public function updatedSearch(): void
+    {
+        $this->syncSortToSearch();
+
+        // Once per settled search, never per keystroke — the debounce on the
+        // input is what makes that true. Cheap and non-throwing by contract, so
+        // it cannot take the search down with it.
+        PopularSearches::record($this->search);
+    }
+
+    protected function syncSortToSearch(): void
     {
         if ($this->search !== '' && $this->sort === 'highest_rated') {
             $this->sort = 'relevance';
@@ -211,19 +258,34 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
             $this->activeFilterCount,
             $this->hasHiddenFacets,
             $this->isNarrowed,
+            // Follows the narrowed set, so it has to be recomputed with it.
+            $this->latestReviews,
         );
+    }
+
+    /**
+     * The search and the facets, as a query — the one place either is applied.
+     *
+     * Both the result grid and the "latest reviews" strip narrow to the same set,
+     * so they have to derive it from the same builder; two hand-built copies of
+     * this would drift the moment a facet is added.
+     */
+    protected function filteredCompanies(): Builder
+    {
+        $query = Company::approved()->matchingSearch($this->search);
+
+        CompanyFacets::apply($query, $this->filters);
+
+        return $query;
     }
 
     #[Computed]
     public function companyResults()
     {
-        $query = Company::approved()
+        $query = $this->filteredCompanies()
             ->withCount(['ratings as ratings_count' => fn ($q) => $q->where('status', 'approved')])
             ->withAvg('approvedRatings as average_rating', 'overall_rating')
-            ->with('latestApprovedRating')
-            ->matchingSearch($this->search);
-
-        CompanyFacets::apply($query, $this->filters);
+            ->with('latestApprovedRating');
 
         match ($this->sort) {
             'relevance' => $query->orderByRelevance($this->search),
@@ -354,6 +416,22 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
     #[Computed]
     public function latestReviews()
     {
+        // Once the list is narrowed the strip follows it, so it reads as "the
+        // newest reviews among these results" rather than advertising companies
+        // the user just filtered away. Uncached and unpaginated on purpose: it
+        // is a different set per query, and it should reflect the whole match,
+        // not just the page that happens to be loaded.
+        if ($this->isNarrowed) {
+            return Rating::approved()
+                ->whereIn('company_id', $this->filteredCompanies()->select('companies.id'))
+                ->whereNotNull('review_text')
+                ->where('review_text', '!=', '')
+                ->with('company')
+                ->latest('created_at')
+                ->take(3)
+                ->get();
+        }
+
         // Only the IDs are cached. Caching the models themselves serializes an
         // Eloquent collection into the store, and every later request dies
         // unserializing it ("method on an incomplete object").
@@ -392,188 +470,196 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         </div>
     </div>
 
-    {{-- Debounced live search + sort, single row on all viewports.
+    {{-- The search box and the facet chips are one control group — grouped so
+         they sit close together, rather than inheriting the page rhythm that
+         separates unrelated sections. --}}
+    <div class="space-y-3">
+        {{-- Debounced live search + sort, single row on all viewports.
 
-         The search understands meaning, not just letters — but nothing about a
-         plain search box says so, and an unexplained capability is one nobody
-         uses. Three cues carry that, cheapest first: a sparked magnifier, a
-         placeholder that names what else you can type, and a panel of real
-         example queries revealed on focus (ux-principles §5). --}}
-    <div class="flex flex-row items-stretch gap-3">
-        <div
-            class="relative min-w-0 flex-1"
-            x-data="{
-                open: false,
-                empty: @js($search === ''),
-                wide: window.matchMedia('(min-width: 640px)').matches,
-            }"
-            {{-- `empty` is mirrored from the server property so every path that
-                 clears the search — the clear button, "مسح الفلاتر", a back
-                 navigation — brings the hint panel back, not just typing. --}}
-            x-init="$wire.$watch('search', value => empty = value === '')"
-            @resize.window.debounce.150ms="wide = window.matchMedia('(min-width: 640px)').matches"
-            @click.outside="open = false"
-            @keydown.escape="open = false; $refs.search.blur()"
-        >
-            <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-blue-500 dark:text-blue-400">
-                {{-- Magnifier with a spark: the one glyph that reads as "search, but smarter". --}}
-                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 20l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.6 2.9l.62 1.68 1.68.62-1.68.62-.62 1.68-.62-1.68-1.68-.62 1.68-.62z"/>
-                </svg>
-            </span>
-            <input
-                x-ref="search"
-                type="text"
-                wire:model.live.debounce.300ms="search"
-                @focus="open = true"
-                @input="empty = $event.target.value === ''"
-                {{-- Static value is the no-JS fallback; Alpine swaps in the fuller
-                     desktop wording where there is room for it. --}}
-                placeholder="ابحث أو صِف ما تبحث عنه…"
-                :placeholder="wide
-                    ? 'ابحث باسم الجهة، أو المدينة، أو صِف المجال الذي تبحث عنه…'
-                    : 'ابحث أو صِف ما تبحث عنه…'"
-                {{-- text-base on mobile stops iOS zooming the page on focus; the
-                     paddings keep both breakpoints level with the sort button. --}}
-                class="w-full rounded-xl border border-slate-200 bg-white ps-11 pe-11 py-2.5 text-base text-slate-900 placeholder-slate-400 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none sm:py-3 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500"
-                aria-label="ابحث عن جهة تدريب بالاسم أو المدينة أو المجال"
-                autocomplete="off"
-                enterkeyhint="search"
-            />
+             The search understands meaning, not just letters — but nothing about a
+             plain search box says so, and an unexplained capability is one nobody
+             uses. Three cues carry that, cheapest first: a sparked magnifier, a
+             placeholder that names what else you can type, and a panel of real
+             example queries revealed on focus (ux-principles §5). --}}
+        <div class="flex flex-row items-stretch gap-3">
+            <div
+                class="relative min-w-0 flex-1"
+                x-data="{
+                    open: false,
+                    empty: @js($search === ''),
+                    wide: window.matchMedia('(min-width: 640px)').matches,
+                }"
+                {{-- `empty` is mirrored from the server property so every path that
+                     clears the search — the clear button, "مسح الفلاتر", a back
+                     navigation — brings the hint panel back, not just typing. --}}
+                x-init="$wire.$watch('search', value => empty = value === '')"
+                @resize.window.debounce.150ms="wide = window.matchMedia('(min-width: 640px)').matches"
+                @click.outside="open = false"
+                @keydown.escape="open = false; $refs.search.blur()"
+            >
+                <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-blue-500 dark:text-blue-400">
+                    {{-- Magnifier with a spark: the one glyph that reads as "search, but smarter". --}}
+                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 20l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.6 2.9l.62 1.68 1.68.62-1.68.62-.62 1.68-.62-1.68-1.68-.62 1.68-.62z"/>
+                    </svg>
+                </span>
+                <input
+                    x-ref="search"
+                    type="text"
+                    wire:model.live.debounce.300ms="search"
+                    @focus="open = true"
+                    @input="empty = $event.target.value === ''"
+                    {{-- Static value is the no-JS fallback; Alpine swaps in the fuller
+                         desktop wording where there is room for it. --}}
+                    placeholder="ابحث أو صِف ما تبحث عنه…"
+                    :placeholder="wide
+                        ? 'ابحث باسم الجهة، أو المدينة، أو صِف المجال الذي تبحث عنه…'
+                        : 'ابحث أو صِف ما تبحث عنه…'"
+                    {{-- text-base on mobile stops iOS zooming the page on focus; the
+                         paddings keep both breakpoints level with the sort button. --}}
+                    class="w-full rounded-xl border border-slate-200 bg-white ps-11 pe-11 py-2.5 text-base text-slate-900 placeholder-slate-400 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none sm:py-3 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500"
+                    aria-label="ابحث عن جهة تدريب بالاسم أو المدينة أو المجال"
+                    autocomplete="off"
+                    enterkeyhint="search"
+                />
 
-            {{-- Clear button --}}
-            @if($search !== '')
-                <button
-                    type="button"
-                    wire:click="$set('search', '')"
-                    @click="empty = true"
-                    class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
-                    aria-label="مسح البحث"
-                >
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            @endif
+                {{-- Clear button --}}
+                @if($search !== '')
+                    <button
+                        type="button"
+                        wire:click="$set('search', '')"
+                        @click="empty = true"
+                        {{-- Shares its corner with the spinner, so it steps aside while one is in flight. --}}
+                        wire:loading.remove
+                        wire:target="search, useExample, toggleFilter, clearFacet, clearFilters, sort"
+                        class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
+                        aria-label="مسح البحث"
+                    >
+                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                @endif
 
-            {{-- Inline spinner while the search request is in flight --}}
-            <div wire:loading wire:target="search" class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 dark:text-slate-500">
-                <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                {{-- Inline spinner while the search request is in flight --}}
+                <div wire:loading wire:target="search, useExample, toggleFilter, clearFacet, clearFilters, sort" class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 dark:text-slate-500">
+                    <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                </div>
+
+                {{-- Revealed on focus while empty, so it teaches at the moment of
+                     typing and costs nothing the rest of the time. Overlays rather
+                     than pushes, which keeps the results grid still on mobile. --}}
+                @if($this->searchSuggestions !== [])
+                    {{-- Visibility is a class binding rather than x-show: this panel
+                         lives inside a Livewire-morphed tree, where an x-show effect
+                         can be replaced mid-life and stop re-running, leaving the
+                         panel stuck shut. `invisible` also keeps it out of the
+                         accessibility tree and untabbable while closed. --}}
+                    {{-- Visibility is a `hidden`/`block` class binding, not x-show:
+                         inside a Livewire-morphed tree an x-show effect can be
+                         replaced mid-life and stop re-running, pinning the panel
+                         shut. The toggled utilities live only in the binding —
+                         Alpine removes classes it added but never ones hard-coded
+                         in `class`, so a static `hidden` would out-rank the bound
+                         `block`. x-cloak covers the pre-Alpine frame. --}}
+                    <div
+                        x-cloak
+                        :class="open && empty ? 'block' : 'hidden'"
+                        class="absolute inset-x-0 top-full z-20 mt-2 rounded-xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+                    >
+                        <p class="text-xs font-medium text-slate-400 dark:text-slate-500">جرّب البحث بـ</p>
+
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            @foreach($this->searchSuggestions as $index => $example)
+                                <button
+                                    type="button"
+                                    wire:click="useExample({{ $index }})"
+                                    @click="open = false; empty = false"
+                                    class="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950/40 dark:hover:text-blue-300"
+                                >{{ $example }}</button>
+                            @endforeach
+                        </div>
+
+                        <p class="mt-3 border-t border-slate-100 pt-3 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                            البحث يفهم المعنى، لا الحروف فقط — اكتب اسم الجهة، أو المدينة، أو صِف المجال ولو بكلماتك.
+                        </p>
+                    </div>
+                @endif
             </div>
 
-            {{-- Revealed on focus while empty, so it teaches at the moment of
-                 typing and costs nothing the rest of the time. Overlays rather
-                 than pushes, which keeps the results grid still on mobile. --}}
-            @if($this->searchExamples !== [])
-                {{-- Visibility is a class binding rather than x-show: this panel
-                     lives inside a Livewire-morphed tree, where an x-show effect
-                     can be replaced mid-life and stop re-running, leaving the
-                     panel stuck shut. `invisible` also keeps it out of the
-                     accessibility tree and untabbable while closed. --}}
-                {{-- Visibility is a `hidden`/`block` class binding, not x-show:
-                     inside a Livewire-morphed tree an x-show effect can be
-                     replaced mid-life and stop re-running, pinning the panel
-                     shut. The toggled utilities live only in the binding —
-                     Alpine removes classes it added but never ones hard-coded
-                     in `class`, so a static `hidden` would out-rank the bound
-                     `block`. x-cloak covers the pre-Alpine frame. --}}
-                <div
-                    x-cloak
-                    :class="open && empty ? 'block' : 'hidden'"
-                    class="absolute inset-x-0 top-full z-20 mt-2 rounded-xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+            <div class="relative size-[46px] shrink-0 compact-select-trigger" wire:key="sort-select-wrapper" title="ترتيب حسب">
+                <span class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                    <svg class="size-5 compact-select-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h13M3 12h9M3 18h5M17 4v16m0 0l-3-3m3 3l3-3"/>
+                    </svg>
+                </span>
+                <x-public.nice-select
+                    name="sort"
+                    wire:model.live="sort"
+                    :options="$this->sortOptions"
+                    aria-label="ترتيب حسب"
+                    offline
+                    :clearable="false"
+                    class="!size-[46px] !min-h-[46px] rounded-xl"
                 >
-                    <p class="text-xs font-medium text-slate-400 dark:text-slate-500">جرّب البحث بـ</p>
-
-                    <div class="mt-2 flex flex-wrap gap-2">
-                        @foreach($this->searchExamples as $index => $example)
-                            <button
-                                type="button"
-                                wire:click="useExample({{ $index }})"
-                                @click="open = false; empty = false"
-                                class="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950/40 dark:hover:text-blue-300"
-                            >{{ $example }}</button>
-                        @endforeach
-                    </div>
-
-                    <p class="mt-3 border-t border-slate-100 pt-3 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                        البحث يفهم المعنى، لا الحروف فقط — اكتب اسم الجهة، أو المدينة، أو صِف المجال ولو بكلماتك.
-                    </p>
-                </div>
-            @endif
+                    @scope('item', $option)
+                        <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50 dark:hover:bg-slate-800">
+                            <div class="font-medium text-slate-900 dark:text-slate-100">{{ data_get($option, 'name') }}</div>
+                        </div>
+                    @endscope
+                </x-public.nice-select>
+            </div>
         </div>
 
-        <div class="relative size-[46px] shrink-0 compact-select-trigger" wire:key="sort-select-wrapper" title="ترتيب حسب">
-            <span class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-slate-500 dark:text-slate-400">
-                <svg class="size-5 compact-select-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h13M3 12h9M3 18h5M17 4v16m0 0l-3-3m3 3l3-3"/>
-                </svg>
-            </span>
-            <x-public.nice-select
-                name="sort"
-                wire:model.live="sort"
-                :options="$this->sortOptions"
-                aria-label="ترتيب حسب"
-                offline
-                :clearable="false"
-                class="!size-[46px] !min-h-[46px] rounded-xl"
-            >
-                @scope('item', $option)
-                    <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50 dark:hover:bg-slate-800">
-                        <div class="font-medium text-slate-900 dark:text-slate-100">{{ data_get($option, 'name') }}</div>
+        {{-- Faceted filters: values OR inside a chip, chips AND together. Options
+             that would return nothing are never offered, so every click lands. --}}
+        @if($this->facets !== [])
+            <div class="flex flex-wrap items-center gap-2" x-data="{ showAll: false }">
+                @foreach($this->facets as $facet)
+                    <div
+                        wire:key="facet-{{ $facet['key'] }}"
+                        @unless($facet['primary']) x-show="showAll" x-cloak @endunless
+                    >
+                        <x-public.filter-chip
+                            :facet="$facet['key']"
+                            :label="$facet['label']"
+                            :options="$facet['options']"
+                            :selected="$facet['selected']"
+                            :searchable="$facet['searchable']"
+                        />
                     </div>
-                @endscope
-            </x-public.nice-select>
-        </div>
+                @endforeach
+
+                @if($this->hasHiddenFacets)
+                    <button
+                        type="button"
+                        @click="showAll = ! showAll"
+                        class="rounded-full px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                    >
+                        <span x-show="! showAll">مزيد من الفلاتر</span>
+                        <span x-show="showAll" x-cloak>فلاتر أقل</span>
+                    </button>
+                @endif
+
+                @if($this->activeFilterCount > 0)
+                    <button
+                        type="button"
+                        wire:click="clearFilters"
+                        class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        مسح الفلاتر
+                    </button>
+                @endif
+            </div>
+        @endif
     </div>
-
-    {{-- Faceted filters: values OR inside a chip, chips AND together. Options
-         that would return nothing are never offered, so every click lands. --}}
-    @if($this->facets !== [])
-        <div class="flex flex-wrap items-center gap-2" x-data="{ showAll: false }">
-            @foreach($this->facets as $facet)
-                <div
-                    wire:key="facet-{{ $facet['key'] }}"
-                    @unless($facet['primary']) x-show="showAll" x-cloak @endunless
-                >
-                    <x-public.filter-chip
-                        :facet="$facet['key']"
-                        :label="$facet['label']"
-                        :options="$facet['options']"
-                        :selected="$facet['selected']"
-                        :searchable="$facet['searchable']"
-                    />
-                </div>
-            @endforeach
-
-            @if($this->hasHiddenFacets)
-                <button
-                    type="button"
-                    @click="showAll = ! showAll"
-                    class="rounded-full px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                >
-                    <span x-show="! showAll">مزيد من الفلاتر</span>
-                    <span x-show="showAll" x-cloak>فلاتر أقل</span>
-                </button>
-            @endif
-
-            @if($this->activeFilterCount > 0)
-                <button
-                    type="button"
-                    wire:click="clearFilters"
-                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    مسح الفلاتر
-                </button>
-            @endif
-        </div>
-    @endif
 
     {{-- "Latest reviews" activity strip --}}
     @if($this->latestReviews->isNotEmpty())
         <div class="space-y-3">
             <div class="flex items-center gap-2">
                 <span class="size-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" aria-hidden="true"></span>
-                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400">أحدث التقييمات</h2>
+                <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400">{{ $this->isNarrowed ? 'أحدث التقييمات في النتائج' : 'أحدث التقييمات' }}</h2>
             </div>
             <div class="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0">
                 @foreach($this->latestReviews as $review)
@@ -600,6 +686,15 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         </div>
     @endif
 
+    {{-- Immediate feedback that the list is being rebuilt. No `.delay`: pairing
+         a delay modifier with a display modifier does not parse, and Livewire
+         silently leaves the element unbound — which renders the skeleton
+         permanently. `.grid` alone is the pattern the sentinel below uses. --}}
+    <div wire:loading.grid wire:target="search, useExample, toggleFilter, clearFacet, clearFilters, sort" class="grid grid-cols-1 gap-4 md:grid-cols-2" aria-hidden="true">
+        <x-public.company-card-skeleton :count="4" />
+    </div>
+
+    <div wire:loading.remove wire:target="search, useExample, toggleFilter, clearFacet, clearFilters, sort" class="space-y-8">
     @if($this->companies->isEmpty())
         <div class="rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center dark:border-slate-800 dark:bg-slate-900">
             <svg class="mx-auto size-16 text-slate-300 dark:text-slate-700" fill="none" viewBox="0 0 64 64" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -639,6 +734,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
             </div>
         @endif
     @endif
+    </div>
 
     @php
         $itemListElements = $this->companies->values()->map(fn ($company, $index) => [
