@@ -39,7 +39,16 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(Embedder::class, function (): Embedder {
             $config = config('search.embeddings');
 
-            if ($config['driver'] !== 'openrouter' || blank($config['key'])) {
+            // The fake driver is a local convenience, never a deployed fallback:
+            // filling the index with meaningless vectors would look exactly like
+            // working semantic search while ranking nonsense. Anywhere else, a
+            // missing key lets OpenRouterEmbedder throw — the indexer and the
+            // ranker both catch it, so search degrades to literal matching and
+            // the failure shows up in the log instead of in the results.
+            $fake = $config['driver'] === 'fake'
+                || (blank($config['key']) && $this->app->environment('local', 'testing'));
+
+            if ($fake) {
                 return new FakeEmbedder((int) $config['dimensions']);
             }
 

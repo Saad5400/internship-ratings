@@ -111,7 +111,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
     public function durationMonthOptions(): array
     {
         return collect(range(1, 12))
-            ->map(fn (int $month) => ['id' => $month, 'name' => (string) $month])
+            ->map(fn (int $month) => ['id' => $month, 'name' => trans_choice('counts.months', $month)])
             ->all();
     }
 
@@ -511,7 +511,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
                     wire:model.live="companyId"
                     :options="$companyOptions"
                     search-function="searchCompanies"
-                    placeholder="ابحث عن جهة أو اكتب اسم جديدة..."
+                    placeholder="اكتب اسم الجهة، أو اسم جهة جديدة لإضافتها…"
                     no-result-text="لا توجد نتائج — اكتب الاسم لإنشاء جهة جديدة"
                     debounce="300ms"
                     searchable
@@ -600,7 +600,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             >
                 @scope('item', $option)
                     <div class="p-3 border-s-4 border-s-transparent hover:bg-slate-50 dark:hover:bg-slate-800">
-                        <div class="font-medium text-slate-900 dark:text-slate-100">{{ data_get($option, 'name') }} {{ (int) data_get($option, 'id') === 1 ? 'شهر' : 'أشهر' }}</div>
+                        <div class="font-medium text-slate-900 dark:text-slate-100">{{ data_get($option, 'name') }}</div>
                     </div>
                 @endscope
             </x-public.nice-select>

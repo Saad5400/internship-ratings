@@ -56,6 +56,54 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         return ['relevance', 'highest_rated', 'most_rated', 'most_recently_rated'];
     }
 
+    /**
+     * Concrete queries offered when the search box is focused and empty.
+     *
+     * People type company names into a search box because that is what search
+     * boxes have always wanted. So these deliberately suggest everything *but*
+     * a company name: a city and a role, both pulled from real data so a
+     * suggestion never lands on an empty page, and a concept no record contains
+     * verbatim — the one that demonstrates meaning-matching.
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function searchExamples(): array
+    {
+        return Cache::remember('public-search-examples', 600, function (): array {
+            $topOf = fn (string $column): ?string => Rating::approved()
+                ->whereNotNull($column)
+                ->where($column, '!=', '')
+                ->groupBy($column)
+                ->orderByRaw('count(*) desc')
+                ->value($column);
+
+            $city = $topOf('city');
+
+            return array_values(array_filter([
+                $city ? "تدريب في {$city}" : null,
+                $topOf('role_title'),
+                'شركات تقنية',
+            ]));
+        });
+    }
+
+    /** Run a suggested query. Taken by index so no Arabic string is ever quoted into markup. */
+    public function useExample(int $index): void
+    {
+        $example = $this->searchExamples[$index] ?? null;
+
+        if ($example === null) {
+            return;
+        }
+
+        $this->search = $example;
+        $this->updatedSearch();
+
+        $this->perPage = $this->pageSize;
+        $this->resetPage();
+    }
+
     public function mount(): void
     {
         $this->filters = CompanyFacets::sanitize($this->filters);
@@ -326,36 +374,72 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
 }; ?>
 
 <div class="space-y-8">
-    {{-- Hero --}}
-    <div class="rounded-2xl border border-slate-200 bg-gradient-to-b from-blue-50/40 to-white px-6 py-10 text-center sm:px-10 sm:py-14 dark:border-slate-800 dark:from-blue-950/30 dark:to-slate-900">
-        <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-slate-100">تجارب تدريب حقيقية، من متدربين مثلك</h1>
-        <p class="mx-auto mt-3 max-w-xl text-slate-500 dark:text-slate-400">اقرأ تقييمات صادقة عن جهات التدريب التعاوني والصيفي قبل أن تختار جهتك.</p>
+    {{-- Page header --}}
+    <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">جهات التدريب</h1>
+            <p class="mt-1.5 text-slate-500 dark:text-slate-400">تقييمات من متدربين سبقوك تساعدك في اختيار جهتك.</p>
+        </div>
 
-        <div class="mt-6 flex items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+        <div class="flex shrink-0 items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
             <span class="inline-flex items-baseline gap-1.5">
-                <x-public.count-up :value="$this->stats['ratings']" :duration="900" class="text-lg font-bold tabular-nums text-slate-900 dark:text-slate-100" />
-                <span>تقييم</span>
+                <x-public.count-noun :count="$this->stats['ratings']" noun="ratings" :duration="900" class="font-semibold tabular-nums text-slate-900 dark:text-slate-100" />
             </span>
             <span class="size-1 rounded-full bg-slate-300 dark:bg-slate-700" aria-hidden="true"></span>
             <span class="inline-flex items-baseline gap-1.5">
-                <x-public.count-up :value="$this->stats['companies']" :duration="900" class="text-lg font-bold tabular-nums text-slate-900 dark:text-slate-100" />
-                <span>جهة</span>
+                <x-public.count-noun :count="$this->stats['companies']" noun="companies" :duration="900" class="font-semibold tabular-nums text-slate-900 dark:text-slate-100" />
             </span>
         </div>
     </div>
 
-    {{-- Debounced live search + sort, single row on all viewports --}}
+    {{-- Debounced live search + sort, single row on all viewports.
+
+         The search understands meaning, not just letters — but nothing about a
+         plain search box says so, and an unexplained capability is one nobody
+         uses. Three cues carry that, cheapest first: a sparked magnifier, a
+         placeholder that names what else you can type, and a panel of real
+         example queries revealed on focus (ux-principles §5). --}}
     <div class="flex flex-row items-stretch gap-3">
-        <div class="relative min-w-0 flex-1">
-            <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-slate-400 dark:text-slate-500">
-                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <div
+            class="relative min-w-0 flex-1"
+            x-data="{
+                open: false,
+                empty: @js($search === ''),
+                wide: window.matchMedia('(min-width: 640px)').matches,
+            }"
+            {{-- `empty` is mirrored from the server property so every path that
+                 clears the search — the clear button, "مسح الفلاتر", a back
+                 navigation — brings the hint panel back, not just typing. --}}
+            x-init="$wire.$watch('search', value => empty = value === '')"
+            @resize.window.debounce.150ms="wide = window.matchMedia('(min-width: 640px)').matches"
+            @click.outside="open = false"
+            @keydown.escape="open = false; $refs.search.blur()"
+        >
+            <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-blue-500 dark:text-blue-400">
+                {{-- Magnifier with a spark: the one glyph that reads as "search, but smarter". --}}
+                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 20l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.6 2.9l.62 1.68 1.68.62-1.68.62-.62 1.68-.62-1.68-1.68-.62 1.68-.62z"/>
+                </svg>
             </span>
             <input
+                x-ref="search"
                 type="text"
                 wire:model.live.debounce.300ms="search"
-                placeholder="ابحث عن جهة..."
-                class="w-full rounded-xl border border-slate-200 bg-white ps-11 pe-11 py-3 text-sm text-slate-900 placeholder-slate-400 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500"
-                aria-label="ابحث عن جهة"
+                @focus="open = true"
+                @input="empty = $event.target.value === ''"
+                {{-- Static value is the no-JS fallback; Alpine swaps in the fuller
+                     desktop wording where there is room for it. --}}
+                placeholder="ابحث أو صِف ما تبحث عنه…"
+                :placeholder="wide
+                    ? 'ابحث باسم الجهة، أو المدينة، أو صِف المجال الذي تبحث عنه…'
+                    : 'ابحث أو صِف ما تبحث عنه…'"
+                {{-- text-base on mobile stops iOS zooming the page on focus; the
+                     paddings keep both breakpoints level with the sort button. --}}
+                class="w-full rounded-xl border border-slate-200 bg-white ps-11 pe-11 py-2.5 text-base text-slate-900 placeholder-slate-400 shadow-xs transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none sm:py-3 sm:text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500"
+                aria-label="ابحث عن جهة تدريب بالاسم أو المدينة أو المجال"
+                autocomplete="off"
+                enterkeyhint="search"
             />
 
             {{-- Clear button --}}
@@ -363,6 +447,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                 <button
                     type="button"
                     wire:click="$set('search', '')"
+                    @click="empty = true"
                     class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 transition-colors hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                     aria-label="مسح البحث"
                 >
@@ -374,6 +459,46 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
             <div wire:loading wire:target="search" class="absolute inset-y-0 end-0 flex items-center pe-4 text-slate-400 dark:text-slate-500">
                 <svg class="size-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
             </div>
+
+            {{-- Revealed on focus while empty, so it teaches at the moment of
+                 typing and costs nothing the rest of the time. Overlays rather
+                 than pushes, which keeps the results grid still on mobile. --}}
+            @if($this->searchExamples !== [])
+                {{-- Visibility is a class binding rather than x-show: this panel
+                     lives inside a Livewire-morphed tree, where an x-show effect
+                     can be replaced mid-life and stop re-running, leaving the
+                     panel stuck shut. `invisible` also keeps it out of the
+                     accessibility tree and untabbable while closed. --}}
+                {{-- Visibility is a `hidden`/`block` class binding, not x-show:
+                     inside a Livewire-morphed tree an x-show effect can be
+                     replaced mid-life and stop re-running, pinning the panel
+                     shut. The toggled utilities live only in the binding —
+                     Alpine removes classes it added but never ones hard-coded
+                     in `class`, so a static `hidden` would out-rank the bound
+                     `block`. x-cloak covers the pre-Alpine frame. --}}
+                <div
+                    x-cloak
+                    :class="open && empty ? 'block' : 'hidden'"
+                    class="absolute inset-x-0 top-full z-20 mt-2 rounded-xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+                >
+                    <p class="text-xs font-medium text-slate-400 dark:text-slate-500">جرّب البحث بـ</p>
+
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        @foreach($this->searchExamples as $index => $example)
+                            <button
+                                type="button"
+                                wire:click="useExample({{ $index }})"
+                                @click="open = false; empty = false"
+                                class="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950/40 dark:hover:text-blue-300"
+                            >{{ $example }}</button>
+                        @endforeach
+                    </div>
+
+                    <p class="mt-3 border-t border-slate-100 pt-3 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                        البحث يفهم المعنى، لا الحروف فقط — اكتب اسم الجهة، أو المدينة، أو صِف المجال ولو بكلماتك.
+                    </p>
+                </div>
+            @endif
         </div>
 
         <div class="relative size-[46px] shrink-0 compact-select-trigger" wire:key="sort-select-wrapper" title="ترتيب حسب">
@@ -450,9 +575,14 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                 <span class="size-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" aria-hidden="true"></span>
                 <h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400">أحدث التقييمات</h2>
             </div>
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0">
                 @foreach($this->latestReviews as $review)
-                    <div wire:key="latest-review-{{ $review->id }}" class="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                    <a
+                        wire:key="latest-review-{{ $review->id }}"
+                        href="{{ route('companies.show', $review->company) }}"
+                        wire:navigate
+                        class="group w-[78%] shrink-0 snap-start rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:border-blue-200 hover:shadow-md motion-safe:hover:-translate-y-0.5 sm:w-auto dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-900"
+                    >
                         <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                             <span class="text-lg font-bold leading-none text-blue-300 dark:text-blue-500" aria-hidden="true">&rdquo;</span>
                             {{ Str::limit($review->review_text, 110) }}
@@ -460,11 +590,11 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                         <div class="mt-3 flex items-center justify-between gap-2 text-xs text-slate-400 dark:text-slate-500">
                             <span class="min-w-0 truncate">
                                 {{ $review->role_title }} ·
-                                <a href="{{ route('companies.show', $review->company) }}" wire:navigate class="font-medium text-slate-500 hover:text-blue-600 transition-colors dark:text-slate-400 dark:hover:text-blue-400">{{ $review->company->name }}</a>
+                                <span class="font-medium text-slate-500 transition-colors group-hover:text-blue-600 dark:text-slate-400 dark:group-hover:text-blue-400">{{ $review->company->name }}</span>
                             </span>
                             <span class="shrink-0">{{ $review->created_at->diffForHumans() }}</span>
                         </div>
-                    </div>
+                    </a>
                 @endforeach
             </div>
         </div>

@@ -32,28 +32,41 @@ final readonly class SearchHit
     }
 
     /**
-     * Fields that meaningfully contributed, strongest first. Used for the
-     * "matched on" line; a long tail of near-zero fields is noise, not an
-     * explanation.
+     * The fields that actually carried the match, strongest first — the
+     * "matched on" line.
      *
-     * The best field is always included even if it falls under the threshold —
-     * a result in the list with no stated reason reads as a bug, and a weak
-     * match still has a strongest field.
+     * Two rules keep this an explanation instead of a dump. The best field is
+     * always listed, even if weak: a result with no stated reason reads as a
+     * bug. Everything after it must score within `$relative` of that best
+     * field, because a semantic query gives *every* field some score, and
+     * listing all six says nothing about why this result is here.
      *
      * @return list<SearchField>
      */
-    public function matchedFields(float $threshold = 0.05): array
+    public function matchedFields(float $relative = 0.55, int $limit = 3): array
     {
         $matched = [];
+        $best = null;
 
         foreach ($this->fields as $key => $scores) {
-            if ($scores['score'] < $threshold && $matched !== []) {
+            $field = SearchField::tryFrom($key);
+
+            if ($field === null) {
                 continue;
             }
 
-            if ($field = SearchField::tryFrom($key)) {
+            if ($best === null) {
+                $best = $scores['score'];
                 $matched[] = $field;
+
+                continue;
             }
+
+            if (count($matched) >= $limit || $scores['score'] < $best * $relative) {
+                break;
+            }
+
+            $matched[] = $field;
         }
 
         return $matched;

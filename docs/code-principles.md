@@ -33,6 +33,19 @@ fork a pattern**. Every rule points at real files — imitate them.
   strips tashkeel/tatweel and unifies letter variants. `Company` persists the
   result to `name_normalized` in its `saving()` hook and matches against it in
   `scopeSearchByName()`. Never normalize Arabic ad hoc — call `Arabic::normalize`.
+- **Search has one owner.** Hybrid search — literal matching and embedding
+  similarity, fused — lives in `app/Support/Search/*`: `CompanySearch` ranks,
+  `SearchIndexer` maintains the `search_documents` rows, and `Embedder` is the
+  only place a provider is named (settings in `config/search.php`, driver bound
+  in `AppServiceProvider`). **Field weights live on the `SearchField` enum**, so
+  changing what outranks what is an edit to `SearchField::weight()` — never a
+  hand-tuned query. Public browsing goes through `Company::scopeMatchingSearch()`
+  and `scopeOrderByRelevance()`; results and facet counts call the same scope, so
+  a chip's count always matches the list. Re-indexing is queued
+  (`IndexSearchDocuments`, dispatched from the `Company`/`Rating` `saved` hooks)
+  because embedding is a paid network call; `php artisan search:index` backfills
+  and repairs. The semantic thresholds in `config/search.php` are **measured
+  against the corpus, not guessed** — re-measure before changing them.
 
 ## 2. Admin pages compose the shared admin component layer
 
