@@ -21,6 +21,8 @@
                 document.addEventListener('livewire:navigated', forceLight);
             })();
         </script>
+    <!-- Analytics (self-hosted Umami, cookieless) -->
+    <script defer src="https://analytics.sb.sa/script.js" data-website-id="fb84e21d-eda8-4eda-89f0-6c750b8c91fb"></script>
     </head>
     <body class="min-h-screen bg-slate-50/50 font-sans antialiased text-slate-900">
         @php
