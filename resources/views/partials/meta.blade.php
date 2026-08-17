@@ -20,9 +20,25 @@
     $siteName = 'تقييم التدريب';
     $metaTitle ??= $siteName;
     $fullTitle = $metaTitle === $siteName ? $siteName : $metaTitle.' - '.$siteName;
+
+    // Company pages describe the company and preview with a per-company social
+    // card (rendered by App\Support\CompanyOgImage at route companies.og).
+    // Deriving these here from the bound model is the one request-scoped place
+    // that reaches the layout head: a Livewire page component can push only its
+    // title into the layout, and View::share would persist across requests
+    // under Octane. Explicit @include overrides still win via the ??= below.
+    if (request()->routeIs('companies.show') && ($company = request()->route('company')) instanceof \App\Models\Company) {
+        $metaDescription ??= filled($company->description)
+            ? \Illuminate\Support\Str::limit($company->description, 155)
+            : 'اقرأ تقييمات وتجارب المتدربين في '.$company->name.' للتدريب التعاوني والصيفي، وشارك تجربتك لمساعدة غيرك على اختيار جهة التدريب المناسبة.';
+        $metaImage ??= route('companies.og', $company);
+        $metaImageAlt ??= $company->name;
+    }
+
     $metaDescription ??= 'منصّة عربية لتقييم جهات التدريب التعاوني والتدريب الصيفي. اقرأ تجارب المتدربين الحقيقية وتقييماتهم لمختلف الشركات والجهات، وشارك تجربتك لمساعدة غيرك على اختيار جهة التدريب المناسبة.';
     $metaUrl ??= url()->current();
     $metaImage ??= url('/og-image.png');
+    $metaImageAlt ??= $siteName;
     $metaType ??= 'website';
 
     // Default to indexable only for public routes on the production host.
@@ -62,7 +78,7 @@
 <meta property="og:image" content="{{ $metaImage }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="{{ $siteName }}">
+<meta property="og:image:alt" content="{{ $metaImageAlt }}">
 <meta property="og:locale" content="ar_SA">
 
 <meta name="twitter:card" content="summary_large_image">

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OgImageController;
 use App\Models\Company;
 use Illuminate\Support\Facades\Route;
 
@@ -7,6 +8,10 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/companies')->name('home');
 Route::livewire('/companies', 'pages::companies.index')->name('companies.index');
 Route::livewire('/companies/{company}', 'pages::companies.show')->name('companies.show');
+
+// Dynamic Open Graph card for a company, rendered by App\Support\CompanyOgImage
+// and referenced from the show page's og:image tag.
+Route::get('/companies/{company}/og.png', OgImageController::class)->name('companies.og');
 
 // XML sitemap of public, indexable pages.
 Route::get('/sitemap.xml', function () {

@@ -19,6 +19,8 @@
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.2.2",
+        "@takumi-rs/core": "^2.9.2",
+        "@takumi-rs/helpers": "^2.9.2",
         "daisyui": "^5.5.19",
         "playwright": "^1.61.1",
         "tailwindcss": "^4.2.2"
