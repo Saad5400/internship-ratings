@@ -35,13 +35,12 @@ new #[Layout('layouts.public')] class extends Component {
 
     public function rendering($view): void
     {
+        // Only the page <title> propagates from a Livewire page component into
+        // the layout. The company's meta description and social card can't ride
+        // along on the view here (that data never reaches the head partial, and
+        // View::share leaks across requests under Octane), so partials/meta.blade
+        // derives them from the bound company for this route instead.
         $view->title($this->company->name);
-
-        $description = filled($this->company->description)
-            ? \Illuminate\Support\Str::limit($this->company->description, 155)
-            : 'اقرأ تقييمات وتجارب المتدربين في '.$this->company->name.' للتدريب التعاوني والصيفي، وشارك تجربتك لمساعدة غيرك على اختيار جهة التدريب المناسبة.';
-
-        $view->with('metaDescription', $description);
     }
 
     public function loadMore(): void
