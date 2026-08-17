@@ -22,6 +22,8 @@
     <script defer src="https://analytics.sb.sa/script.js" data-website-id="fb84e21d-eda8-4eda-89f0-6c750b8c91fb"></script>
     </head>
     <body class="min-h-screen bg-slate-50/50 font-sans antialiased text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        @include('partials.splash')
+
         <nav class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
             <div class="max-w-5xl mx-auto px-4 sm:px-6">
                 <div class="flex items-center justify-between h-16">
