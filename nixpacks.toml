@@ -18,7 +18,6 @@ nixPkgs = [
     "php84Extensions.pcntl",
     "python311Packages.supervisor",
     "nodejs_22",
-    "libreoffice-still",
 ]
 
 [phases.install]
