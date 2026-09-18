@@ -14,9 +14,67 @@
     layout for why it does.
 --}}
 @php($analyticsWebsiteId = 'fb84e21d-eda8-4eda-89f0-6c750b8c91fb')
+{{--
+    Query-string scrubber. The tracker's automatic page view sends the address
+    bar verbatim, and this app puts the visitor's own search text in the address
+    bar (`#[Url]` on the companies index) — so before this, every search anyone
+    typed was landing in `website_event.url_query`, which has none of this app's
+    access control. On a site about ratings of real workplaces, a search term
+    plus a timestamp can point at a person.
+
+    An allowlist, not a blocklist: a query parameter added later is dropped by
+    default instead of silently starting a new leak. `data-exclude-search` would
+    have been the one-liner, but the tracker does not parse UTM itself — it ships
+    the raw query and the server extracts utm_* from it — so excluding the search
+    would take attribution down with it.
+
+    `referrer` gets the same treatment: on a wire:navigate the tracker reports the
+    previous in-app URL as the referrer, which is exactly the search page.
+
+    Defined before the deferred tracker, on `window`, and it cannot throw: the
+    tracker awaits this and sends whatever comes back, so a throw here would be a
+    silently broken tag.
+--}}
+<script data-navigate-once>
+    window.umamiScrubQuery = function (type, payload) {
+        try {
+            var allowed = ['ref', 'gclid', 'fbclid', 'msclkid'];
+            var scrub = function (value) {
+                if (typeof value !== 'string' || value.indexOf('?') === -1) {
+                    return value;
+                }
+
+                var url = new URL(value, window.location.href);
+                var kept = new URLSearchParams();
+
+                url.searchParams.forEach(function (paramValue, key) {
+                    var name = key.toLowerCase();
+
+                    if (name.indexOf('utm_') === 0 || allowed.indexOf(name) !== -1) {
+                        kept.append(key, paramValue);
+                    }
+                });
+
+                url.search = kept.toString();
+
+                return value.indexOf('://') === -1 ? url.pathname + url.search + url.hash : url.toString();
+            };
+
+            if (payload) {
+                payload.url = scrub(payload.url);
+                payload.referrer = scrub(payload.referrer);
+            }
+        } catch (e) {
+            // Never take the tag down over a URL we failed to parse.
+        }
+
+        return payload;
+    };
+</script>
 <script defer src="https://analytics.sb.sa/script.js"
     data-website-id="{{ $analyticsWebsiteId }}"
-    data-domains="{{ config('app.production_host') }}"></script>
+    data-domains="{{ config('app.production_host') }}"
+    data-before-send="umamiScrubQuery"></script>
 {{--
     Session replay + heatmaps. A SEPARATE script, not a replacement: recorder.js
     never defines `window.umami` and posts only to /api/record, so dropping

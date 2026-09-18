@@ -36,6 +36,29 @@ test('the public shell loads the tracker scoped to the production domain', funct
         ->assertSee('data-domains="'.config('app.production_host').'"', false);
 });
 
+test('the tracker is told to scrub the query string before it sends anything', function () {
+    $this->withoutVite()
+        ->get(route('companies.index'))
+        ->assertOk()
+        ->assertSee('data-before-send="umamiScrubQuery"', false)
+        // Defined before the deferred tracker can run, or it sends the first
+        // page view unscrubbed.
+        ->assertSeeInOrder(['window.umamiScrubQuery', 'data-before-send'], false);
+});
+
+test('the scrubber keeps attribution and drops everything else', function () {
+    $head = file_get_contents(resource_path('views/partials/analytics.blade.php'));
+
+    // An allowlist, so a query parameter added later leaks nothing by default.
+    expect($head)->toContain("var allowed = ['ref', 'gclid', 'fbclid', 'msclkid'];")
+        ->toContain("name.indexOf('utm_') === 0")
+        // The referrer is the search page on every in-app navigation.
+        ->toContain('payload.referrer = scrub(payload.referrer);')
+        // data-exclude-search would take UTM with it: the tracker ships the raw
+        // query and the server parses utm_* out of it.
+        ->not->toContain('data-exclude-search="');
+});
+
 test('the recorder is an addition to the tracker, never a replacement', function () {
     $response = $this->withoutVite()->get(analyticsProductionUrl())->assertOk();
 
