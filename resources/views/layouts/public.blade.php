@@ -18,8 +18,7 @@
             })();
         </script>
         @include('partials.head')
-    <!-- Analytics (self-hosted Umami, cookieless) -->
-    <script defer src="https://analytics.sb.sa/script.js" data-website-id="fb84e21d-eda8-4eda-89f0-6c750b8c91fb"></script>
+        @include('partials.analytics')
     </head>
     <body class="min-h-screen bg-slate-50/50 font-sans antialiased text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         @include('partials.splash')
@@ -97,5 +96,6 @@
             <script data-navigate-once>window.onTurnstileReady = () => window.dispatchEvent(new Event('turnstile-loaded'));</script>
             <script data-navigate-once src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileReady&render=explicit" async defer></script>
         @endif
+        @include('partials.analytics-events')
     </body>
 </html>
