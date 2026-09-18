@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Concerns\TracksAnalytics;
 use App\Models\Company;
 use App\Models\Rating;
 use App\Models\RatingVote;
@@ -8,6 +9,8 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 new #[Layout('layouts.public')] class extends Component {
+    use TracksAnalytics;
+
     public Company $company;
 
     public int $perPage = 10;
@@ -50,6 +53,9 @@ new #[Layout('layouts.public')] class extends Component {
         }
 
         $this->perPage += $this->pageSize;
+
+        $this->trackEvent('company_ratings_load_more', ['page' => intdiv($this->perPage, $this->pageSize)]);
+
         unset($this->ratingResults, $this->ratings, $this->hasMore);
     }
 
@@ -68,6 +74,12 @@ new #[Layout('layouts.public')] class extends Component {
 
         if (! in_array($ratingId, $this->revealedContacts, true)) {
             $this->revealedContacts[] = $ratingId;
+
+            // Whether anyone takes up the offer to be contacted is the strongest
+            // signal this page produces, and it is the whole reason the field
+            // exists. No rating id travels with it: that is a pointer to one
+            // person's review and their contact details.
+            $this->trackEvent('rating_contact_revealed');
         }
     }
 
@@ -88,6 +100,8 @@ new #[Layout('layouts.public')] class extends Component {
             ->where('rating_id', $ratingId)
             ->where('voter_hash', $voterHash)
             ->delete();
+
+        $this->trackEvent('rating_vote', ['action' => $removed > 0 ? 'remove' : 'add']);
 
         if ($removed > 0) {
             $this->votedRatingIds = array_values(array_diff($this->votedRatingIds, [$ratingId]));

@@ -5,8 +5,10 @@ use App\Enums\Modality;
 use App\Enums\Recommendation;
 use App\Enums\ReviewerDegree;
 use App\Enums\SaudiCity;
+use App\Livewire\Concerns\TracksAnalytics;
 use App\Models\Company;
 use App\Models\Rating;
+use App\Support\Analytics;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -14,6 +16,8 @@ use Livewire\Component;
 use NjoguAmos\Turnstile\Rules\TurnstileRule;
 
 new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Component {
+    use TracksAnalytics;
+
     public int $currentStep = 1;
     public int $totalSteps = 3;
 
@@ -319,23 +323,50 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         $this->dispatch('rating-wizard-step-changed');
     }
 
-    protected function validateOrScroll(array $rules): void
+    /**
+     * The one gate every step advance and the submit pass through — so it is
+     * also the one place that can see a wizard refusing to move.
+     *
+     * A form that silently stops accepting reviews looks exactly like a quiet
+     * week in a page-view chart, which is the failure this counts. `$step` is
+     * the step being left; null means this is the final submit.
+     *
+     * The field name is the app's own property name, from a closed set fixed in
+     * `rulesForStep()` — never the value the person entered.
+     */
+    protected function validateOrScroll(array $rules, ?int $step = null): void
     {
         try {
             $this->validate($rules, $this->messages());
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->dispatch('rating-wizard-validation-failed');
+
+            $field = (string) (array_key_first($e->validator->errors()->toArray()) ?? 'unknown');
+
+            if ($step !== null) {
+                $this->trackEvent('rating_step_blocked', ['step' => $step, 'field' => $field]);
+            } else {
+                // Turnstile deserves its own reason: a captcha that starts
+                // rejecting everyone is a site-wide outage that leaves no trace
+                // anywhere else, and it is nobody's typo.
+                $this->trackEvent('rating_submit_blocked', [
+                    'reason' => $e->validator->errors()->has('turnstile') ? 'turnstile' : 'validation',
+                    'field' => $field,
+                ]);
+            }
+
             throw $e;
         }
     }
 
     public function nextStep(): void
     {
-        $this->validateOrScroll($this->rulesForStep($this->currentStep));
+        $this->validateOrScroll($this->rulesForStep($this->currentStep), $this->currentStep);
 
         if ($this->currentStep < $this->totalSteps) {
             $this->currentStep++;
             $this->dispatchStepChangedEvent();
+            $this->trackEvent('rating_step_advanced', ['step' => $this->currentStep]);
         }
     }
 
@@ -358,7 +389,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
         }
 
         for ($s = $this->currentStep; $s < $step; $s++) {
-            $this->validateOrScroll($this->rulesForStep($s));
+            $this->validateOrScroll($this->rulesForStep($s), $s);
         }
 
         $this->currentStep = $step;
@@ -372,6 +403,7 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             $allRules = array_merge($allRules, $this->rulesForStep($s));
         }
         $this->validateOrScroll($allRules);
+
 
         if ($this->companyId === '__new__') {
             $company = Company::create([
@@ -418,6 +450,23 @@ new #[Layout('layouts.public')] #[Title('أضف تقييم')] class extends Comp
             'willing_to_help' => $this->willing_to_help,
             'contact_method' => $this->willing_to_help ? $this->contact_method : null,
             'status' => 'pending',
+        ]);
+
+        /*
+         * Flashed rather than dispatched: this request ends in a redirect, and a
+         * browser event racing a navigation is a coin toss. It rides the session
+         * to the page the redirect lands on (App\Support\Analytics).
+         *
+         * What it carries is the shape of the submission, never its content — no
+         * scores, no recommendation, no stipend, no company name. A pending
+         * review is not public yet and this site is small enough that a
+         * timestamp plus a score would often single one out; "did a submission
+         * happen, and did it invent a new employer" is all the funnel needs, and
+         * the moderation queue answers the rest behind a login.
+         */
+        Analytics::track('rating_submitted', [
+            'company' => $this->companyId === '__new__' ? 'new' : 'existing',
+            'review' => filled($this->review_text) ? 'yes' : 'no',
         ]);
 
         session()->flash('success', $successMessage);

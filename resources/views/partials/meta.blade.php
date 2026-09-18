@@ -8,8 +8,9 @@
 @php
     // Production is the only indexable host. Any other host (staging, preview,
     // IP, localhost) must emit noindex so it never competes with production for
-    // rankings. We key off the request host rather than an env flag.
-    $productionHost = 'internship-ratings.sb.sa';
+    // rankings. We key off the request host rather than an env flag; the host
+    // itself is config('app.production_host'), shared with the analytics gate.
+    $productionHost = config('app.production_host');
     $isProductionHost = request()->getHost() === $productionHost;
 
     // Public, indexable routes. Everything else (auth, settings, dashboard)

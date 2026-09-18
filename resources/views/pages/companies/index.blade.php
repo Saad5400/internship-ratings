@@ -1,8 +1,10 @@
 <?php
 
+use App\Livewire\Concerns\TracksAnalytics;
 use App\Models\Company;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Rating;
+use App\Support\Analytics;
 use App\Support\Arabic;
 use App\Support\CompanyFacets;
 use App\Support\PopularSearches;
@@ -15,6 +17,8 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component {
+    use TracksAnalytics;
+
     #[Url(as: 'search', except: '')]
     public string $search = '';
 
@@ -32,6 +36,13 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
 
     /** How many facets are shown before the "more filters" toggle. */
     protected int $primaryFacetCount = 3;
+
+    /**
+     * Set when this request changed the search, cleared once `rendering()` has
+     * counted the event. Protected, so it lives for exactly one round trip —
+     * which is the whole point: the count it reports has to be this search's.
+     */
+    protected ?string $pendingSearchSource = null;
 
     public int $perPage = 12;
 
@@ -137,6 +148,10 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         // suggested. Only a query the visitor actually typed counts.
         $this->syncSortToSearch();
 
+        // Whether the suggestions earn their place is a question only analytics
+        // can answer, so a chip counts as a search — tagged as one.
+        $this->pendingSearchSource = 'suggestion';
+
         $this->perPage = $this->pageSize;
         $this->resetPage();
     }
@@ -148,6 +163,8 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
 
     public function rendering($view): void
     {
+        $this->trackSearch();
+
         $view->with('metaDescription', 'تصفّح تقييمات جهات التدريب التعاوني والصيفي من المتدربين أنفسهم. قارن بين الشركات والجهات حسب تقييمات المتدربين، واطّلع على التجارب الحقيقية قبل اختيار جهة تدريبك.');
     }
 
@@ -183,6 +200,40 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         // input is what makes that true. Cheap and non-throwing by contract, so
         // it cannot take the search down with it.
         PopularSearches::record($this->search);
+
+        // Clearing the box is not a search, so it isn't counted as one.
+        if ($this->search !== '') {
+            $this->pendingSearchSource = 'typed';
+        }
+    }
+
+    /**
+     * Count a settled search, once the results for it exist.
+     *
+     * Deferred to `rendering()` because the interesting half of a search is how
+     * many companies it found, and that isn't known when the property updates.
+     * Reading the computed here costs nothing: the view is about to read the
+     * same memoized value.
+     *
+     * The query itself is never sent — it is text a person typed, and an
+     * employer name typed by someone about to write a review is exactly the
+     * kind of thing that must not leave the app. The term we do want is already
+     * recorded in-app by PopularSearches, behind the app's own access control;
+     * Umami gets the shape of the result, which is what tells us whether the
+     * search is working and which searches find nothing.
+     */
+    protected function trackSearch(): void
+    {
+        if ($this->pendingSearchSource === null) {
+            return;
+        }
+
+        $this->trackEvent('company_search', [
+            'source' => $this->pendingSearchSource,
+            'results' => Analytics::band($this->companyResults->count()),
+        ]);
+
+        $this->pendingSearchSource = null;
     }
 
     protected function syncSortToSearch(): void
@@ -204,8 +255,9 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         }
 
         $selected = $this->filters[$facet] ?? [];
+        $wasSelected = in_array($value, $selected, true);
 
-        $selected = in_array($value, $selected, true)
+        $selected = $wasSelected
             ? array_values(array_diff($selected, [$value]))
             : [...$selected, $value];
 
@@ -215,12 +267,24 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
             $this->filters[$facet] = $selected;
         }
 
+        // The facet key, never the value: "which dimensions do people filter on"
+        // is the product question, and facet×value would multiply into a table
+        // nobody can read.
+        $this->trackEvent('company_filter', [
+            'facet' => $facet,
+            'action' => $wasSelected ? 'remove' : 'add',
+        ]);
+
         $this->perPage = $this->pageSize;
         $this->resetPage();
     }
 
     public function clearFacet(string $facet): void
     {
+        if (isset($this->filters[$facet])) {
+            $this->trackEvent('company_filter', ['facet' => $facet, 'action' => 'clear']);
+        }
+
         unset($this->filters[$facet]);
 
         $this->perPage = $this->pageSize;
@@ -229,6 +293,10 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
 
     public function clearFilters(): void
     {
+        if ($this->isNarrowed) {
+            $this->trackEvent('company_filter', ['facet' => 'all', 'action' => 'clear']);
+        }
+
         $this->filters = [];
         $this->search = '';
 
@@ -243,6 +311,11 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         }
 
         $this->perPage += $this->pageSize;
+
+        // The page reached, not a count: how deep people are willing to scroll
+        // is the question, and it stays a handful of values.
+        $this->trackEvent('company_list_load_more', ['page' => intdiv($this->perPage, $this->pageSize)]);
+
         unset($this->companyResults, $this->companies, $this->hasMore);
     }
 

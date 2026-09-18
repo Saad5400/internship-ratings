@@ -21,8 +21,14 @@
                 document.addEventListener('livewire:navigated', forceLight);
             })();
         </script>
-    <!-- Analytics (self-hosted Umami, cookieless) -->
-    <script defer src="https://analytics.sb.sa/script.js" data-website-id="fb84e21d-eda8-4eda-89f0-6c750b8c91fb"></script>
+        {{--
+            Page views only: the recorder is off here. The panel is a handful of
+            staff accounts — no funnel to read — and its screens are the one
+            place where pending reviews, reviewers' names and the contact details
+            they left for other students are all on display at once. That is not
+            footage to keep in a system with no access control of its own.
+        --}}
+        @include('partials.analytics', ['recorder' => false])
     </head>
     <body class="min-h-screen bg-slate-50/50 font-sans antialiased text-slate-900">
         @php
@@ -160,5 +166,6 @@
                 @endforeach
             </div>
         </nav>
+        @include('partials.analytics-events')
     </body>
 </html>

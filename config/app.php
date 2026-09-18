@@ -56,6 +56,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Production Host
+    |--------------------------------------------------------------------------
+    |
+    | The one host that is the real site. Two unrelated features need to know
+    | it: SEO (only production is indexable, and canonicals point at it) and
+    | analytics (the tracker reports from this domain only, and session replay
+    | runs there and nowhere else). Keyed off the request host rather than
+    | APP_ENV, so a preview or a copy of the production env can't claim to be
+    | production.
+    |
+    */
+
+    'production_host' => env('APP_PRODUCTION_HOST', 'internship-ratings.sb.sa'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
