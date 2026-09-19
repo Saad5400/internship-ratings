@@ -80,6 +80,38 @@ Both `companies.status` and `ratings.status` are plain strings:
   navigation badges and status tabs, and rows can be approved/rejected in one
   click (individually or in bulk).
 
+## Email notifications
+
+Admins receive a digest email when submissions are awaiting moderation — at
+most once every two days, and only when something is pending. The
+`moderation:digest` command is scheduled daily (`routes/console.php`); the
+two-day cadence is enforced by a cache guard inside the command, and mail is
+queued (`App\Mail\PendingModerationDigest`), so the existing `schedule:work`
+and `queue:work` workers handle everything.
+
+**Safe by default:** with no mail configuration, `MAIL_MAILER` falls back to
+`log` and digests are written to `storage/logs/laravel.log` instead of being
+sent — nothing breaks. To actually deliver email in production, set these
+environment variables (in Coolify; the repo does not carry them):
+
+```
+MAIL_MAILER=smtp
+MAIL_HOST=<smtp host>
+MAIL_PORT=587
+MAIL_USERNAME=<smtp user>
+MAIL_PASSWORD=<smtp password>
+MAIL_SCHEME=null            # or as your provider requires
+MAIL_FROM_ADDRESS=no-reply@<your-domain>
+MAIL_FROM_NAME="تقييم التدريب"
+```
+
+`APP_URL` must also be the real public URL — the digest's dashboard link is
+generated inside a queued job from `APP_URL`, not from a request.
+
+Local testing: point `MAIL_HOST`/`MAIL_PORT` at Mailpit, then run
+`php artisan moderation:digest --force` (bypasses the two-day guard) and
+`php artisan queue:work --stop-when-empty`.
+
 ## Project principles
 
 Two short docs capture the conventions this codebase is held to. Read them
