@@ -22,5 +22,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
-rr
-.rr.yaml
+frankenphp
+/public/frankenphp-worker.php
+**/caddy
+/.railpack-plan.json

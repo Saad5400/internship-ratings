@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
 
+/* Container config, not markup: supervisord's [program:x] headers would
+   otherwise compile into arbitrary-property classes. */
+@source not '../../deploy';
+
 @plugin "daisyui" {
     themes: calm --default;
     logs: false;
