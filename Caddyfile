@@ -1,0 +1,95 @@
+# FrankenPHP config for Laravel Octane. Railpack installs this file as
+# /Caddyfile, and deploy/supervisord.conf passes it to
+# `octane:start --server=frankenphp --caddyfile=/Caddyfile`, which replaces
+# Octane's built-in stub (vendor/laravel/octane/src/Commands/stubs/Caddyfile).
+#
+# The {$CADDY_*} and {$APP_*} placeholders are Octane's contract: it sets them
+# from its own options when it launches frankenphp (--workers, --max-requests,
+# the admin port that octane:reload and octane:status talk to). Keep them.
+{
+	{$CADDY_GLOBAL_OPTIONS}
+
+	admin {$CADDY_SERVER_ADMIN_HOST}:{$CADDY_SERVER_ADMIN_PORT}
+	persist_config off
+
+	log {
+		format json
+		output stderr
+		level WARN
+	}
+
+	# Thread pool, sized for a 4-vCPU box shared with ~20 apps. Every Octane
+	# worker is one thread holding a booted Laravel app. `--workers=2` in
+	# supervisord.conf fills the worker directive below with `num 2`;
+	# num_threads must stay above it (2 workers + 1 spare). Under load
+	# FrankenPHP adds threads up to max_threads (so at most 4 workers, the
+	# ceiling RoadRunner's --workers=auto gave on 4 cores) and drops them again
+	# when idle. Requests beyond that queue for max_wait_time, then get a 504.
+	frankenphp {
+		num_threads 3
+		max_threads 5
+		max_wait_time 30s
+
+		worker {
+			file "{$APP_PUBLIC_PATH}/frankenphp-worker.php"
+			{$CADDY_SERVER_WORKER_DIRECTIVE}
+		}
+	}
+}
+
+{$CADDY_SERVER_SERVER_NAME} {
+	# Access log at Octane's level (WARN outside local), so only failed
+	# requests are logged.
+	log {
+		level {$CADDY_SERVER_LOG_LEVEL}
+		format {$CADDY_SERVER_LOGGER}
+	}
+
+	route {
+		root * "{$APP_PUBLIC_PATH}"
+
+		# The app takes no uploads (php.ini post_max_size = 8M).
+		request_body {
+			max_size 8MB
+		}
+
+		header X-Content-Type-Options "nosniff"
+		header -Server
+
+		# Vite's hashed build assets are public and credential-free, so they
+		# are served cross-origin. @font-face fetches are CORS-gated, and the
+		# Umami session replayer rebuilds pages inside an iframe on the
+		# analytics origin; without this header replays fall back to a
+		# default font.
+		@build path /build/*
+		header @build Access-Control-Allow-Origin "*"
+
+		# Compress an explicit allowlist only (Octane's stub compresses every
+		# type). Nothing here streams today; if SSE is ever added,
+		# text/event-stream must stay off this list.
+		encode {
+			zstd
+			gzip
+			minimum_length 1024
+			match {
+				header Content-Type text/html*
+				header Content-Type text/css*
+				header Content-Type text/plain*
+				header Content-Type text/javascript*
+				header Content-Type application/javascript*
+				header Content-Type application/json*
+				header Content-Type application/xml*
+				header Content-Type image/svg+xml*
+			}
+		}
+
+		# Static files are served straight from public/; everything else goes
+		# to the Octane worker.
+		php_server {
+			index frankenphp-worker.php
+			try_files {path} frankenphp-worker.php
+			# Required for the public/storage/ symlink.
+			resolve_root_symlink
+		}
+	}
+}
