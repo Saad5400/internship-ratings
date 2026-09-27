@@ -16,7 +16,7 @@ account system; only admins log in, and only to moderate content.
 - **Cloudflare Turnstile** (`njoguamos/laravel-turnstile`) on the public rating form
 - **Pest v4** for tests, **Pint** for formatting
 - **SQLite** in development, **PostgreSQL** in production
-- **Laravel Octane** (FrankenPHP); deployed via Coolify + Railpack (`railpack.json`; `nixpacks.toml` kept for rollback)
+- **Laravel Octane** (FrankenPHP); deployed via Coolify + Railpack (`railpack.json`)
 
 ## Local setup
 
