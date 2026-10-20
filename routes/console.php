@@ -23,3 +23,15 @@ Schedule::command('search:index')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground();
+
+/*
+ * Moderation digest email. Runs daily, but the every-two-days cadence lives
+ * in the command's cache guard — the daily slot just gives it a chance to
+ * fire, so a missed day self-heals the next morning instead of waiting for
+ * the next matching cron day. 06:00 UTC is 09:00 in Riyadh. onOneServer()
+ * (shared database cache lock) keeps a scaled-out deployment from sending
+ * the digest once per container.
+ */
+Schedule::command('moderation:digest')
+    ->dailyAt('06:00')
+    ->onOneServer();

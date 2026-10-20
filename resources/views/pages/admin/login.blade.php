@@ -39,7 +39,7 @@ new #[Layout('layouts.public')] #[Title('تسجيل الدخول')] class extend
         $attempted = Auth::attempt([
             'email' => $this->email,
             'password' => $this->password,
-            fn ($query) => $query->where('is_admin', true),
+            fn ($query) => $query->admins(),
         ], $this->remember);
 
         if (! $attempted) {

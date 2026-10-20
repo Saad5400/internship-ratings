@@ -104,7 +104,7 @@ new #[Layout('layouts.admin')] #[Title('المستخدمون')] class extends Co
                         ->orWhere('email', 'like', "%{$this->search}%");
                 });
             })
-            ->when($this->adminFilter === 'admins', fn ($query) => $query->where('is_admin', true))
+            ->when($this->adminFilter === 'admins', fn ($query) => $query->admins())
             ->when($this->adminFilter === 'members', fn ($query) => $query->where('is_admin', false))
             ->orderBy($this->sortField, $this->sortDirection)
             ->orderBy('id', $this->sortDirection)
@@ -114,7 +114,7 @@ new #[Layout('layouts.admin')] #[Title('المستخدمون')] class extends Co
     #[Computed]
     public function adminCount(): int
     {
-        return User::query()->where('is_admin', true)->count();
+        return User::admins()->count();
     }
 
     public function invite(): void
