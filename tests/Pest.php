@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Features\SupportTesting\Testable;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 /*
@@ -47,4 +50,16 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Mounts the admin setup page the way its signed link does, with the link's
+ * query. Shared by AdminUsersPageTest and SecurityHardeningTest; it lives here
+ * so either file also passes on its own and under --parallel.
+ */
+function setupComponent(User $user): Testable
+{
+    parse_str((string) parse_url($user->setupLink(), PHP_URL_QUERY), $query);
+
+    return Livewire::withQueryParams($query)->test('pages::admin.setup', ['user' => $user]);
 }

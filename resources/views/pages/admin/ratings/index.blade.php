@@ -4,6 +4,7 @@ use App\Enums\CompanyType;
 use App\Enums\Modality;
 use App\Enums\Recommendation;
 use App\Livewire\Concerns\ModeratesRecords;
+use App\Livewire\Concerns\RequiresAdmin;
 use App\Models\Rating;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -18,6 +19,7 @@ use Livewire\WithPagination;
  * disclosure, and one-click approve/reject on every row.
  */
 new #[Layout('layouts.admin')] #[Title('التقييمات')] class extends Component {
+    use RequiresAdmin;
     use ModeratesRecords;
     use WithPagination;
 
@@ -167,11 +169,16 @@ new #[Layout('layouts.admin')] #[Title('التقييمات')] class extends Comp
             ->when(filled($this->jobOffer), fn ($q) => $q->where('job_offer', $this->jobOffer === 'yes'))
             ->when(filled($this->score), fn ($q) => $q->whereRaw('ROUND(overall_rating) = ?', [(int) $this->score]));
 
-        if ($this->sortField === 'overall_rating') {
-            // Direction is whitelisted in sortBy()/mount(), so the raw sort is safe.
-            $query->orderByRaw("overall_rating {$this->sortDirection} nulls last");
+        // Re-whitelisted here, not only in sortBy()/mount(): both properties can
+        // still be set from the client on any later Livewire update, and the
+        // direction is concatenated into raw SQL.
+        $sortField = in_array($this->sortField, self::SORTABLE_FIELDS, true) ? $this->sortField : 'created_at';
+        $sortDirection = $this->sortDirection === 'asc' ? 'asc' : 'desc';
+
+        if ($sortField === 'overall_rating') {
+            $query->orderByRaw("overall_rating {$sortDirection} nulls last");
         } else {
-            $query->orderBy($this->sortField, $this->sortDirection);
+            $query->orderBy($sortField, $sortDirection);
         }
 
         return $query->orderByDesc('id')->paginate(15);

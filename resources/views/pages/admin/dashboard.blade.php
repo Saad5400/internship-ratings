@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Concerns\ModeratesRecords;
+use App\Livewire\Concerns\RequiresAdmin;
 use App\Models\Company;
 use App\Models\Rating;
 use Livewire\Attributes\Computed;
@@ -14,6 +15,7 @@ use Livewire\Component;
  * below the queue. Clearing this queue is the admin's daily job.
  */
 new #[Layout('layouts.admin')] #[Title('المراجعة')] class extends Component {
+    use RequiresAdmin;
     use ModeratesRecords;
 
     public int $ratingsLimit = 5;

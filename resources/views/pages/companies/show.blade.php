@@ -6,6 +6,7 @@ use App\Models\Rating;
 use App\Models\RatingVote;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 new #[Layout('layouts.public')] class extends Component {
@@ -13,12 +14,15 @@ new #[Layout('layouts.public')] class extends Component {
 
     public Company $company;
 
+    #[Locked]
     public int $perPage = 10;
 
     /** @var array<int, int> */
+    #[Locked]
     public array $revealedContacts = [];
 
     /** @var array<int, int> */
+    #[Locked]
     public array $votedRatingIds = [];
 
     protected int $pageSize = 10;
@@ -266,5 +270,5 @@ new #[Layout('layouts.public')] class extends Component {
             ],
         ];
     @endphp
-    <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+    <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
 </div>

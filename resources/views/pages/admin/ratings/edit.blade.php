@@ -5,6 +5,7 @@ use App\Enums\Recommendation;
 use App\Enums\ReviewerDegree;
 use App\Enums\SaudiCity;
 use App\Livewire\Concerns\ModeratesRecords;
+use App\Livewire\Concerns\RequiresAdmin;
 use App\Models\Rating;
 use App\Support\ModerationStatus;
 use Livewire\Attributes\Computed;
@@ -19,6 +20,7 @@ use Livewire\Component;
  * The overall score is never edited — the model recomputes it on save.
  */
 new #[Layout('layouts.admin')] #[Title('تعديل تقييم')] class extends Component {
+    use RequiresAdmin;
     use ModeratesRecords;
 
     public Rating $rating;

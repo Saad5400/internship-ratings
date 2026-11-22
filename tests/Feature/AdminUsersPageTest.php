@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
 
 test('the users page renders for an admin', function () {
@@ -172,13 +171,14 @@ test('an admin cannot delete their own account', function () {
 });
 
 test('the last admin cannot be deleted', function () {
+    // The only account that could try is a non-admin, and a non-admin is now
+    // refused by the component itself before any action runs.
     $actingUser = User::factory()->create(['is_admin' => false]);
     $lastAdmin = User::factory()->admin()->create();
 
     Livewire::actingAs($actingUser)
         ->test('pages::admin.users.index')
-        ->call('deleteUser', $lastAdmin->id)
-        ->assertDispatched('toast', type: 'danger');
+        ->assertForbidden();
 
     expect($lastAdmin->fresh())->not->toBeNull();
 });
@@ -198,14 +198,14 @@ test('a regular user can be deleted', function () {
 test('a signed setup link renders and lets the invitee set a password and sign in', function () {
     $invitee = User::factory()->admin()->unverified()->create();
 
-    $url = url(URL::temporarySignedRoute('admin.setup', now()->addDays(7), ['user' => $invitee->id], absolute: false));
+    $url = $invitee->setupLink();
 
     $this->get($url)
         ->assertOk()
         ->assertSee('تعيين كلمة المرور')
         ->assertSee($invitee->email);
 
-    Livewire::test('pages::admin.setup', ['user' => $invitee])
+    setupComponent($invitee)
         ->set('password', 'chosen-new-password')
         ->set('password_confirmation', 'chosen-new-password')
         ->call('save')
@@ -223,7 +223,7 @@ test('a signed setup link renders and lets the invitee set a password and sign i
 test('the setup page rejects mismatched password confirmation', function () {
     $invitee = User::factory()->admin()->create();
 
-    Livewire::test('pages::admin.setup', ['user' => $invitee])
+    setupComponent($invitee)
         ->set('password', 'chosen-new-password')
         ->set('password_confirmation', 'different-password')
         ->call('save')
@@ -239,7 +239,7 @@ test('an unsigned setup URL returns 403', function () {
 test('an expired setup URL returns 403', function () {
     $invitee = User::factory()->admin()->create();
 
-    $url = url(URL::temporarySignedRoute('admin.setup', now()->addDays(7), ['user' => $invitee->id], absolute: false));
+    $url = $invitee->setupLink();
 
     $this->travel(8)->days();
 

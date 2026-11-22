@@ -176,11 +176,15 @@ test('search and facets narrow together', function () {
 });
 
 test('toggleFilter adds then removes a value and resets paging', function () {
-    ratedCompany('شركة جدة', ['city' => 'جدة']);
+    foreach (range(1, 13) as $i) {
+        ratedCompany("شركة جدة {$i}", ['city' => 'جدة']);
+    }
 
-    $component = Livewire::test('pages::companies.index')
-        ->set('perPage', 48)
-        ->call('toggleFilter', 'city', 'جدة');
+    // perPage is server-owned (#[Locked]); paging deeper goes through loadMore.
+    $component = Livewire::test('pages::companies.index')->call('loadMore');
+    expect($component->get('perPage'))->toBe(24);
+
+    $component->call('toggleFilter', 'city', 'جدة');
 
     expect($component->get('filters'))->toBe(['city' => ['جدة']]);
     expect($component->get('perPage'))->toBe(12);
