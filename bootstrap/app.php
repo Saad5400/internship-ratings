@@ -11,7 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        // Trusted proxies come from config/trustedproxy.php (TRUSTED_PROXIES),
+        // which the framework's TrustProxies middleware reads per request.
 
         /*
          * One combined call on purpose: `redirectUsersTo()` after

@@ -1,8 +1,8 @@
 #!/bin/bash
 # Railpack runs this as the container's start command (it replaces Railpack's
 # default start-container.sh). It ports the old Nixpacks start.sh: prepare
-# Laravel, then hand PID 1 to supervisord, which runs Octane (FrankenPHP), the
-# queue worker and the scheduler (deploy/supervisord.conf).
+# Laravel, then hand PID 1 to supervisord, which runs Octane (FrankenPHP) and the
+# scheduler; the scheduler drains the queue each minute (deploy/supervisord.conf).
 set -e
 
 cd /app

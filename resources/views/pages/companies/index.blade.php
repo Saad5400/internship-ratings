@@ -584,7 +584,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
                 <input
                     x-ref="search"
                     type="text"
-                    wire:model.live.debounce.300ms="search"
+                    wire:model.live.debounce.500ms="search"
                     @focus="open = true"
                     @input="empty = $event.target.value === ''"
                     {{-- Static value is the no-JS fallback; Alpine swaps in the fuller

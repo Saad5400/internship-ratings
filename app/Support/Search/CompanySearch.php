@@ -48,6 +48,29 @@ class CompanySearch
 
     protected ?int $corpus = null;
 
+    /**
+     * The embedding matrix this worker last loaded, keyed by its version stamp.
+     *
+     * Static on purpose. The instance is `scoped` (per request), but under
+     * Octane the PHP process lives across requests, and live search used to
+     * unserialize the whole matrix out of the cache store on every keystroke.
+     * Holding it here makes a repeat search free while staying Octane-safe:
+     * the data is the same for every user, only ONE version is ever held (a
+     * new stamp replaces it, so memory is bounded at one matrix, ~a few MB),
+     * and the stamp is re-read from the database on every search, so a
+     * re-index by the queue or the scheduler is picked up on the next query.
+     *
+     * The hold also expires after `search.cache.worker_ttl` seconds. The stamp
+     * is count + newest second, so a re-embed that lands in the same second as
+     * the previous newest row, with the count unchanged, keeps the same stamp;
+     * without an expiry the worker would serve that stale matrix until it
+     * restarted. With it, staleness is bounded exactly as the cache entry's
+     * own TTL always bounded it.
+     *
+     * @var array{version: string, at: int, rows: list<array{id: int, field: string, embedding: string}>}|null
+     */
+    protected static ?array $workerMatrix = null;
+
     public function __construct(private readonly Embedder $embedder) {}
 
     /**
@@ -464,10 +487,11 @@ class CompanySearch
     }
 
     /**
-     * Every embedded field vector, cached whole.
+     * Every embedded field vector, cached whole and held by the worker.
      *
-     * The cache key carries the index's own row count and newest timestamp, so
-     * re-indexing invalidates it without anything having to remember to flush.
+     * The version carries the index's own row count and newest timestamp (and
+     * the embedding model), so re-indexing invalidates both the cache entry and
+     * the worker copy without anything having to remember to flush.
      *
      * @return list<array{id: int, field: string, embedding: string}>
      */
@@ -481,9 +505,17 @@ class CompanySearch
             ->selectRaw('count(*) as rows, max(indexed_at) as newest')
             ->first();
 
-        $version = md5(($stamp->rows ?? 0).'|'.($stamp->newest ?? '').'|'.$this->embedder->dimensions());
+        $version = md5(($stamp->rows ?? 0).'|'.($stamp->newest ?? '').'|'.$this->embedder->model().'|'.$this->embedder->dimensions());
 
-        return Cache::remember(
+        $now = now()->getTimestamp();
+
+        if (self::$workerMatrix !== null
+            && self::$workerMatrix['version'] === $version
+            && $now - self::$workerMatrix['at'] < (int) config('search.cache.worker_ttl', 60)) {
+            return self::$workerMatrix['rows'];
+        }
+
+        $rows = Cache::remember(
             "search:matrix:{$version}",
             (int) config('search.cache.matrix_ttl', 3600),
             fn (): array => SearchDocument::query()
@@ -497,6 +529,20 @@ class CompanySearch
                 ])
                 ->all()
         );
+
+        self::$workerMatrix = ['version' => $version, 'at' => $now, 'rows' => $rows];
+
+        return $rows;
+    }
+
+    /**
+     * Forget the worker-held matrix. The version stamp already invalidates it in
+     * production; tests call this because each test builds a fresh application
+     * in the same PHP process, and two tests can produce identical stamps.
+     */
+    public static function forgetWorkerMatrix(): void
+    {
+        self::$workerMatrix = null;
     }
 
     /** LIKE wildcards inside a user's query are literal characters, not operators. */
