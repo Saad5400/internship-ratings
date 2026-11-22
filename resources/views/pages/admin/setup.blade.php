@@ -4,6 +4,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -16,6 +17,14 @@ use Livewire\Component;
 new #[Layout('layouts.public')] #[Title('تعيين كلمة المرور')] class extends Component {
     public User $user;
 
+    /** The link's password fingerprint ({@see User::setupFingerprint()}). */
+    #[Locked]
+    public string $fingerprint = '';
+
+    /** The link's expiry, as a Unix timestamp. */
+    #[Locked]
+    public int $expires = 0;
+
     public string $password = '';
 
     public string $password_confirmation = '';
@@ -23,10 +32,33 @@ new #[Layout('layouts.public')] #[Title('تعيين كلمة المرور')] cla
     public function mount(User $user): void
     {
         $this->user = $user;
+        $this->fingerprint = (string) request()->query('v', '');
+        $this->expires = request()->integer('expires');
+
+        $this->ensureLinkIsLive();
+    }
+
+    /**
+     * The `signed` route middleware only guards the page load; `save()` arrives
+     * later on Livewire's update endpoint, possibly from a replayed snapshot. So
+     * the link's own limits are re-checked here, against the user as stored now:
+     * a link whose password has since been set (or changed) is spent, and one
+     * past its expiry is dead.
+     */
+    protected function ensureLinkIsLive(): void
+    {
+        abort_unless(
+            $this->expires > now()->getTimestamp()
+                && hash_equals($this->user->setupFingerprint(), $this->fingerprint),
+            403,
+        );
     }
 
     public function save(): void
     {
+        $this->user->refresh();
+        $this->ensureLinkIsLive();
+
         $this->validate(
             rules: [
                 'password' => ['required', 'confirmed', Password::defaults()],

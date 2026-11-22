@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 #[Signature('app:make-admin {email} {--revoke} {--name= : Name for a newly created user} {--setup-link : Print a fresh password-setup link}')]
@@ -57,9 +56,7 @@ class MakeAdminCommand extends Command
         }
 
         if ($created || $this->option('setup-link')) {
-            // Relative signature (route uses signed:relative) so the link
-            // works on any host/port the app is reached through.
-            $link = url(URL::temporarySignedRoute('admin.setup', now()->addDays(7), ['user' => $user->id], absolute: false));
+            $link = $user->setupLink();
 
             $this->newLine();
             $this->line('Password setup link (valid for 7 days):');

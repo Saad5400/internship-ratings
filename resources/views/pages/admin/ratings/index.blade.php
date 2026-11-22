@@ -4,6 +4,7 @@ use App\Enums\CompanyType;
 use App\Enums\Modality;
 use App\Enums\Recommendation;
 use App\Livewire\Concerns\ModeratesRecords;
+use App\Livewire\Concerns\RequiresAdmin;
 use App\Models\Rating;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -18,6 +19,7 @@ use Livewire\WithPagination;
  * disclosure, and one-click approve/reject on every row.
  */
 new #[Layout('layouts.admin')] #[Title('التقييمات')] class extends Component {
+    use RequiresAdmin;
     use ModeratesRecords;
     use WithPagination;
 

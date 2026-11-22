@@ -1,13 +1,14 @@
 <?php
 
+use App\Livewire\Concerns\RequiresAdmin;
 use App\Models\User;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url as UrlParam;
 use Livewire\Component;
@@ -20,6 +21,7 @@ use Livewire\WithPagination;
  * doubles as a password-reset flow via the per-row "رابط تعيين كلمة المرور".
  */
 new #[Layout('layouts.admin')] #[Title('المستخدمون')] class extends Component {
+    use RequiresAdmin;
     use WithPagination;
 
     #[UrlParam(as: 'q')]
@@ -29,8 +31,10 @@ new #[Layout('layouts.admin')] #[Title('المستخدمون')] class extends Co
     #[UrlParam(as: 'role')]
     public string $adminFilter = '';
 
+    #[Locked]
     public string $sortField = 'created_at';
 
+    #[Locked]
     public string $sortDirection = 'desc';
 
     // --- Invite dialog state ---
@@ -254,7 +258,7 @@ new #[Layout('layouts.admin')] #[Title('المستخدمون')] class extends Co
     {
         // Relative signature (route uses signed:relative) so the link works
         // on any host/port the app is reached through.
-        $this->inviteLink = url(URL::temporarySignedRoute('admin.setup', now()->addDays(7), ['user' => $user->id], absolute: false));
+        $this->inviteLink = $user->setupLink();
         $this->inviteLinkUserName = $user->name;
 
         $this->dispatch('open-dialog', id: 'invite-link');

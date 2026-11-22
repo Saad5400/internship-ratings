@@ -12,6 +12,7 @@ use App\Support\Search\CompanySearch;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -44,6 +45,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
      */
     protected ?string $pendingSearchSource = null;
 
+    #[Locked]
     public int $perPage = 12;
 
     protected int $pageSize = 12;
@@ -872,5 +874,5 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
             ],
         ];
     @endphp
-    <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+    <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
 </div>

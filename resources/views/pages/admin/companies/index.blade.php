@@ -2,6 +2,7 @@
 
 use App\Enums\CompanyType;
 use App\Livewire\Concerns\ModeratesRecords;
+use App\Livewire\Concerns\RequiresAdmin;
 use App\Models\Company;
 use App\Support\ModerationStatus;
 use Illuminate\Validation\Rule;
@@ -19,6 +20,7 @@ use Livewire\WithPagination;
  */
 new #[Layout('layouts.admin')] #[Title('الجهات')] class extends Component
 {
+    use RequiresAdmin;
     use ModeratesRecords;
     use WithPagination;
 
