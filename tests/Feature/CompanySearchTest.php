@@ -668,6 +668,21 @@ test('a re-index replaces the worker-held matrix on the next search', function (
     expect($reads)->toHaveCount(1);
 });
 
+test('the worker re-reads the matrix after its hold expires, even when the stamp did not change', function () {
+    app()->bind(Embedder::class, fn () => conceptEmbedder(['software' => ['برمجيات', 'تطوير التطبيقات']]));
+    $software = searchableCompany('مؤسسة الصقر', [], ['description' => 'تطوير التطبيقات']);
+    config(['search.cache.worker_ttl' => 60]);
+
+    matrixCacheReads(fn () => app(CompanySearch::class)->search('برمجيات'));
+
+    $this->travel(30)->seconds();
+    expect(matrixCacheReads(fn () => app(CompanySearch::class)->search('برمجيات')))->toBeEmpty();
+
+    $this->travel(31)->seconds();
+    $reads = matrixCacheReads(fn () => expect(app(CompanySearch::class)->search('برمجيات'))->toHaveKey($software->id));
+    expect($reads)->toHaveCount(1);
+});
+
 test('live search waits for the typing to settle before searching', function () {
     $view = file_get_contents(resource_path('views/pages/companies/index.blade.php'));
 

@@ -159,6 +159,9 @@ return [
     'cache' => [
         'query_ttl' => (int) env('SEARCH_QUERY_CACHE_TTL', 86400),
         'matrix_ttl' => (int) env('SEARCH_MATRIX_CACHE_TTL', 3600),
+        // How long an Octane worker keeps its own copy of the matrix before
+        // re-reading the cache (CompanySearch::matrix()).
+        'worker_ttl' => (int) env('SEARCH_MATRIX_WORKER_TTL', 60),
     ],
 
 ];

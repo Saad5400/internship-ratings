@@ -60,7 +60,14 @@ class CompanySearch
      * and the stamp is re-read from the database on every search, so a
      * re-index by the queue or the scheduler is picked up on the next query.
      *
-     * @var array{version: string, rows: list<array{id: int, field: string, embedding: string}>}|null
+     * The hold also expires after `search.cache.worker_ttl` seconds. The stamp
+     * is count + newest second, so a re-embed that lands in the same second as
+     * the previous newest row, with the count unchanged, keeps the same stamp;
+     * without an expiry the worker would serve that stale matrix until it
+     * restarted. With it, staleness is bounded exactly as the cache entry's
+     * own TTL always bounded it.
+     *
+     * @var array{version: string, at: int, rows: list<array{id: int, field: string, embedding: string}>}|null
      */
     protected static ?array $workerMatrix = null;
 
@@ -500,7 +507,11 @@ class CompanySearch
 
         $version = md5(($stamp->rows ?? 0).'|'.($stamp->newest ?? '').'|'.$this->embedder->model().'|'.$this->embedder->dimensions());
 
-        if (self::$workerMatrix !== null && self::$workerMatrix['version'] === $version) {
+        $now = now()->getTimestamp();
+
+        if (self::$workerMatrix !== null
+            && self::$workerMatrix['version'] === $version
+            && $now - self::$workerMatrix['at'] < (int) config('search.cache.worker_ttl', 60)) {
             return self::$workerMatrix['rows'];
         }
 
@@ -519,7 +530,7 @@ class CompanySearch
                 ->all()
         );
 
-        self::$workerMatrix = ['version' => $version, 'rows' => $rows];
+        self::$workerMatrix = ['version' => $version, 'at' => $now, 'rows' => $rows];
 
         return $rows;
     }
