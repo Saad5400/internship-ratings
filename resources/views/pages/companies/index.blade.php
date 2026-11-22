@@ -158,6 +158,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
 
     public function mount(): void
     {
+        $this->clampSearch();
         $this->filters = CompanyFacets::sanitize($this->filters);
     }
 
@@ -194,6 +195,7 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
      */
     public function updatedSearch(): void
     {
+        $this->clampSearch();
         $this->syncSortToSearch();
 
         // Once per settled search, never per keystroke — the debounce on the
@@ -234,6 +236,12 @@ new #[Layout('layouts.public')] #[Title('الجهات')] class extends Component
         ]);
 
         $this->pendingSearchSource = null;
+    }
+
+    /** The search box is a query, not a document; see `search.max_query_length`. */
+    protected function clampSearch(): void
+    {
+        $this->search = mb_substr($this->search, 0, (int) config('search.max_query_length', 100));
     }
 
     protected function syncSortToSearch(): void
