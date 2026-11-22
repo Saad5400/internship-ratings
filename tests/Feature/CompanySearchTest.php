@@ -10,7 +10,10 @@ use App\Support\Search\CompanySearch;
 use App\Support\Search\Embedder;
 use App\Support\Search\SearchIndexer;
 use App\Support\Search\Vector;
+use Illuminate\Cache\Events\CacheHit;
+use Illuminate\Cache\Events\CacheMissed;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
@@ -608,4 +611,65 @@ test('a field where most companies share one value cannot invent a standout', fu
     expect($hits[$genuine->id]->fields[SearchField::Name->value]['semantic'])
         ->toBeGreaterThan(0.0)
         ->toBeLessThan(1.0);
+});
+
+/**
+ * The matrix keys this request read from the cache store, hit or miss.
+ *
+ * @return list<string>
+ */
+function matrixCacheReads(callable $search): array
+{
+    $reads = [];
+    $listener = function (object $event) use (&$reads): void {
+        if (str_starts_with($event->key, 'search:matrix:')) {
+            $reads[] = $event->key;
+        }
+    };
+
+    Event::listen(CacheHit::class, $listener);
+    Event::listen(CacheMissed::class, $listener);
+
+    app()->forgetScopedInstances();
+    $search();
+
+    return $reads;
+}
+
+test('the worker holds the matrix between requests instead of re-reading the cache', function () {
+    app()->bind(Embedder::class, fn () => conceptEmbedder(['software' => ['برمجيات', 'تطوير التطبيقات']]));
+    $software = searchableCompany('مؤسسة الصقر', [], ['description' => 'تطوير التطبيقات']);
+
+    $first = matrixCacheReads(fn () => expect(app(CompanySearch::class)->search('برمجيات'))->toHaveKey($software->id));
+    $second = matrixCacheReads(fn () => expect(app(CompanySearch::class)->search('برمجيات'))->toHaveKey($software->id));
+
+    expect($first)->toHaveCount(1);
+    expect($second)->toBeEmpty();
+});
+
+test('a re-index replaces the worker-held matrix on the next search', function () {
+    app()->bind(Embedder::class, fn () => conceptEmbedder(['software' => ['برمجيات', 'تطوير التطبيقات']]));
+    searchableCompany('مؤسسة الصقر', [], ['description' => 'تطوير التطبيقات']);
+
+    matrixCacheReads(fn () => app(CompanySearch::class)->search('برمجيات'));
+
+    // Indexed later by the queue: a new row and a newer stamp. It shares no
+    // word with the query, so only a fresh matrix can find it.
+    $this->travel(1)->minutes();
+    $newcomer = searchableCompany('مؤسسة النسر', [], ['description' => 'تطوير التطبيقات']);
+
+    $reads = matrixCacheReads(function () use ($newcomer): void {
+        $hits = app(CompanySearch::class)->search('برمجيات');
+
+        expect($hits)->toHaveKey($newcomer->id);
+        expect($hits[$newcomer->id]->isSemanticMatch())->toBeTrue();
+    });
+
+    expect($reads)->toHaveCount(1);
+});
+
+test('live search waits for the typing to settle before searching', function () {
+    $view = file_get_contents(resource_path('views/pages/companies/index.blade.php'));
+
+    expect($view)->toContain('wire:model.live.debounce.500ms="search"');
 });
