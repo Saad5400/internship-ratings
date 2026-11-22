@@ -816,3 +816,8 @@ test('the latest-reviews cache holds plain ids, never hydrated models', function
 
     expect(Cache::get('public-latest-review-ids'))->toBeArray()->each->toBeInt();
 });
+
+test('a non-numeric company id is a 404, not a database error', function () {
+    $this->get('/companies/abc')->assertNotFound();
+    $this->get('/companies/abc/og.png')->assertNotFound();
+});
