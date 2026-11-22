@@ -10,6 +10,7 @@ use App\Support\Arabic;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Throwable;
 
 /**
@@ -80,7 +81,9 @@ class CompanySearch
      */
     public function search(?string $term): Collection
     {
-        $query = Arabic::normalize($term);
+        // Capped before anything else: the query becomes one LIKE clause per
+        // word and, on a cache miss, a paid embedding of the whole string.
+        $query = Arabic::normalize(mb_substr((string) $term, 0, (int) config('search.max_query_length', 100)));
 
         // The index guard belongs here rather than only in the calling scope:
         // pages read hits directly for the "matched on" line, and that path
@@ -470,11 +473,16 @@ class CompanySearch
         $key = 'search:query:'.$this->embedder->model().':'.$this->embedder->dimensions().':'.md5($query);
 
         try {
-            $encoded = Cache::remember(
-                $key,
-                (int) config('search.cache.query_ttl', 86400),
-                fn (): string => Vector::encode($this->embedder->embed([$query])[0] ?? [])
-            );
+            $encoded = Cache::get($key);
+
+            if (! is_string($encoded)) {
+                if (! $this->withinEmbeddingBudget()) {
+                    return null;
+                }
+
+                $encoded = Vector::encode($this->embedder->embed([$query])[0] ?? []);
+                Cache::put($key, $encoded, (int) config('search.cache.query_ttl', 86400));
+            }
         } catch (Throwable $exception) {
             report($exception);
 
@@ -484,6 +492,30 @@ class CompanySearch
         $vector = Vector::decode($encoded);
 
         return $vector === [] ? null : $vector;
+    }
+
+    /**
+     * Whether one more paid query embedding fits the spend caps
+     * (`search.semantic.embed_*`). Counts the attempt when it does.
+     */
+    protected function withinEmbeddingBudget(): bool
+    {
+        $limits = [
+            ['search-embed:ip:'.(request()->ip() ?? 'unknown'), (int) config('search.semantic.embed_per_ip_per_minute', 30), 60],
+            ['search-embed:global', (int) config('search.semantic.embed_global_per_hour', 1500), 3600],
+        ];
+
+        foreach ($limits as [$key, $max, $decay]) {
+            if (RateLimiter::tooManyAttempts($key, $max)) {
+                return false;
+            }
+        }
+
+        foreach ($limits as [$key, $max, $decay]) {
+            RateLimiter::hit($key, $decay);
+        }
+
+        return true;
     }
 
     /**

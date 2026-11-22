@@ -116,6 +116,18 @@ return [
 
         /** Queries shorter than this skip the provider round-trip entirely. */
         'min_query_length' => (int) env('SEARCH_SEMANTIC_MIN_LENGTH', 3),
+
+        /**
+         * Spend caps on query embeddings. Search is public and unauthenticated
+         * and every *new* query is a paid provider call on the render path, so
+         * a script cycling unique queries would otherwise bill without limit.
+         * Only cache misses count (a repeated query is free). Past either cap
+         * the semantic leg is skipped and search falls back to lexical — it
+         * degrades, it never fails. The per-IP cap relies on TRUSTED_PROXIES
+         * being set, or every visitor shares the proxy's address.
+         */
+        'embed_per_ip_per_minute' => (int) env('SEARCH_EMBED_PER_IP_PER_MINUTE', 30),
+        'embed_global_per_hour' => (int) env('SEARCH_EMBED_GLOBAL_PER_HOUR', 1500),
     ],
 
     /*
@@ -155,6 +167,9 @@ return [
     | table stay as they are.
     |
     */
+
+    /** Longest query the search will look at; anything longer is cut, not refused. */
+    'max_query_length' => (int) env('SEARCH_MAX_QUERY_LENGTH', 100),
 
     'cache' => [
         'query_ttl' => (int) env('SEARCH_QUERY_CACHE_TTL', 86400),
