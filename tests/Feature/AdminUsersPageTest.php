@@ -245,11 +245,3 @@ test('an expired setup URL returns 403', function () {
 
     $this->get($url)->assertForbidden();
 });
-
-/** Mounts the setup page the way its signed link does, with the link's query. */
-function setupComponent(User $user)
-{
-    parse_str((string) parse_url($user->setupLink(), PHP_URL_QUERY), $query);
-
-    return Livewire::withQueryParams($query)->test('pages::admin.setup', ['user' => $user]);
-}

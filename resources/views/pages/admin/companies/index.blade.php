@@ -183,11 +183,17 @@ new #[Layout('layouts.admin')] #[Title('الجهات')] class extends Component
             ->when($this->ratingsFilter === 'yes', fn ($q) => $q->has('ratings'))
             ->when($this->ratingsFilter === 'no', fn ($q) => $q->doesntHave('ratings'));
 
-        if ($this->sortField === 'approved_ratings_avg') {
+        // Re-whitelisted here, not only in mount(): both properties can still be
+        // set from the client on any later Livewire update, and the direction is
+        // concatenated into raw SQL.
+        $sortField = in_array($this->sortField, self::SORTABLE_FIELDS, true) ? $this->sortField : 'created_at';
+        $sortDirection = $this->sortDirection === 'asc' ? 'asc' : 'desc';
+
+        if ($sortField === 'approved_ratings_avg') {
             // Companies without approved ratings sort after rated ones either way.
-            $query->orderByRaw('approved_ratings_avg '.$this->sortDirection.' nulls last');
+            $query->orderByRaw('approved_ratings_avg '.$sortDirection.' nulls last');
         } else {
-            $query->orderBy($this->sortField, $this->sortDirection);
+            $query->orderBy($sortField, $sortDirection);
         }
 
         return $query->orderByDesc('companies.id')->paginate(15);

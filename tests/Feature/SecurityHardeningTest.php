@@ -115,3 +115,21 @@ test('a company name cannot break out of the JSON-LD script block', function () 
         ->assertOk()
         ->assertDontSee('</script><script>alert(1)', false);
 });
+
+/*
+ * The admin list sorts are whitelisted at query time: a direction set from the
+ * client on a later update must never reach the raw ORDER BY.
+ */
+test('a tampered admin sort direction never reaches the raw ORDER BY', function (string $component, string $field) {
+    $this->actingAs(User::factory()->admin()->create());
+    Company::create(['name' => 'شركة', 'status' => 'approved']);
+
+    Livewire::test($component)
+        ->call('sortBy', $field)
+        ->set('sortDirection', 'asc, (select x from no_such_table) --')
+        ->set('sortField', 'no_such_column')
+        ->assertOk();
+})->with([
+    'companies' => ['pages::admin.companies.index', 'approved_ratings_avg'],
+    'ratings' => ['pages::admin.ratings.index', 'overall_rating'],
+]);
