@@ -56,6 +56,20 @@
 		header X-Content-Type-Options "nosniff"
 		header -Server
 
+		# Baseline security headers for every response (pages and assets).
+		# HSTS without includeSubDomains/preload: sb.sa hosts other apps this
+		# file can't vouch for. Framing is same-origin only (clickjacking on
+		# the rating form and the admin panel); the Umami replayer rebuilds
+		# pages from recorded DOM, it never frames this origin. No feature
+		# here uses the camera, microphone, location or payments.
+		header {
+			Strict-Transport-Security "max-age=31536000"
+			X-Frame-Options "SAMEORIGIN"
+			Content-Security-Policy "frame-ancestors 'self'; base-uri 'self'; object-src 'none'"
+			Referrer-Policy "strict-origin-when-cross-origin"
+			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		}
+
 		# Vite's hashed build assets are public and credential-free, so they
 		# are served cross-origin. @font-face fetches are CORS-gated, and the
 		# Umami session replayer rebuilds pages inside an iframe on the
