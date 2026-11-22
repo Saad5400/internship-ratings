@@ -27,6 +27,7 @@ Route::prefix('admin')->middleware(SetAdminLocale::class)->group(function () {
      * generate with `absolute: false` and prefix with url() for display.
      */
     Route::livewire('/setup/{user}', 'pages::admin.setup')
+        ->whereNumber('user')
         ->middleware('signed:relative')
         ->name('admin.setup');
 
@@ -34,10 +35,10 @@ Route::prefix('admin')->middleware(SetAdminLocale::class)->group(function () {
         Route::livewire('/', 'pages::admin.dashboard')->name('dashboard');
 
         Route::livewire('/ratings', 'pages::admin.ratings.index')->name('ratings.index');
-        Route::livewire('/ratings/{rating}/edit', 'pages::admin.ratings.edit')->name('ratings.edit');
+        Route::livewire('/ratings/{rating}/edit', 'pages::admin.ratings.edit')->whereNumber('rating')->name('ratings.edit');
 
         Route::livewire('/companies', 'pages::admin.companies.index')->name('companies.index');
-        Route::livewire('/companies/{company}', 'pages::admin.companies.show')->name('companies.show');
+        Route::livewire('/companies/{company}', 'pages::admin.companies.show')->whereNumber('company')->name('companies.show');
 
         Route::livewire('/users', 'pages::admin.users.index')->name('users.index');
 

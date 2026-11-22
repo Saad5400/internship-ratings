@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::redirect('/', '/companies')->name('home');
 Route::livewire('/companies', 'pages::companies.index')->name('companies.index');
-Route::livewire('/companies/{company}', 'pages::companies.show')->name('companies.show');
+Route::livewire('/companies/{company}', 'pages::companies.show')->whereNumber('company')->name('companies.show');
 
 // Dynamic Open Graph card for a company, rendered by App\Support\CompanyOgImage
 // and referenced from the show page's og:image tag.
-Route::get('/companies/{company}/og.png', OgImageController::class)->name('companies.og');
+Route::get('/companies/{company}/og.png', OgImageController::class)->whereNumber('company')->name('companies.og');
 
 // XML sitemap of public, indexable pages.
 Route::get('/sitemap.xml', function () {
